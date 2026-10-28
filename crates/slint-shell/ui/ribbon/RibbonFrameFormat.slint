@@ -1,0 +1,555 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+// 注：上下文标签页的"自动出现/切换"逻辑属于第4.5节tabBar骨架范畴，本次未实现
+// 注："插入形状"Popup里6个形状是QML内联写死的Repeater，不是外部ShapePickerPopup.qml
+//     （v15第4.2节跳过的是"依赖未看过的ShapePickerPopup.qml"场景，与此处不同，故未跳过）
+// 注："形状样式"/"艺术字样式"选择器在QML里本身就只有展示+hover，无点击动作，原样保留
+// 注："高度/宽度"输入框同RibbonImageFormat处理：空壳化为静态占位展示，不引入TextInput
+// 注：文字环绕Popup与RibbonImageFormat中完全一致，复用同样写法
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component RibbonFrameFormat inherits Rectangle {
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 插入形状 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("插入形状");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                // 形状选择器：大按钮 + Popup（6个基本形状）
+                Rectangle {
+                    width: 88px;
+                    height: 56px;
+
+                    shape-trigger := Rectangle {
+                        width: parent.width;
+                        height: parent.height;
+                        border-radius: 3px;
+                        background: shape-touch.pressed ? #d6d6d6
+                            : shape-touch.has-hover ? #ebebeb
+                            : transparent;
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Image {
+                                source: @image-url("../icons/fluent/shapes.svg");
+                                width: 26px;
+                                height: 26px;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: @tr("插入形状");
+                                font-size: 11px;
+                                color: #333333;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+
+                    shape-touch := TouchArea {
+                        clicked => {
+                            shape-popup.show();
+                        }
+                    }
+
+                    shape-popup := PopupWindow {
+                        x: 0px;
+                        y: 56px;
+                        close-policy: close-on-click-outside;
+
+                        Rectangle {
+                            width: 200px;
+                            height: 24px + shape-flow.preferred-height + 16px;
+                            background: white;
+                            border-color: #c8c8c8;
+                            border-width: 1px;
+                            border-radius: 3px;
+
+                            VerticalLayout {
+                                x: 8px;
+                                y: 8px;
+                                width: 184px;
+                                spacing: 4px;
+
+                                Text {
+                                    text: @tr("基本形状");
+                                    font-size: 11px;
+                                    color: #888888;
+                                }
+
+                                shape-flow := VerticalLayout {
+                                    width: 184px;
+                                    spacing: 2px;
+
+                                    HorizontalLayout {
+                                        spacing: 2px;
+                                        for entry[idx] in [@tr("矩"), @tr("圆"), @tr("三")]: Rectangle {
+                                            width: 28px;
+                                            height: 28px;
+                                            border-radius: 3px;
+                                            background: shape-item-touch - 1.has-hover ? #e5f0fb : transparent;
+                                            border-color: #d0d0d0;
+                                            border-width: 1px;
+                                            Text {
+                                                text: entry;
+                                                font-size: 11px;
+                                                color: #333333;
+                                                x: (parent.width - self.width) / 2;
+                                                y: (parent.height - self.height) / 2;
+                                            }
+                                            shape-item-touch - 1 := TouchArea {
+                                                clicked => {
+                                                    shape-popup.close();
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    HorizontalLayout {
+                                        spacing: 2px;
+                                        for entry[idx] in [@tr("箭"), @tr("线"), @tr("文")]: Rectangle {
+                                            width: 28px;
+                                            height: 28px;
+                                            border-radius: 3px;
+                                            background: shape-item-touch - 2.has-hover ? #e5f0fb : transparent;
+                                            border-color: #d0d0d0;
+                                            border-width: 1px;
+                                            Text {
+                                                text: entry;
+                                                font-size: 11px;
+                                                color: #333333;
+                                                x: (parent.width - self.width) / 2;
+                                                y: (parent.height - self.height) / 2;
+                                            }
+                                            shape-item-touch - 2 := TouchArea {
+                                                clicked => {
+                                                    shape-popup.close();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/frame.svg");
+                        label: @tr("编辑形状");
+                        tooltip: @tr("编辑形状顶点");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/textbox.svg");
+                        label: @tr("文本框");
+                        tooltip: @tr("插入横排文本框");
+                    }
+                }
+            }
+        }
+
+
+        // ── 形状样式 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("形状样式");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                // 样式选择器：纯展示色块网格，QML原版无点击动作
+                Rectangle {
+                    width: 88px;
+                    height: 56px;
+                    border-radius: 3px;
+                    background: style-sel-touch.pressed ? #d6d6d6
+                        : style-sel-touch.has-hover ? #ebebeb
+                        : transparent;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 3px;
+
+                        Rectangle {
+                            height: 38px;
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 3px;
+                                for entry[idx] in [
+                                    { fill: #ffffff, border: #888888 },
+                                    { fill: #dce6f1, border: #2b579a },
+                                    { fill: #2b579a, border: #2b579a },
+                                ]: Rectangle {
+                                    width: 20px;
+                                    height: 16px;
+                                    border-radius: 2px;
+                                    background: entry.fill;
+                                    border-color: entry.border;
+                                    border-width: 1px;
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: @tr("形状样式 ⌄");
+                            font-size: 10px;
+                            color: #555555;
+                            horizontal-alignment: center;
+                        }
+                    }
+
+                    style-sel-touch := TouchArea { }
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/shapes.svg");
+                        label: @tr("形状填充");
+                        tooltip: @tr("设置形状填充颜色");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/insert_image.svg");
+                        label: @tr("形状轮廓");
+                        tooltip: @tr("设置形状边框颜色和宽度");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/insert_image.svg");
+                        label: @tr("形状效果");
+                        tooltip: @tr("阴影、发光、柔化边缘等");
+                    }
+                }
+            }
+        }
+
+
+        // ── 艺术字样式 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("艺术字样式");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                Rectangle {
+                    width: 88px;
+                    height: 56px;
+                    border-radius: 3px;
+                    background: art-sel-touch.pressed ? #d6d6d6
+                        : art-sel-touch.has-hover ? #ebebeb
+                        : transparent;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 3px;
+
+                        Rectangle {
+                            height: 40px;
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 3px;
+                                for entry[idx] in [0, 1, 2]: Rectangle {
+                                    width: 20px;
+                                    height: 18px;
+                                    border-radius: 2px;
+                                    background: #f0f4ff;
+                                    border-color: #b0c0e0;
+                                    border-width: 1px;
+                                    Text {
+                                        text: "A";
+                                        font-size: 12px;
+                                        font-weight: 700;
+                                        color: mod(idx, 2) == 0 ? #2b579a : #c55a11;
+                                        x: (parent.width - self.width) / 2;
+                                        y: (parent.height - self.height) / 2;
+                                    }
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: @tr("艺术字 ⌄");
+                            font-size: 10px;
+                            color: #555555;
+                            horizontal-alignment: center;
+                        }
+                    }
+
+                    art-sel-touch := TouchArea { }
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/text_effects.svg");
+                        label: @tr("文本填充");
+                        tooltip: @tr("文字填充颜色");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/text_effects.svg");
+                        label: @tr("文本轮廓");
+                        tooltip: @tr("文字轮廓颜色和宽度");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/text_effects.svg");
+                        label: @tr("文本效果");
+                        tooltip: @tr("阴影、发光、映像等文字效果");
+                    }
+                }
+            }
+        }
+
+
+        // ── 文本 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("文本");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/text_direction.svg");
+                    label: @tr("文字方向");
+                    tooltip: @tr("更改文字方向");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("对齐文字");
+                    tooltip: @tr("文字垂直对齐方式");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("创建链接");
+                    tooltip: @tr("链接到另一个文本框");
+                }
+            }
+        }
+
+
+        // ── 排列 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("排列");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("位置");
+                    tooltip: @tr("设置形状在页面中的位置");
+                }
+
+                // 文字环绕：复用 RibbonImageFormat 已验证的写法
+                Rectangle {
+                    width: 56px;
+                    height: 62px;
+
+                    fwrap-trigger := RibbonBigButton {
+                        width: 56px;
+                        icon-source: @image-url("../icons/fluent/text_wrap.svg");
+                        label: @tr("文字环绕");
+                        tooltip: @tr("设置文字环绕方式");
+                        clicked => {
+                            fwrap-trigger.active = true;
+                            fwrap-popup.show();
+                        }
+                    }
+
+                    fwrap-popup := PopupWindow {
+                        x: 0px;
+                        y: 62px;
+                        close-policy: close-on-click-outside;
+
+                        Rectangle {
+                            width: 160px;
+                            height: fwrap-list.preferred-height + 8px;
+                            background: white;
+                            border-color: #c8c8c8;
+                            border-width: 1px;
+                            border-radius: 3px;
+
+                            fwrap-list := VerticalLayout {
+                                x: 0px;
+                                y: 4px;
+                                width: 160px;
+                                spacing: 0px;
+
+                                for entry[idx] in [
+                                    @tr("嵌入型"),
+                                    @tr("四周型"),
+                                    @tr("紧密型"),
+                                    @tr("上下型"),
+                                    @tr("衬于文字下方"),
+                                    @tr("浮于文字上方"),
+                                ]: Rectangle {
+                                    height: 28px;
+                                    border-radius: 3px;
+                                    background: fwrap-item-touch.has-hover ? #e5f0fb : transparent;
+                                    Text {
+                                        text: entry;
+                                        font-size: 12px;
+                                        color: #222222;
+                                        x: 10px;
+                                        y: (parent.height - self.height) / 2;
+                                    }
+                                    fwrap-item-touch := TouchArea {
+                                        clicked => {
+                                            fwrap-trigger.active = false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("上移一层");
+                    tooltip: @tr("上移一层");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("下移一层");
+                    tooltip: @tr("下移一层");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("选择窗格");
+                    tooltip: @tr("显示选择窗格");
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/insert_image.svg");
+                        label: @tr("对齐");
+                        tooltip: @tr("对齐所选对象");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/shapes.svg");
+                        label: @tr("组合");
+                        tooltip: @tr("将多个对象组合");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/insert_image.svg");
+                        label: @tr("旋转");
+                        tooltip: @tr("旋转或翻转对象");
+                    }
+                }
+            }
+        }
+
+
+        // ── 大小 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("大小");
+
+            VerticalLayout {
+                spacing: 8px;
+
+                HorizontalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: @tr("高度:");
+                        font-size: 11px;
+                        color: #444444;
+                        vertical-alignment: center;
+                    }
+                    Rectangle {
+                        width: 72px;
+                        height: 22px;
+                        border-radius: 3px;
+                        background: white;
+                        border-color: #c8c8c8;
+                        border-width: 1px;
+                        Text {
+                            text: @tr("0 cm");
+                            font-size: 11px;
+                            color: #222222;
+                            x: 6px;
+                            y: (parent.height - self.height) / 2;
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: @tr("宽度:");
+                        font-size: 11px;
+                        color: #444444;
+                        vertical-alignment: center;
+                    }
+                    Rectangle {
+                        width: 72px;
+                        height: 22px;
+                        border-radius: 3px;
+                        background: white;
+                        border-color: #c8c8c8;
+                        border-width: 1px;
+                        Text {
+                            text: @tr("0 cm");
+                            font-size: 11px;
+                            color: #222222;
+                            x: 6px;
+                            y: (parent.height - self.height) / 2;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // ── 辅助功能 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("辅助功能");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("替换文字");
+                    tooltip: @tr("为形状添加替换文字（Alt Text）");
+                }
+            }
+        }
+    }
+}

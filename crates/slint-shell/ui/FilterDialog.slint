@@ -1,0 +1,197 @@
+// FilterDialog.slint — 表头自动筛选下拉面板(排序占位 + 唯一值勾选 + 个数)
+// v213 改版:从居中模态对话框改为贴表头按钮下方的小型下拉面板,
+// 视觉不再需要全屏遮罩色,但仍用一层透明 TouchArea 垫底以支持"点外部关闭"。
+// 状态在 Rust,这里只是视图:点击只上报回调,Rust 改状态后整体 set 回 items/counts/checked。
+// 升序/降序回调已接(2026-09-22):点击触发 sort-asc/sort-desc，Rust 端对 filter_open
+// 已探测好的数据区按当前列排序，排序后自动关闭面板。
+
+import { ScrollView } from "std-widgets.slint";
+import { CheckBox16 } from "CheckBox16.slint";
+
+export component FilterDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> title: @tr("筛选");
+    in property <string> range-text: "";
+    in property <[string]> items: [];
+    in property <[int]> counts: [];
+    in property <[bool]> checked: [];
+    in property <bool> all-checked: false;
+    // 下拉面板锚点位置(由命中检测算出的表头按钮下方坐标设置;默认0,占位)
+    in property <length> anchor-x: 0px;
+    in property <length> anchor-y: 0px;
+
+    callback toggle-item(int);
+    callback toggle-all();
+    callback confirmed();
+    callback cancelled();
+    callback sort-asc();
+    callback sort-desc();
+
+    background: transparent;
+    visible: root.visible-dialog;
+
+    // 透明垫底层:铺满父容器,仅用于承接"点外部关闭",不画遮罩色
+    Rectangle {
+        x: 0px; y: 0px;
+        width: parent.width;
+        height: parent.height;
+        background: transparent;
+        TouchArea {
+            width: parent.width; height: parent.height;
+            clicked => { root.cancelled(); }
+        }
+    }
+
+    // 下拉面板本体:锚定在 anchor-x/anchor-y,不再居中
+    Rectangle {
+        x: root.anchor-x;
+        y: root.anchor-y;
+        width: 200px;
+        height: sort-asc-row.height + sort-desc-row.height + 1px
+            + range-text-label.height + 8px
+            + all-row.height + 1px
+            + list-scroll.height
+            + bottom-bar.height;
+        background: #ffffff;
+        border-radius: 6px;
+        border-width: 1px;
+        border-color: #d8d8d8;
+        drop-shadow-blur: 16px;
+        drop-shadow-color: #00000025;
+
+        // 吞掉面板内的点击,避免落到垫底层触发取消
+        TouchArea { width: parent.width; height: parent.height; }
+
+        VerticalLayout {
+            spacing: 0px;
+
+            // 升序/降序:点击排序当前列(见文件头注释)
+            sort-asc-touch := TouchArea {
+                clicked => { root.sort-asc(); }
+                sort-asc-row := Rectangle {
+                    height: 28px;
+                    background: sort-asc-touch.has-hover ? #f4f8f6 : transparent;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 6px;
+                        alignment: start;
+                        Text { text: "↑"; font-size: 12px; color: #555555; vertical-alignment: center; }
+                        Text { text: @tr("升序"); font-size: 12px; color: #333333; vertical-alignment: center; }
+                    }
+                }
+            }
+            sort-desc-touch := TouchArea {
+                clicked => { root.sort-desc(); }
+                sort-desc-row := Rectangle {
+                    height: 28px;
+                    background: sort-desc-touch.has-hover ? #f4f8f6 : transparent;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 6px;
+                        alignment: start;
+                        Text { text: "↓"; font-size: 12px; color: #555555; vertical-alignment: center; }
+                        Text { text: @tr("降序"); font-size: 12px; color: #333333; vertical-alignment: center; }
+                    }
+                }
+            }
+            Rectangle { height: 1px; background: #e8e8e8; }
+
+            range-text-label := Text {
+                x: 12px;
+                width: parent.width - 24px;
+                height: root.range-text == "" ? 0px : 24px;
+                text: root.range-text;
+                font-size: 11px; color: #888888;
+                overflow: elide;
+                vertical-alignment: center;
+            }
+
+            // "全选"
+            all-touch := TouchArea {
+                all-row := Rectangle {
+                    height: 24px;
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 8px;
+                        alignment: start;
+                        CheckBox16 { on: root.all-checked; y: (parent.height - self.height) / 2; }
+                        Text { text: @tr("全选"); font-size: 12px; color: #333333; vertical-alignment: center; }
+                    }
+                }
+                clicked => { root.toggle-all(); }
+            }
+            Rectangle { height: 1px; background: #e8e8e8; }
+
+            // 唯一值列表:固定最大高度,内部滚动
+            list-scroll := ScrollView {
+                width: parent.width;
+                height: 180px;
+                VerticalLayout {
+                    padding-left: 8px;
+                    padding-right: 8px;
+                    spacing: 2px;
+                    for name[idx] in root.items: Rectangle {
+                        height: 24px;
+                        background: row-touch.has-hover ? #f4f8f6 : transparent;
+                        border-radius: 3px;
+                        row-touch := TouchArea {
+                            clicked => { root.toggle-item(idx); }
+                        }
+                        HorizontalLayout {
+                            padding-left: 4px;
+                            padding-right: 6px;
+                            spacing: 6px;
+                            CheckBox16 { on: root.checked[idx]; y: (parent.height - self.height) / 2; }
+                            Text {
+                                text: name == "" ? @tr("(空白)") : name;
+                                font-size: 12px; color: #222222;
+                                vertical-alignment: center;
+                                overflow: elide;
+                                horizontal-stretch: 1;
+                            }
+                            Text {
+                                text: "\{root.counts[idx]}";
+                                font-size: 10px; color: #999999;
+                                vertical-alignment: center;
+                                horizontal-alignment: right;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 底部按钮栏
+            bottom-bar := Rectangle {
+                height: 40px;
+                background: #fafafa;
+                Rectangle { y: 0px; width: parent.width; height: 1px; background: #e8e8e8; }
+                HorizontalLayout {
+                    x: parent.width - 8px - 128px;
+                    y: (parent.height - 24px) / 2;
+                    width: 128px; height: 24px;
+                    spacing: 6px;
+                    alignment: end;
+                    cancel-touch := TouchArea {
+                        width: 52px; height: 24px;
+                        clicked => { root.cancelled(); }
+                        Rectangle {
+                            border-radius: 4px;
+                            border-color: #c0c0c0; border-width: 1px;
+                            background: cancel-touch.has-hover ? #f0f0f0 : #ffffff;
+                            Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: @tr("取消"); font-size: 11px; color: #333333; }
+                        }
+                    }
+                    confirm-touch := TouchArea {
+                        width: 68px; height: 24px;
+                        clicked => { root.confirmed(); }
+                        Rectangle {
+                            border-radius: 4px;
+                            background: confirm-touch.has-hover ? #1a5c38 : #217346;
+                            Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: @tr("确定"); font-size: 11px; color: #ffffff; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

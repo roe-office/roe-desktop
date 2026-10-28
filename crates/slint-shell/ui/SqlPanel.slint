@@ -1,0 +1,72 @@
+// SqlPanel.slint — SQL查询面板
+export component SqlPanel inherits Rectangle {
+    in property <[string]> column-names: [];
+    in property <string> table-name: "data";
+    in-out property <string> sql-text: "";
+    in-out property <string> status-text: @tr("就绪");
+    in-out property <[string]> sql-history: [];
+
+    callback run-query(string);
+    callback insert-field(string);
+
+    background: #fafafa;
+
+    VerticalLayout {
+        spacing: 0px; alignment: start; padding: 0px;
+
+        Rectangle { width: parent.width; height: 24px; background: #f5f5f5; Rectangle { y: parent.height-1px; width: parent.width; height: 1px; background: #e8e8e8; } Text { x: 10px; y: (parent.height - self.height)/2; text: @tr("可用字段 (点击插入)"); font-size: 10px; color: #666666; } }
+
+        Rectangle {
+            width: parent.width; height: 32px; background: #fafafa; clip: true;
+            HorizontalLayout {
+                x: 4px; y: 4px; spacing: 4px; alignment: start;
+                for col-name in root.column-names: Rectangle {
+                    height: 20px; width: col-text.preferred-width + 12px;
+                    border-radius: 3px; background: chip-touch.has-hover ? #217346 : #e8f5ee;
+                    border-color: #217346; border-width: 1px;
+                    col-text := Text { x: 6px; y: (parent.height - self.height)/2; text: col-name; font-size: 10px; color: chip-touch.has-hover ? #ffffff : #217346; }
+                    chip-touch := TouchArea { clicked => { root.insert-field(col-name); } }
+                }
+            }
+        }
+
+        Text { x: 10px; width: parent.width - 20px; height: 20px; text: @tr("SQL 语句  (表名: {})", root.table-name); font-size: 10px; color: #666666; vertical-alignment: center; }
+
+        Rectangle {
+            width: parent.width - 16px; x: 8px; height: 110px;
+            border-radius: 4px; border-color: #c8c8c8; border-width: 1px; background: #ffffff;
+            TextInput { x: 6px; y: 6px; width: parent.width - 12px; height: parent.height - 12px; text <=> root.sql-text; font-size: 11px; color: #1a1a1a; wrap: word-wrap; }
+        }
+
+        Rectangle {
+            width: parent.width; height: 28px; background: transparent;
+            HorizontalLayout {
+                x: 8px; y: 4px; spacing: 4px; alignment: start;
+                Rectangle { width: 64px; height: 20px; border-radius: 3px; background: t1.has-hover ? #e8f0fe : #f0f0f0; border-color: #d0d0d0; border-width: 1px; Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "SELECT *"; font-size: 10px; color: #333333; } t1 := TouchArea { clicked => { root.sql-text = "SELECT * FROM " + root.table-name + " LIMIT 100"; } } }
+                Rectangle { width: 44px; height: 20px; border-radius: 3px; background: t2.has-hover ? #e8f0fe : #f0f0f0; border-color: #d0d0d0; border-width: 1px; Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "COUNT"; font-size: 10px; color: #333333; } t2 := TouchArea { clicked => { root.sql-text = "SELECT COUNT(*) FROM " + root.table-name; } } }
+                Rectangle { width: 56px; height: 20px; border-radius: 3px; background: t3.has-hover ? #e8f0fe : #f0f0f0; border-color: #d0d0d0; border-width: 1px; Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "GROUP BY"; font-size: 10px; color: #333333; } t3 := TouchArea { clicked => { root.sql-text = "SELECT , COUNT(*) FROM " + root.table-name + " GROUP BY "; } } }
+                Rectangle { width: 56px; height: 20px; border-radius: 3px; background: t4.has-hover ? #e8f0fe : #f0f0f0; border-color: #d0d0d0; border-width: 1px; Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "ORDER BY"; font-size: 10px; color: #333333; } t4 := TouchArea { clicked => { root.sql-text = "SELECT * FROM " + root.table-name + " ORDER BY  DESC LIMIT 50"; } } }
+            }
+        }
+
+        Rectangle {
+            x: 8px; width: parent.width - 16px; height: 30px; border-radius: 4px;
+            background: run-touch.pressed ? #164d2a : (run-touch.has-hover ? #1a5c38 : #217346);
+            HorizontalLayout { alignment: center; spacing: 6px; Text { text: "▶"; font-size: 12px; color: #ffffff; vertical-alignment: center; } Text { text: @tr("执行查询  (Ctrl+Enter)"); font-size: 12px; color: #ffffff; vertical-alignment: center; } }
+            run-touch := TouchArea { clicked => { root.run-query(root.sql-text); } }
+        }
+
+        Text { x: 10px; width: parent.width - 20px; height: 24px; text: root.status-text; font-size: 10px; color: #555555; vertical-alignment: center; wrap: word-wrap; }
+
+        Rectangle { width: parent.width; height: 24px; background: #f5f5f5; Rectangle { y: parent.height-1px; width: parent.width; height: 1px; background: #e8e8e8; } Text { x: 10px; y: (parent.height - self.height)/2; text: @tr("历史记录"); font-size: 10px; color: #666666; } }
+
+        for hist-item in root.sql-history: Rectangle {
+            width: parent.width; height: 36px; background: #ffffff;
+            border-color: #eeeeee; border-width: 1px;
+            Text { x: 8px; y: 4px; width: parent.width - 16px; text: hist-item; font-size: 10px; color: #1a1a1a; overflow: elide; }
+            hist-touch := TouchArea { clicked => { root.sql-text = hist-item; } }
+        }
+
+        Text { visible: root.sql-history.length == 0; width: parent.width; height: 40px; text: @tr("执行过的查询会显示在这里"); font-size: 10px; color: #bbbbbb; horizontal-alignment: center; vertical-alignment: center; }
+    }
+}

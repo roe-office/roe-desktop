@@ -1,0 +1,23 @@
+// 由 scripts/gen_icon_glyphs.py 生成,请勿手改。顺序与 CfIconSetPicker 格子下标一致。
+pub const ICON_STYLES: [&str; 20] = [
+    "3Arrows",
+    "3ArrowsGray",
+    "3Triangles",
+    "4ArrowsGray",
+    "4Arrows",
+    "5ArrowsGray",
+    "5Arrows",
+    "3TrafficLights1",
+    "3TrafficLights2",
+    "3Signs",
+    "4TrafficLights",
+    "4RedToBlack",
+    "3Symbols",
+    "3Symbols2",
+    "3Flags",
+    "3Stars",
+    "4Rating",
+    "5Quarters",
+    "5Rating",
+    "5Boxes",
+];

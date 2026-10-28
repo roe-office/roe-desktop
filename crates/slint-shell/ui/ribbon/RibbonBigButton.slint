@@ -1,0 +1,47 @@
+// 大图标(24px)+文字(10px,自动换行,宽度44px)竖排按钮，整体48x62
+// 用于插入/布局等Tab。Tooltip本次未实现，仅占位属性。
+export component RibbonBigButton inherits Rectangle {
+    in property <image> icon-source;
+    in property <string> label: "";
+    in property <string> tooltip: "";
+    in property <bool> active: false;
+    callback clicked();
+
+    width: 48px;
+    height: 62px;
+    border-radius: 3px;
+    border-width: root.active ? 1px : 0px;
+    border-color: root.active ? #2b579a : transparent;
+    background: touch.pressed ? #d6d6d6
+        : root.active ? #dde8f8
+        : touch.has-hover ? #ebebeb
+        : transparent;
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 4px;
+        padding: 4px;
+
+        HorizontalLayout {
+            alignment: center;
+            Image {
+                source: root.icon-source;
+                width: 24px;
+                height: 24px;
+                image-fit: contain;
+            }
+        }
+
+        Text {
+            text: root.label;
+            font-size: 10px;
+            color: #333333;
+            horizontal-alignment: center;
+            wrap: word-wrap;
+        }
+    }
+
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}

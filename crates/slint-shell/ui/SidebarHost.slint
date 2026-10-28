@@ -1,0 +1,15 @@
+// SidebarHost.slint — 右侧侧边栏公共外壳（v225）
+// 只负责外观：固定宽度、白底、边框、圆角、阴影、裁剪。
+// 内容直接写在实例里作为子元素（本组件继承 Rectangle，子元素会放进外壳）。
+// 位置（x/y/height）由使用处决定；是否显示由使用处的 `if` 决定。
+// 后续计划：加 kind 状态、标题栏/关闭按钮，供公式/图片/图形/图表/透视复用。
+export component SidebarHost inherits Rectangle {
+    width: 264px;
+    background: #ffffff;
+    border-color: #d8d8d8;
+    border-width: 1px;
+    border-radius: 4px;
+    drop-shadow-blur: 8px;
+    drop-shadow-color: #00000015;
+    clip: true;
+}

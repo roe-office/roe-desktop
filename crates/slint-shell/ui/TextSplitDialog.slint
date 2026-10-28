@@ -1,0 +1,149 @@
+// TextSplitDialog.slint — "分列"对话框(按分隔符把单列文本拆成多列)
+// 外壳改用 DialogShell 通用组件(2026-09-23，DialogShell抽取)。
+// 状态在 Rust,这里只是视图;唯一例外:custom-text(输入框内容)由 Slint 持有,
+// 仅通过 custom-edited 单向上报,避免 Rust 回灌打断光标。
+
+import { CheckBox16 } from "CheckBox16.slint";
+import { DialogShell } from "DialogShell.slint";
+
+export component TextSplitDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> title: @tr("分列");
+    in property <string> range-text: "";
+    // 顺序:逗号、制表符、分号、空格、冒号、其他
+    in property <[bool]> checked: [false, false, false, false, false, false];
+    in property <bool> merge: false;
+    in property <bool> can-confirm: false;
+    in property <string> warn-text: "";
+    // 打开对话框时由 Rust 单向设值;之后由输入框持有
+    in-out property <string> custom-text: "";
+
+    callback toggle(int);
+    callback toggle-merge();
+    callback custom-edited(string);
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: root.title;
+        card-width: 360px;
+        card-height: 300px;
+        confirm-enabled: root.can-confirm;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        // 范围小字
+        Text {
+            x: 16px; y: 48px;
+            width: parent.width - 32px;
+            text: root.range-text;
+            font-size: 12px; color: #666666;
+        }
+
+        Text {
+            x: 16px; y: 74px;
+            text: @tr("分隔符号");
+            font-size: 12px; font-weight: 600; color: #1a1a1a;
+        }
+
+        // ---- 第 1 行:逗号 | 制表符 ----
+        TouchArea {
+            x: 16px; y: 98px; width: 150px; height: 24px;
+            clicked => { root.toggle(0); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.checked[0]; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("逗号"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+        TouchArea {
+            x: 186px; y: 98px; width: 150px; height: 24px;
+            clicked => { root.toggle(1); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.checked[1]; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("制表符"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+
+        // ---- 第 2 行:分号 | 空格 ----
+        TouchArea {
+            x: 16px; y: 126px; width: 150px; height: 24px;
+            clicked => { root.toggle(2); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.checked[2]; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("分号"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+        TouchArea {
+            x: 186px; y: 126px; width: 150px; height: 24px;
+            clicked => { root.toggle(3); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.checked[3]; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("空格"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+
+        // ---- 第 3 行:冒号 | 其他 + 输入框 ----
+        TouchArea {
+            x: 16px; y: 154px; width: 150px; height: 24px;
+            clicked => { root.toggle(4); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.checked[4]; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("冒号"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+        TouchArea {
+            x: 186px; y: 154px; width: 70px; height: 24px;
+            clicked => { root.toggle(5); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.checked[5]; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("其他"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+        custom-box := Rectangle {
+            x: 258px; y: 153px; width: 86px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: custom-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            custom-input := TextInput {
+                x: 6px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 12px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.custom-text;
+                edited => { root.custom-edited(self.text); }
+            }
+        }
+
+        // ---- 连续分隔符视为一个 ----
+        TouchArea {
+            x: 16px; y: 190px; width: parent.width - 32px; height: 24px;
+            clicked => { root.toggle-merge(); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.merge; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("连续分隔符视为一个"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+
+        // ---- 提示行(如"将覆盖右侧已有数据"),空串不显示 ----
+        Text {
+            visible: root.warn-text != "";
+            x: 16px; y: 222px;
+            width: parent.width - 32px;
+            text: root.warn-text;
+            font-size: 12px; color: #c0392b;
+        }
+    }
+}

@@ -1,0 +1,3136 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "主页"
+msgstr "Accueil"
+
+msgid "设置"
+msgstr "Paramètres"
+
+msgid "已复制 ✓"
+msgstr "Copié ✓"
+
+msgid "复制"
+msgstr "Copier"
+
+msgid "思考中… {}s（点击收起）"
+msgstr "Réflexion… {}s (cliquer pour réduire)"
+
+msgid "已思考 {}s（点击展开）"
+msgstr "Réfléchi {}s (cliquer pour développer)"
+
+msgid "预览"
+msgstr "Aperçu"
+
+msgid "确认"
+msgstr "Confirmer"
+
+msgid "丢弃"
+msgstr "Ignorer"
+
+msgid "已确认执行"
+msgstr "Confirmé et exécuté"
+
+msgid "已丢弃"
+msgstr "Ignoré"
+
+msgid "自主模式已执行"
+msgstr "Exécuté en mode autonome"
+
+msgid "新对话"
+msgstr "Nouvelle discussion"
+
+msgid "项目目录"
+msgstr "Projets"
+
+msgid "+ 新建项目"
+msgstr "+ Nouveau projet"
+
+msgid "暂无项目"
+msgstr "Aucun projet"
+
+msgid "暂无历史对话"
+msgstr "Aucun historique"
+
+msgid "开始一段对话，让 AI 帮你操作文档"
+msgstr "Lancez une discussion et laissez l'IA travailler sur votre document"
+
+msgid "已复制全部对话 ✓"
+msgstr "Discussion copiée ✓"
+
+msgid "复制全部对话"
+msgstr "Copier la discussion"
+
+msgid "支持 xlsx / docx / pptx / csv 与 png / jpg"
+msgstr "Prend en charge xlsx / docx / pptx / csv et png / jpg"
+
+msgid "发送中"
+msgstr "Envoi"
+
+msgid "发送"
+msgstr "Envoyer"
+
+msgid "Rhai 脚本"
+msgstr "Script Rhai"
+
+msgid "AI 直连"
+msgstr "IA directe"
+
+msgid "① 点「获取索引」,把文档结构复制给外部 AI\n② 把 AI 返回的 Rhai 脚本粘贴到下方输入框,点「运行」\n运行后可点「撤销」回退"
+msgstr "① Cliquez sur « Obtenir l'index » pour copier la structure du document vers une IA externe\n② Collez le script Rhai renvoyé par l'IA dans la zone ci-dessous et cliquez sur « Exécuter »\nAprès exécution, « Annuler » permet de revenir en arrière"
+
+msgid "仅文档结构"
+msgstr "Structure seule"
+
+msgid "可获取标题"
+msgstr "Titres lisibles"
+
+msgid "可获取全文"
+msgstr "Texte intégral lisible"
+
+msgid "⟳ 获取索引"
+msgstr "⟳ Obtenir l'index"
+
+msgid "⎘ 复制索引"
+msgstr "⎘ Copier l'index"
+
+msgid "▶  运行"
+msgstr "▶  Exécuter"
+
+msgid "↶  撤销"
+msgstr "↶  Annuler"
+
+msgid "未配置模型"
+msgstr "Aucun modèle configuré"
+
+msgid "描述你想对文档做的修改,AI 会直接执行,可用标题栏撤销回退"
+msgstr "Décrivez la modification souhaitée. L'IA l'applique directement ; utilisez Annuler dans la barre de titre pour revenir en arrière"
+
+msgid "尚未配置 API Key 或未选择模型。"
+msgstr "Aucune clé API configurée ou aucun modèle sélectionné."
+
+msgid "去设置 →"
+msgstr "Aller aux paramètres →"
+
+msgid "复制全部"
+msgstr "Tout copier"
+
+msgid "思考中…"
+msgstr "Réflexion…"
+
+msgid "✦  发送"
+msgstr "✦  Envoyer"
+
+msgid "⚙ 去设置…"
+msgstr "⚙ Ouvrir les paramètres…"
+
+msgid "未接线 · 请到设置添加 API Key →"
+msgstr "Non connecté · Ajoutez une clé API dans les paramètres →"
+
+msgid "自动保存"
+msgstr "Enreg. auto"
+
+msgid "AI Agent - 对话1"
+msgstr "Agent IA - Discussion 1"
+
+msgid "常规"
+msgstr "Standard"
+
+msgid "数字"
+msgstr "Nombre"
+
+msgid "货币"
+msgstr "Monétaire"
+
+msgid "会计专用"
+msgstr "Comptabilité"
+
+msgid "百分比"
+msgstr "Pourcentage"
+
+msgid "短日期"
+msgstr "Date courte"
+
+msgid "文本"
+msgstr "Texte"
+
+msgid "差"
+msgstr "Mauvais"
+
+msgid "好"
+msgstr "Bon"
+
+msgid "适中"
+msgstr "Neutre"
+
+msgid "计算"
+msgstr "Calcul"
+
+msgid "检查单元格"
+msgstr "Cellule de contrôle"
+
+msgid "解释性文本"
+msgstr "Texte explicatif"
+
+msgid "警告文本"
+msgstr "Avertissement"
+
+msgid "链接单元格"
+msgstr "Cellule liée"
+
+msgid "输出"
+msgstr "Sortie"
+
+msgid "输入"
+msgstr "Entrée"
+
+msgid "注释"
+msgstr "Remarque"
+
+msgid "标题"
+msgstr "Titre"
+
+msgid "标题 1"
+msgstr "Titre 1"
+
+msgid "标题 2"
+msgstr "Titre 2"
+
+msgid "标题 3"
+msgstr "Titre 3"
+
+msgid "标题 4"
+msgstr "Titre 4"
+
+msgid "汇总"
+msgstr "Total"
+
+msgid "20% - 着色 1"
+msgstr "20 % - Accent1"
+
+msgid "20% - 着色 2"
+msgstr "20 % - Accent2"
+
+msgid "20% - 着色 3"
+msgstr "20 % - Accent3"
+
+msgid "20% - 着色 4"
+msgstr "20 % - Accent4"
+
+msgid "20% - 着色 5"
+msgstr "20 % - Accent5"
+
+msgid "20% - 着色 6"
+msgstr "20 % - Accent6"
+
+msgid "40% - 着色 1"
+msgstr "40 % - Accent1"
+
+msgid "40% - 着色 2"
+msgstr "40 % - Accent2"
+
+msgid "40% - 着色 3"
+msgstr "40 % - Accent3"
+
+msgid "40% - 着色 4"
+msgstr "40 % - Accent4"
+
+msgid "40% - 着色 5"
+msgstr "40 % - Accent5"
+
+msgid "40% - 着色 6"
+msgstr "40 % - Accent6"
+
+msgid "60% - 着色 1"
+msgstr "60 % - Accent1"
+
+msgid "60% - 着色 2"
+msgstr "60 % - Accent2"
+
+msgid "60% - 着色 3"
+msgstr "60 % - Accent3"
+
+msgid "60% - 着色 4"
+msgstr "60 % - Accent4"
+
+msgid "60% - 着色 5"
+msgstr "60 % - Accent5"
+
+msgid "60% - 着色 6"
+msgstr "60 % - Accent6"
+
+msgid "着色 1"
+msgstr "Accent1"
+
+msgid "着色 2"
+msgstr "Accent2"
+
+msgid "着色 3"
+msgstr "Accent3"
+
+msgid "着色 4"
+msgstr "Accent4"
+
+msgid "着色 5"
+msgstr "Accent5"
+
+msgid "着色 6"
+msgstr "Accent6"
+
+msgid "货币[0]"
+msgstr "Monétaire [0]"
+
+msgid "千位分隔"
+msgstr "Milliers"
+
+msgid "千位分隔[0]"
+msgstr "Milliers [0]"
+
+msgid "底部边框"
+msgstr "Bordure inférieure"
+
+msgid "顶部边框"
+msgstr "Bordure supérieure"
+
+msgid "左边框"
+msgstr "Bordure gauche"
+
+msgid "右边框"
+msgstr "Bordure droite"
+
+msgid "无边框"
+msgstr "Aucune bordure"
+
+msgid "所有边框"
+msgstr "Toutes les bordures"
+
+msgid "外部边框"
+msgstr "Bordure extérieure"
+
+msgid "内部边框"
+msgstr "Bordures intérieures"
+
+msgid "内水平边框"
+msgstr "Bordure int. horizontale"
+
+msgid "内部垂直边框"
+msgstr "Bordure int. verticale"
+
+msgid "句首字母大写"
+msgstr "Majuscule en début de phrase"
+
+msgid "全部小写"
+msgstr "minuscules"
+
+msgid "全部大写"
+msgstr "MAJUSCULES"
+
+msgid "每个单词首字母大写"
+msgstr "Majuscule à chaque mot"
+
+msgid "切换大小写"
+msgstr "iNVERSER LA CASSE"
+
+msgid "1.0 单倍行距"
+msgstr "1,0 simple"
+
+msgid "1.5 倍行距"
+msgstr "1,5 ligne"
+
+msgid "2.0 双倍行距"
+msgstr "2,0 double"
+
+msgid "段前加间距"
+msgstr "Espace avant"
+
+msgid "段后加间距"
+msgstr "Espace après"
+
+msgid "清除段间距"
+msgstr "Effacer l'espacement"
+
+msgid "行距选项…"
+msgstr "Options d'interligne…"
+
+msgid "正文"
+msgstr "Corps"
+
+msgid "副标题"
+msgstr "Sous-titre"
+
+msgid "无"
+msgstr "Aucun"
+
+msgid "●  实心圆"
+msgstr "●  Disque plein"
+
+msgid "○  空心圆"
+msgstr "○  Cercle vide"
+
+msgid "■  实心方"
+msgstr "■  Carré plein"
+
+msgid "–  短横线"
+msgstr "–  Tiret"
+
+msgid "✓  勾选"
+msgstr "✓  Coche"
+
+msgid "开始"
+msgstr "Accueil"
+
+msgid "插入"
+msgstr "Insertion"
+
+msgid "设计"
+msgstr "Création"
+
+msgid "布局"
+msgstr "Disposition"
+
+msgid "引用"
+msgstr "Références"
+
+msgid "邮件"
+msgstr "Publipostage"
+
+msgid "审阅"
+msgstr "Révision"
+
+msgid "视图"
+msgstr "Affichage"
+
+msgid "形状格式"
+msgstr "Format de forme"
+
+msgid "绘图"
+msgstr "Dessin"
+
+msgid "页面布局"
+msgstr "Mise en page"
+
+msgid "公式"
+msgstr "Formules"
+
+msgid "数据"
+msgstr "Données"
+
+msgid "告诉我"
+msgstr "Rechercher"
+
+msgid "数据透视表"
+msgstr "Tableau croisé dynamique"
+
+msgid "幻灯片母版"
+msgstr "Masque"
+
+msgid "动画"
+msgstr "Animations"
+
+msgid "切换"
+msgstr "Transitions"
+
+msgid "幻灯片放映"
+msgstr "Diaporama"
+
+msgid "该功能待实现"
+msgstr "Bientôt disponible"
+
+msgid "插入表格"
+msgstr "Insérer un tableau"
+
+msgid "{} × {} 表格"
+msgstr "Tableau {} × {}"
+
+msgid "无填充"
+msgstr "Sans remplissage"
+
+msgid "自动(默认色)"
+msgstr "Automatique"
+
+msgid "边框颜色"
+msgstr "Couleur de bordure"
+
+msgid "获取数据"
+msgstr "Obtenir des données"
+
+msgid "CSV 文件…"
+msgstr "Fichier CSV…"
+
+msgid "Parquet / Hive 目录…"
+msgstr "Dossier Parquet / Hive…"
+
+msgid "Excel 文件…"
+msgstr "Fichier Excel…"
+
+msgid "数据分析"
+msgstr "Analyse de données"
+
+msgid "描述性统计"
+msgstr "Statistiques descriptives"
+
+msgid "相关性分析"
+msgstr "Corrélation"
+
+msgid "协方差"
+msgstr "Covariance"
+
+msgid "卡方检验(独立性)"
+msgstr "Test du khi-deux (indépendance)"
+
+msgid "F 检验"
+msgstr "Test F"
+
+msgid "配对 t 检验"
+msgstr "Test t apparié"
+
+msgid "Z 检验(已知方差)"
+msgstr "Test Z (variance connue)"
+
+msgid "回归分析"
+msgstr "Régression"
+
+msgid "单因素方差分析"
+msgstr "ANOVA à un facteur"
+
+msgid "双因素方差分析"
+msgstr "ANOVA à deux facteurs"
+
+msgid "移动平均"
+msgstr "Moyenne mobile"
+
+msgid "指数平滑"
+msgstr "Lissage exponentiel"
+
+msgid "突出显示单元格规则"
+msgstr "Règles de mise en surbrillance des cellules"
+
+msgid "大于…"
+msgstr "Supérieur à…"
+
+msgid "小于…"
+msgstr "Inférieur à…"
+
+msgid "介于…"
+msgstr "Entre…"
+
+msgid "等于…"
+msgstr "Égal à…"
+
+msgid "文本包含…"
+msgstr "Texte contenant…"
+
+msgid "其他规则…"
+msgstr "Autres règles…"
+
+msgid "数据条"
+msgstr "Barres de données"
+
+msgid "色阶"
+msgstr "Nuances de couleurs"
+
+msgid "图标集…"
+msgstr "Jeux d'icônes…"
+
+msgid "清除所选单元格的规则"
+msgstr "Effacer les règles des cellules sélectionnées"
+
+msgid "清除整个工作表的规则"
+msgstr "Effacer les règles de la feuille entière"
+
+msgid "浅色"
+msgstr "Clair"
+
+msgid "中等色"
+msgstr "Moyen"
+
+msgid "深色"
+msgstr "Foncé"
+
+msgid "清除"
+msgstr "Effacer"
+
+msgid "好、差和适中"
+msgstr "Bon, mauvais et neutre"
+
+msgid "数据和模型"
+msgstr "Données et modèle"
+
+msgid "主题单元格样式"
+msgstr "Styles de cellule à thème"
+
+msgid "数字格式"
+msgstr "Format de nombre"
+
+msgid "清除格式"
+msgstr "Effacer la mise en forme"
+
+msgid "添加回复"
+msgstr "Ajouter une réponse"
+
+msgid "编辑数据"
+msgstr "Modifier les données"
+
+msgid "应用"
+msgstr "Appliquer"
+
+msgid "关闭"
+msgstr "Fermer"
+
+msgid "母版"
+msgstr "Masque"
+
+msgid "幻灯片"
+msgstr "Diapositive"
+
+msgid "新建"
+msgstr "Nouveau"
+
+msgid "Writer 文档"
+msgstr "Document Writer"
+
+msgid "Calc 表格"
+msgstr "Classeur Calc"
+
+msgid "Impress 演示"
+msgstr "Présentation Impress"
+
+msgid "打开文件..."
+msgstr "Ouvrir un fichier..."
+
+msgid "最近文件"
+msgstr "Fichiers récents"
+
+msgid "暂无最近文件"
+msgstr "Aucun fichier récent"
+
+msgid "编辑文字"
+msgstr "Modifier le texte"
+
+msgid "文字内容(回车换行)"
+msgstr "Texte (Entrée = nouvelle ligne)"
+
+msgid "最小值"
+msgstr "Minimum"
+
+msgid "包含文本"
+msgstr "Texte contenant"
+
+msgid "数值"
+msgstr "Valeur"
+
+msgid "最大值"
+msgstr "Maximum"
+
+msgid "样式"
+msgstr "Style"
+
+msgid "浅红填充 + 深红文本"
+msgstr "Remplissage rouge clair et texte rouge foncé"
+
+msgid "黄填充 + 深黄文本"
+msgstr "Remplissage jaune et texte jaune foncé"
+
+msgid "绿填充 + 深绿文本"
+msgstr "Remplissage vert et texte vert foncé"
+
+msgid "仅浅红填充"
+msgstr "Remplissage rouge clair"
+
+msgid "仅红色文本"
+msgstr "Texte rouge"
+
+msgid "条件"
+msgstr "Condition"
+
+msgid "大于"
+msgstr "Supérieur à"
+
+msgid "小于"
+msgstr "Inférieur à"
+
+msgid "介于"
+msgstr "Entre"
+
+msgid "等于"
+msgstr "Égal à"
+
+msgid "文本包含"
+msgstr "Contient le texte"
+
+msgid "不等于"
+msgstr "Différent de"
+
+msgid "大于或等于"
+msgstr "Supérieur ou égal à"
+
+msgid "小于或等于"
+msgstr "Inférieur ou égal à"
+
+msgid "未介于"
+msgstr "Pas entre"
+
+msgid "介于(不含端点)"
+msgstr "Entre (exclusif)"
+
+msgid "图标集"
+msgstr "Jeux d'icônes"
+
+msgid "反转图标顺序"
+msgstr "Inverser l'ordre des icônes"
+
+msgid "更多颜色"
+msgstr "Autres couleurs"
+
+msgid "编辑图表数据"
+msgstr "Modifier les données du graphique"
+
+msgid "加行"
+msgstr "Ajouter une ligne"
+
+msgid "加列"
+msgstr "Ajouter une colonne"
+
+msgid "删行"
+msgstr "Suppr. ligne"
+
+msgid "删列"
+msgstr "Suppr. colonne"
+
+msgid "行列互换"
+msgstr "Inverser lignes/colonnes"
+
+msgid "首行为系列名，首列为类别名；非数字按 0 处理"
+msgstr "1re ligne = noms des séries, 1re colonne = noms des catégories ; les valeurs non numériques valent 0"
+
+msgid "插入图表"
+msgstr "Insérer un graphique"
+
+msgid "取消"
+msgstr "Annuler"
+
+msgid "确定"
+msgstr "OK"
+
+msgid "柱形图"
+msgstr "Colonnes"
+
+msgid "条形图"
+msgstr "Barres"
+
+msgid "折线图"
+msgstr "Courbes"
+
+msgid "饼图"
+msgstr "Secteurs"
+
+msgid "散点图"
+msgstr "Nuage de points"
+
+msgid "雷达图"
+msgstr "Radar"
+
+msgid "面积图"
+msgstr "Aires"
+
+msgid "圆环图"
+msgstr "Anneau"
+
+msgid "图表格式（统计图）"
+msgstr "Format du graphique (graphique statistique)"
+
+msgid "图表格式"
+msgstr "Format du graphique"
+
+msgid "图表类型"
+msgstr "Type de graphique"
+
+msgid "统计图"
+msgstr "Graphique statistique"
+
+msgid "图例"
+msgstr "Légende"
+
+msgid "网格线"
+msgstr "Quadrillage"
+
+msgid "X轴标题"
+msgstr "Titre de l'axe X"
+
+msgid "Y轴标题"
+msgstr "Titre de l'axe Y"
+
+msgid "数据包含标题"
+msgstr "Données avec en-têtes"
+
+msgid "全选"
+msgstr "Tout sélectionner"
+
+msgid "新建批注"
+msgstr "Nouveau commentaire"
+
+msgid "批注内容"
+msgstr "Texte du commentaire"
+
+msgid "数据验证"
+msgstr "Validation des données"
+
+msgid "应用范围"
+msgstr "Appliquer à"
+
+msgid "来源"
+msgstr "Source"
+
+msgid "用逗号分隔,如:A,B,C"
+msgstr "Séparez par des virgules, ex. A,B,C"
+
+msgid "忽略空值"
+msgstr "Ignorer si vide"
+
+msgid "输入无效数据时显示错误警告"
+msgstr "Afficher une alerte d'erreur si les données saisies sont invalides"
+
+msgid "错误信息"
+msgstr "Message d'erreur"
+
+msgid "允许"
+msgstr "Autoriser"
+
+msgid "任何值"
+msgstr "Toute valeur"
+
+msgid "整数"
+msgstr "Nombre entier"
+
+msgid "小数"
+msgstr "Décimal"
+
+msgid "列表"
+msgstr "Liste"
+
+msgid "日期"
+msgstr "Date"
+
+msgid "时间"
+msgstr "Heure"
+
+msgid "文本长度"
+msgstr "Longueur du texte"
+
+msgid "自定义"
+msgstr "Personnalisé"
+
+msgid "您输入的值无效"
+msgstr "La valeur saisie n'est pas valide"
+
+msgid "此单元格中输入的值不符合数据验证限制。"
+msgstr "La valeur saisie dans cette cellule ne respecte pas les restrictions de validation des données."
+
+msgid "全部"
+msgstr "Tout"
+
+msgid "前10"
+msgstr "10 premiers"
+
+msgid "前20"
+msgstr "20 premiers"
+
+msgid "前50"
+msgstr "50 premiers"
+
+msgid "降序"
+msgstr "Décr."
+
+msgid "升序"
+msgstr "Crois."
+
+msgid "求和"
+msgstr "Somme"
+
+msgid "平均值"
+msgstr "Moyenne"
+
+msgid "计数"
+msgstr "Nb"
+
+msgid "第一个"
+msgstr "Premier"
+
+msgid "最后一个"
+msgstr "Dernier"
+
+msgid "标准差"
+msgstr "Écart type"
+
+msgid "方差"
+msgstr "Variance"
+
+msgid "取前N行"
+msgstr "N premières"
+
+msgid "选列"
+msgstr "Sélection"
+
+msgid "排序"
+msgstr "Tri"
+
+msgid "去重"
+msgstr "Doublons"
+
+msgid "删空值"
+msgstr "Suppr. nuls"
+
+msgid "重命名"
+msgstr "Renommer"
+
+msgid "分组聚合"
+msgstr "Regrouper"
+
+msgid "派生列"
+msgstr "Nouv. colonne"
+
+msgid "DF 链式查询(一行一条语句,以 df_use 开头)"
+msgstr "Requête chaînée DF (une instruction par ligne, commençant par df_use)"
+
+msgid "数据集(点击载入)"
+msgstr "Jeux de données (cliquer pour charger)"
+
+msgid "列名(点击选中/取消;最后选中的列在「分组聚合」中作为被聚合列)"
+msgstr "Colonnes (cliquer pour sélectionner/désélectionner ; la dernière colonne sélectionnée est la colonne agrégée dans « Regrouper »)"
+
+msgid "函数模板(用已选列生成一行)"
+msgstr "Modèles (générer une ligne à partir des colonnes choisies)"
+
+msgid "输出行数"
+msgstr "Lignes"
+
+msgid "聚合"
+msgstr "Agrég."
+
+msgid "▶ 运行预览"
+msgstr "▶ Aperçu"
+
+msgid "清空代码"
+msgstr "Effacer le code"
+
+msgid "运行预览不改动文档;保存才会生成 chain_N"
+msgstr "L'aperçu ne modifie pas le document ; l'enregistrement crée chain_N"
+
+msgid "保存为数据集并预览"
+msgstr "Enregistrer comme jeu de données et afficher l'aperçu"
+
+msgid "列名"
+msgstr "Colonne"
+
+msgid "类型"
+msgstr "Type"
+
+msgid "空值数"
+msgstr "Nuls"
+
+msgid "最小"
+msgstr "Min"
+
+msgid "最大"
+msgstr "Max"
+
+msgid "均值"
+msgstr "Moy."
+
+msgid "前 10 行"
+msgstr "10 premières lignes"
+
+msgid "导入并预览"
+msgstr "Importer et afficher l'aperçu"
+
+msgid "上一页"
+msgstr "Précédent"
+
+msgid "下一页"
+msgstr "Suivant"
+
+msgid "筛选"
+msgstr "Filtrer"
+
+msgid "(空白)"
+msgstr "(Vides)"
+
+msgid "查找和替换"
+msgstr "Rechercher et remplacer"
+
+msgid "查找"
+msgstr "Rechercher"
+
+msgid "替换"
+msgstr "Remplacer"
+
+msgid "转到"
+msgstr "Atteindre"
+
+msgid "输入搜索词…"
+msgstr "Saisir un terme…"
+
+msgid "区分大小写"
+msgstr "Respecter la casse"
+
+msgid "全词匹配"
+msgstr "Mot entier"
+
+msgid "正则表达式"
+msgstr "Expression régulière"
+
+msgid "↑ 上一个"
+msgstr "↑ Précédent"
+
+msgid "↓ 下一个"
+msgstr "↓ Suivant"
+
+msgid "查找："
+msgstr "Rechercher :"
+
+msgid "替换："
+msgstr "Remplacer :"
+
+msgid "替换为…"
+msgstr "Remplacer par…"
+
+msgid "全部替换"
+msgstr "Remplacer tout"
+
+msgid "页码："
+msgstr "Numéro de page :"
+
+msgid "页码…"
+msgstr "Numéro de page…"
+
+msgid "页眉和页脚"
+msgstr "En-tête et pied de page"
+
+msgid "页眉"
+msgstr "En-tête"
+
+msgid "页脚"
+msgstr "Pied de page"
+
+msgid "页码"
+msgstr "Numéro de page"
+
+msgid "页眉文字"
+msgstr "Texte de l'en-tête"
+
+msgid "页眉对齐"
+msgstr "Alignement de l'en-tête"
+
+msgid "居左"
+msgstr "Gauche"
+
+msgid "居中"
+msgstr "Centre"
+
+msgid "居右"
+msgstr "Droite"
+
+msgid "页脚文字"
+msgstr "Texte du pied de page"
+
+msgid "页脚对齐"
+msgstr "Alignement du pied de page"
+
+msgid "页码位置"
+msgstr "Position du numéro de page"
+
+msgid "不显示"
+msgstr "Masqué"
+
+msgid "页码格式"
+msgstr "Format du numéro de page"
+
+msgid "第 1 页"
+msgstr "Page 1"
+
+msgid "1 / 总页数"
+msgstr "1 / Total pages"
+
+msgid "页码对齐"
+msgstr "Alignement du numéro de page"
+
+msgid "首页不同（首页不显示页眉页脚）"
+msgstr "Première page différente (pas d'en-tête/pied de page sur la première page)"
+
+msgid "奇偶页不同"
+msgstr "Pages paires et impaires différentes"
+
+msgid "对整篇文档生效；会覆盖原有首页/偶数页内容"
+msgstr "S'applique à tout le document ; le contenu existant de la première page/des pages paires sera écrasé"
+
+msgid "方向"
+msgstr "Direction"
+
+msgid "形状"
+msgstr "Forme"
+
+msgid "标记"
+msgstr "Repère"
+
+msgid "等级"
+msgstr "Niveaux"
+
+msgid "插入占位符"
+msgstr "Insérer un espace réservé"
+
+msgid "{}（已存在）"
+msgstr "{} (existe déjà)"
+
+msgid "重命名版式"
+msgstr "Renommer la disposition"
+
+msgid "版式名称"
+msgstr "Nom de la disposition"
+
+msgid "柱状图"
+msgstr "Histogramme"
+
+msgid "图表标题："
+msgstr "Titre du graphique :"
+
+msgid "预览加载中…"
+msgstr "Chargement de l'aperçu…"
+
+msgid "行距选项"
+msgstr "Options d'interligne"
+
+msgid "行距类型"
+msgstr "Type d'interligne"
+
+msgid "多倍行距"
+msgstr "Multiple"
+
+msgid "固定值"
+msgstr "Exactement"
+
+msgid "倍数（0.5–10）"
+msgstr "Multiple (0,5–10)"
+
+msgid "磅值（pt）"
+msgstr "Points (pt)"
+
+msgid "段前（pt）"
+msgstr "Avant (pt)"
+
+msgid "段后（pt）"
+msgstr "Après (pt)"
+
+msgid "段前、段后留空表示不修改"
+msgstr "Laissez Avant/Après vide pour ne rien modifier"
+
+msgid "名称管理器"
+msgstr "Gestionnaire de noms"
+
+msgid "名称"
+msgstr "Nom"
+
+msgid "引用位置"
+msgstr "Fait référence à"
+
+msgid "名称:"
+msgstr "Nom :"
+
+msgid "引用位置:"
+msgstr "Fait référence à :"
+
+msgid "新增"
+msgstr "Ajouter"
+
+msgid "删除选中"
+msgstr "Supprimer la sélection"
+
+msgid "提示:局部名称按全局名称处理,同名的局部名称会丢失。"
+msgstr "Remarque : les noms locaux sont traités comme des noms globaux ; les noms locaux homonymes seront perdus."
+
+msgid "页面设置"
+msgstr "Mise en page"
+
+msgid "纸张大小"
+msgstr "Taille du papier"
+
+msgid "自定义(保持当前)"
+msgstr "Personnalisée (conserver)"
+
+msgid "纸张方向"
+msgstr "Orientation"
+
+msgid "纵向"
+msgstr "Portrait"
+
+msgid "横向"
+msgstr "Paysage"
+
+msgid "页边距预设"
+msgstr "Marges prédéfinies"
+
+msgid "窄"
+msgstr "Étroites"
+
+msgid "宽"
+msgstr "Larges"
+
+msgid "上（cm）"
+msgstr "Haut (cm)"
+
+msgid "下（cm）"
+msgstr "Bas (cm)"
+
+msgid "左（cm）"
+msgstr "Gauche (cm)"
+
+msgid "右（cm）"
+msgstr "Droite (cm)"
+
+msgid "设置对整篇文档（所有分节）生效"
+msgstr "Les paramètres s'appliquent à tout le document (toutes les sections)"
+
+msgid "选择透视表字段"
+msgstr "Choisir les champs du tableau croisé dynamique"
+
+msgid "数据透视表字段"
+msgstr "Champs du tableau croisé dynamique"
+
+msgid "选择要添加到报表的字段:"
+msgstr "Choisissez les champs à ajouter au rapport :"
+
+msgid "添加到筛选"
+msgstr "Ajouter aux filtres"
+
+msgid "添加到行"
+msgstr "Ajouter aux lignes"
+
+msgid "添加到列"
+msgstr "Ajouter aux colonnes"
+
+msgid "添加到值"
+msgstr "Ajouter aux valeurs"
+
+msgid "行"
+msgstr "Lignes"
+
+msgid "列"
+msgstr "Colonnes"
+
+msgid "值"
+msgstr "Valeurs"
+
+msgid "创建数据透视表"
+msgstr "Créer un tableau croisé dynamique"
+
+msgid "请选择要分析的数据"
+msgstr "Sélectionnez les données à analyser"
+
+msgid "选择表格或区域:"
+msgstr "Sélectionnez un tableau ou une plage :"
+
+msgid "选择放置数据透视表的位置"
+msgstr "Choisissez l'emplacement du tableau croisé dynamique"
+
+msgid "新建工作表"
+msgstr "Nouvelle feuille"
+
+msgid "现有工作表"
+msgstr "Feuille existante"
+
+msgid "位置:"
+msgstr "Emplacement :"
+
+msgid "拖放字段至此"
+msgstr "Faites glisser les champs ici"
+
+msgid "获取并转换数据"
+msgstr "Récupérer et transformer"
+
+msgid "获取数据(Polars)"
+msgstr "Obtenir des données (Polars)"
+
+msgid "导入 CSV / Parquet(含 Hive 目录) / Excel 为数据集"
+msgstr "Importer CSV / Parquet (dossiers Hive inclus) / Excel comme jeu de données"
+
+msgid "来自图片的数据"
+msgstr "Données d'une image"
+
+msgid "从图片OCR提取数据（开发中）"
+msgstr "Extraire des données d'une image par OCR (en développement)"
+
+msgid "SQL查询"
+msgstr "Requête SQL"
+
+msgid "使用SQL查询当前表格数据（Polars SQLContext）"
+msgstr "Interroger la feuille actuelle en SQL (Polars SQLContext)"
+
+msgid "DF分析"
+msgstr "Analyse DF"
+
+msgid "Polars数据分析脚本（df_info/pivot/sql/unique_values）"
+msgstr "Scripts d'analyse de données Polars (df_info/pivot/sql/unique_values)"
+
+msgid "查询和连接"
+msgstr "Requêtes et connexions"
+
+msgid "全部刷新"
+msgstr "Actualiser tout"
+
+msgid "刷新所有数据连接"
+msgstr "Actualiser toutes les connexions de données"
+
+msgid "查询&连接"
+msgstr "Requêtes et connexions"
+
+msgid "查看查询和连接"
+msgstr "Afficher les requêtes et connexions"
+
+msgid "属性"
+msgstr "Propriétés"
+
+msgid "数据连接属性"
+msgstr "Propriétés de la connexion"
+
+msgid "编辑链接"
+msgstr "Modifier les liens"
+
+msgid "编辑外部链接"
+msgstr "Modifier les liens externes"
+
+msgid "排序和筛选"
+msgstr "Trier et filtrer"
+
+msgid "升序排序 (A→Z)"
+msgstr "Tri croissant (A→Z)"
+
+msgid "降序排序 (Z→A)"
+msgstr "Tri décroissant (Z→A)"
+
+msgid "自定义排序"
+msgstr "Tri personnalisé"
+
+msgid "自动筛选(开/关)"
+msgstr "Filtre automatique (activé/désactivé)"
+
+msgid "清除筛选"
+msgstr "Effacer le filtre"
+
+msgid "重新应用"
+msgstr "Réappliquer"
+
+msgid "重新应用筛选"
+msgstr "Réappliquer le filtre"
+
+msgid "高级"
+msgstr "Avancé"
+
+msgid "高级筛选"
+msgstr "Filtre avancé"
+
+msgid "数据工具"
+msgstr "Outils de données"
+
+msgid "文本拆分为列"
+msgstr "Convertir"
+
+msgid "将文本按分隔符拆分为多列"
+msgstr "Fractionner le texte en colonnes selon un séparateur"
+
+msgid "快速填充"
+msgstr "Remplissage instantané"
+
+msgid "Flash Fill — 智能识别填充规律"
+msgstr "Remplissage instantané — détecte automatiquement les motifs"
+
+msgid "删除重复值"
+msgstr "Supprimer les doublons"
+
+msgid "删除重复行"
+msgstr "Supprimer les lignes en double"
+
+msgid "设置单元格输入规则和下拉列表"
+msgstr "Définir des règles de saisie et des listes déroulantes"
+
+msgid "合并计算"
+msgstr "Consolider"
+
+msgid "合并多个区域的数据"
+msgstr "Combiner les données de plusieurs plages"
+
+msgid "模拟分析"
+msgstr "Analyse de scénarios"
+
+msgid "模拟分析工具（开发中）"
+msgstr "Outils d'analyse de scénarios (en développement)"
+
+msgid "描述性统计 / 相关 / 检验 / 方差分析 / 回归 / 移动平均 / 指数平滑"
+msgstr "Statistiques descriptives / corrélation / tests / ANOVA / régression / moyenne mobile / lissage exponentiel"
+
+msgid "分级显示"
+msgstr "Plan"
+
+msgid "组合"
+msgstr "Grouper"
+
+msgid "将行列组合为分级显示"
+msgstr "Grouper des lignes ou colonnes dans un plan"
+
+msgid "取消组合"
+msgstr "Dissocier"
+
+msgid "取消行列组合"
+msgstr "Dissocier des lignes ou colonnes"
+
+msgid "分类汇总"
+msgstr "Sous-total"
+
+msgid "按分类汇总数据"
+msgstr "Résumer les données par catégorie"
+
+msgid "显示详细"
+msgstr "Afficher le détail"
+
+msgid "展开分组"
+msgstr "Développer le groupe"
+
+msgid "隐藏详细"
+msgstr "Masquer le détail"
+
+msgid "折叠分组"
+msgstr "Réduire le groupe"
+
+msgid "函数库"
+msgstr "Bibliothèque de fonctions"
+
+msgid "插入函数"
+msgstr "Insérer une fonction"
+
+msgid "插入函数向导 (Shift+F3)"
+msgstr "Assistant Fonction (Maj+F3)"
+
+msgid "自动求和"
+msgstr "Somme auto"
+
+msgid "SUM — 对选定区域求和"
+msgstr "SOMME — additionne la plage sélectionnée"
+
+msgid "财务 ▾"
+msgstr "Finances ▾"
+
+msgid "财务函数"
+msgstr "Fonctions financières"
+
+msgid "逻辑 ▾"
+msgstr "Logique ▾"
+
+msgid "逻辑函数"
+msgstr "Fonctions logiques"
+
+msgid "文本 ▾"
+msgstr "Texte ▾"
+
+msgid "文本函数"
+msgstr "Fonctions de texte"
+
+msgid "日期和时间 ▾"
+msgstr "Date et heure ▾"
+
+msgid "日期和时间函数"
+msgstr "Fonctions de date et d'heure"
+
+msgid "查找与引用 ▾"
+msgstr "Recherche ▾"
+
+msgid "查找与引用函数"
+msgstr "Fonctions de recherche et de référence"
+
+msgid "数学和三角 ▾"
+msgstr "Maths et trigo ▾"
+
+msgid "数学和三角函数"
+msgstr "Fonctions mathématiques et trigonométriques"
+
+msgid "其他函数 ▾"
+msgstr "Autres fonctions ▾"
+
+msgid "统计/工程/信息等其他函数"
+msgstr "Fonctions statistiques, d'ingénierie, d'information et autres"
+
+msgid "管理命名区域 (Ctrl+F3)"
+msgstr "Gérer les plages nommées (Ctrl+F3)"
+
+msgid "定义名称"
+msgstr "Définir un nom"
+
+msgid "为单元格区域定义名称"
+msgstr "Définir un nom pour une plage de cellules"
+
+msgid "在公式中使用"
+msgstr "Utiliser dans la formule"
+
+msgid "在公式中插入已定义的名称"
+msgstr "Insérer un nom défini dans une formule"
+
+msgid "由所选区域创建"
+msgstr "Depuis la sélection"
+
+msgid "根据选定区域自动创建名称"
+msgstr "Créer automatiquement des noms depuis la sélection"
+
+msgid "公式审核"
+msgstr "Audit de formules"
+
+msgid "追踪引用单元格"
+msgstr "Repérer les antécédents"
+
+msgid "显示影响当前单元格的单元格"
+msgstr "Afficher les cellules qui influencent la cellule active"
+
+msgid "追踪从属单元格"
+msgstr "Repérer les dépendants"
+
+msgid "显示依赖当前单元格的单元格"
+msgstr "Afficher les cellules qui dépendent de la cellule active"
+
+msgid "删除箭头"
+msgstr "Supprimer les flèches"
+
+msgid "删除所有追踪箭头"
+msgstr "Supprimer toutes les flèches de repérage"
+
+msgid "显示公式"
+msgstr "Afficher les formules"
+
+msgid "切换显示公式/值 (Ctrl+`)"
+msgstr "Basculer formules/valeurs (Ctrl+`)"
+
+msgid "错误检查"
+msgstr "Vérification des erreurs"
+
+msgid "检查公式错误"
+msgstr "Rechercher les erreurs de formule"
+
+msgid "监视窗口"
+msgstr "Fenêtre espion"
+
+msgid "监视单元格值变化"
+msgstr "Surveiller les valeurs de cellules"
+
+msgid "计算选项"
+msgstr "Options de calcul"
+
+msgid "设置自动/手动计算模式（占位，未接列表）"
+msgstr "Définir le calcul automatique/manuel (provisoire, liste non reliée)"
+
+msgid "立即计算"
+msgstr "Calculer maintenant"
+
+msgid "立即重新计算所有公式 (F9)"
+msgstr "Recalculer toutes les formules (F9)"
+
+msgid "计算工作表"
+msgstr "Calculer la feuille"
+
+msgid "计算当前工作表 (Shift+F9)"
+msgstr "Calculer la feuille active (Maj+F9)"
+
+msgid "剪贴板"
+msgstr "Presse-papiers"
+
+msgid "粘贴"
+msgstr "Coller"
+
+msgid "粘贴 (Ctrl+V)"
+msgstr "Coller (Ctrl+V)"
+
+msgid "剪切"
+msgstr "Couper"
+
+msgid "格式刷"
+msgstr "Reproduire la mise en forme"
+
+msgid "格式刷(单击一次,双击连续)"
+msgstr "Reproduire la mise en forme (un clic ; double-clic pour garder actif)"
+
+msgid "字体"
+msgstr "Police"
+
+msgid "增大字号"
+msgstr "Augmenter la taille"
+
+msgid "减小字号"
+msgstr "Réduire la taille"
+
+msgid "加粗 (Ctrl+B)"
+msgstr "Gras (Ctrl+B)"
+
+msgid "斜体 (Ctrl+I)"
+msgstr "Italique (Ctrl+I)"
+
+msgid "下划线 (Ctrl+U)"
+msgstr "Souligné (Ctrl+U)"
+
+msgid "边框"
+msgstr "Bordures"
+
+msgid "填充颜色"
+msgstr "Couleur de remplissage"
+
+msgid "字体颜色"
+msgstr "Couleur de police"
+
+msgid "对齐方式"
+msgstr "Alignement"
+
+msgid "顶端对齐"
+msgstr "Aligner en haut"
+
+msgid "垂直居中"
+msgstr "Aligner au milieu"
+
+msgid "底端对齐"
+msgstr "Aligner en bas"
+
+msgid "自动换行"
+msgstr "Renvoyer à la ligne"
+
+msgid "左对齐"
+msgstr "Aligner à gauche"
+
+msgid "右对齐"
+msgstr "Aligner à droite"
+
+msgid "合并"
+msgstr "Fusionner"
+
+msgid "合并单元格"
+msgstr "Fusionner les cellules"
+
+msgid "货币格式"
+msgstr "Format monétaire"
+
+msgid "百分比格式"
+msgstr "Style pourcentage"
+
+msgid "千分位格式"
+msgstr "Style milliers"
+
+msgid "增加小数位"
+msgstr "Ajouter une décimale"
+
+msgid "减少小数位"
+msgstr "Réduire les décimales"
+
+msgid "条件格式"
+msgstr "Mise en forme conditionnelle"
+
+msgid "套用格式"
+msgstr "Mettre sous forme de tableau"
+
+msgid "单元格样式"
+msgstr "Styles de cellule"
+
+msgid "单元格"
+msgstr "Cellules"
+
+msgid "插入行"
+msgstr "Insérer ligne"
+
+msgid "在选区上方插入一行"
+msgstr "Insérer une ligne au-dessus de la sélection"
+
+msgid "删除行"
+msgstr "Supprimer ligne"
+
+msgid "删除选区所在行"
+msgstr "Supprimer les lignes de la sélection"
+
+msgid "格式"
+msgstr "Format"
+
+msgid "插入列"
+msgstr "Insérer colonne"
+
+msgid "在选区左侧插入一列"
+msgstr "Insérer une colonne à gauche de la sélection"
+
+msgid "删除列"
+msgstr "Supprimer colonne"
+
+msgid "删除选区所在列"
+msgstr "Supprimer les colonnes de la sélection"
+
+msgid "编辑"
+msgstr "Édition"
+
+msgid "查找和选择"
+msgstr "Rechercher et sélectionner"
+
+msgid "表格"
+msgstr "Tableaux"
+
+msgid "插入数据透视表"
+msgstr "Insérer un tableau croisé dynamique"
+
+msgid "建议透视表"
+msgstr "Tableaux croisés recommandés"
+
+msgid "插入建议的数据透视表"
+msgstr "Insérer un tableau croisé dynamique recommandé"
+
+msgid "将区域转换为表格"
+msgstr "Convertir la plage en tableau"
+
+msgid "插图"
+msgstr "Illustrations"
+
+msgid "图片"
+msgstr "Images"
+
+msgid "插入图片"
+msgstr "Insérer une image"
+
+msgid "插入形状"
+msgstr "Insérer une forme"
+
+msgid "图标"
+msgstr "Icônes"
+
+msgid "插入图标"
+msgstr "Insérer une icône"
+
+msgid "截图"
+msgstr "Capture"
+
+msgid "插入屏幕截图"
+msgstr "Insérer une capture d'écran"
+
+msgid "图表"
+msgstr "Graphiques"
+
+msgid "插入图表（选择类型）"
+msgstr "Insérer un graphique (choisir le type)"
+
+msgid "透视图"
+msgstr "Graphique croisé"
+
+msgid "数据透视图"
+msgstr "Graphique croisé dynamique"
+
+msgid "迷你图"
+msgstr "Graphiques sparkline"
+
+msgid "在单元格内插入迷你图(类型可在对话框中选择)"
+msgstr "Insérer un sparkline dans une cellule (type au choix dans la boîte de dialogue)"
+
+msgid "折线"
+msgstr "Courbe"
+
+msgid "插入折线迷你图"
+msgstr "Insérer un sparkline en courbe"
+
+msgid "柱形"
+msgstr "Colonne"
+
+msgid "插入柱形迷你图"
+msgstr "Insérer un sparkline en colonnes"
+
+msgid "清除迷你图"
+msgstr "Effacer les sparklines"
+
+msgid "清除所选单元格中的迷你图"
+msgstr "Effacer les sparklines des cellules sélectionnées"
+
+msgid "切片器"
+msgstr "Segment"
+
+msgid "插入切片器，用于筛选数据透视表"
+msgstr "Insérer un segment pour filtrer un tableau croisé dynamique"
+
+msgid "日程表"
+msgstr "Chronologie"
+
+msgid "按日期范围筛选（开发中）"
+msgstr "Filtrer par plage de dates (en développement)"
+
+msgid "链接"
+msgstr "Liens"
+
+msgid "插入超链接 (Ctrl+K)"
+msgstr "Insérer un lien hypertexte (Ctrl+K)"
+
+msgid "批注"
+msgstr "Commentaire"
+
+msgid "插入批注 (Ctrl+Alt+C)"
+msgstr "Insérer un commentaire (Ctrl+Alt+C)"
+
+msgid "文本框"
+msgstr "Zone de texte"
+
+msgid "插入文本框"
+msgstr "Insérer une zone de texte"
+
+msgid "文字方向"
+msgstr "Orientation du texte"
+
+msgid "更改文字方向"
+msgstr "Modifier l'orientation du texte"
+
+msgid "公式和符号"
+msgstr "Équations et symboles"
+
+msgid "插入数学公式"
+msgstr "Insérer une équation"
+
+msgid "符号"
+msgstr "Symbole"
+
+msgid "插入特殊符号"
+msgstr "Insérer un symbole spécial"
+
+msgid "数据透视表1"
+msgstr "TableauCroisé1"
+
+msgid "更改数据源"
+msgstr "Changer la source"
+
+msgid "操作"
+msgstr "Actions"
+
+msgid "移动透视表"
+msgstr "Déplacer le tableau"
+
+msgid "显示详情"
+msgstr "Afficher les détails"
+
+msgid "筛选器"
+msgstr "Filtres"
+
+msgid "插入切片器"
+msgstr "Insérer un segment"
+
+msgid "样式选项"
+msgstr "Options de style"
+
+msgid "行标题"
+msgstr "En-têtes de lignes"
+
+msgid "镶边行"
+msgstr "Lignes à bandes"
+
+msgid "列标题"
+msgstr "En-têtes de colonnes"
+
+msgid "镶边列"
+msgstr "Colonnes à bandes"
+
+msgid "数据透视表样式"
+msgstr "Styles de tableau croisé"
+
+msgid "填充"
+msgstr "Remplissage"
+
+msgid "边框粗细"
+msgstr "Épaisseur de bordure"
+
+msgid "冻结窗格"
+msgstr "Figer les volets"
+
+msgid "冻结当前单元格上方和左侧的行列（图标占位）"
+msgstr "Figer les lignes au-dessus et les colonnes à gauche de la cellule active (icône provisoire)"
+
+msgid "冻结首行"
+msgstr "Figer la ligne du haut"
+
+msgid "始终显示第一行（图标占位）"
+msgstr "Toujours afficher la première ligne (icône provisoire)"
+
+msgid "冻结首列"
+msgstr "Figer la première colonne"
+
+msgid "始终显示第一列（图标占位）"
+msgstr "Toujours afficher la première colonne (icône provisoire)"
+
+msgid "取消冻结"
+msgstr "Libérer les volets"
+
+msgid "取消所有冻结（图标占位）"
+msgstr "Supprimer tous les figements (icône provisoire)"
+
+msgid "显示"
+msgstr "Afficher"
+
+msgid "编辑栏"
+msgstr "Barre de formule"
+
+msgid "行列标题"
+msgstr "En-têtes"
+
+msgid "缩放"
+msgstr "Zoom"
+
+msgid "恢复100%大小"
+msgstr "Rétablir à 100 %"
+
+msgid "放大"
+msgstr "Zoom avant"
+
+msgid "放大视图"
+msgstr "Agrandir l'affichage"
+
+msgid "缩小"
+msgstr "Zoom arrière"
+
+msgid "缩小视图"
+msgstr "Réduire l'affichage"
+
+msgid "动画效果"
+msgstr "Effets d'animation"
+
+msgid "淡入"
+msgstr "Fondu"
+
+msgid "飞入"
+msgstr "Entrée"
+
+msgid "擦除"
+msgstr "Balayage"
+
+msgid "效果"
+msgstr "Effets"
+
+msgid "效果选项"
+msgstr "Options d'effet"
+
+msgid "动画窗格"
+msgstr "Volet Animations"
+
+msgid "动画刷"
+msgstr "Reproduire l'animation"
+
+msgid "自动播放"
+msgstr "Lecture auto"
+
+msgid "开始时机"
+msgstr "Début"
+
+msgid "持续时间"
+msgstr "Durée"
+
+msgid "字号"
+msgstr "Taille"
+
+msgid "新建幻灯片"
+msgstr "Nouvelle diapositive"
+
+msgid "版式"
+msgstr "Disposition"
+
+msgid "重置"
+msgstr "Réinitialiser"
+
+msgid "节"
+msgstr "Section"
+
+msgid "上标"
+msgstr "Exposant"
+
+msgid "下标"
+msgstr "Indice"
+
+msgid "文本高亮颜色"
+msgstr "Couleur de surbrillance"
+
+msgid "段落"
+msgstr "Paragraphe"
+
+msgid "项目符号"
+msgstr "Puces"
+
+msgid "编号"
+msgstr "Numérotation"
+
+msgid "行距与段间距"
+msgstr "Interligne et espacement"
+
+msgid "大小"
+msgstr "Taille"
+
+msgid "幻灯片编号"
+msgstr "N° de diapositive"
+
+msgid "隐藏幻灯片"
+msgstr "Masquer la diapositive"
+
+msgid "竖排文本框"
+msgstr "Zone de texte verticale"
+
+msgid "日期时间"
+msgstr "Date et heure"
+
+msgid "页眉页脚"
+msgstr "En-tête et pied de page"
+
+msgid "背景颜色"
+msgstr "Couleur d'arrière-plan"
+
+msgid "背景与图片"
+msgstr "Arrière-plan et image"
+
+msgid "背景图片"
+msgstr "Image d'arrière-plan"
+
+msgid "清除背景"
+msgstr "Effacer l'arrière-plan"
+
+msgid "编辑母版"
+msgstr "Modifier le masque"
+
+msgid "复制版式"
+msgstr "Dupliquer la disposition"
+
+msgid "删除版式"
+msgstr "Supprimer la disposition"
+
+msgid "关闭母版视图"
+msgstr "Fermer le mode Masque"
+
+msgid "校对"
+msgstr "Vérification"
+
+msgid "拼写检查"
+msgstr "Orthographe"
+
+msgid "语言"
+msgstr "Langue"
+
+msgid "翻译"
+msgstr "Traduire"
+
+msgid "删除"
+msgstr "Supprimer"
+
+msgid "上一个"
+msgstr "Précédent"
+
+msgid "下一个"
+msgstr "Suivant"
+
+msgid "显示批注"
+msgstr "Afficher les commentaires"
+
+msgid "解决"
+msgstr "Résoudre"
+
+msgid "比较"
+msgstr "Comparer"
+
+msgid "纯色"
+msgstr "Uni"
+
+msgid "渐变"
+msgstr "Dégradé"
+
+msgid "蓝白横"
+msgstr "Bleu-blanc H"
+
+msgid "蓝白竖"
+msgstr "Bleu-blanc V"
+
+msgid "橙白横"
+msgstr "Orange-blanc H"
+
+msgid "橙白竖"
+msgstr "Orange-blanc V"
+
+msgid "灰黑横"
+msgstr "Gris-noir H"
+
+msgid "灰黑竖"
+msgstr "Gris-noir V"
+
+msgid "图片背景"
+msgstr "Image d'arrière-plan"
+
+msgid "恢复默认"
+msgstr "Rétablir par défaut"
+
+msgid "开始放映"
+msgstr "Démarrer le diaporama"
+
+msgid "从头开始"
+msgstr "Depuis le début"
+
+msgid "从当前开始"
+msgstr "Depuis la diapositive actuelle"
+
+msgid "放映设置"
+msgstr "Configurer le diaporama"
+
+msgid "排练计时"
+msgstr "Enregistrer le minutage"
+
+msgid "播放效果"
+msgstr "Effets de transition"
+
+msgid "推入"
+msgstr "Poussée"
+
+msgid "分割"
+msgstr "Fractionner"
+
+msgid "播放时间"
+msgstr "Minutage"
+
+msgid "声音"
+msgstr "Son"
+
+msgid "播放设置"
+msgstr "Paramètres de lecture"
+
+msgid "单击时"
+msgstr "Au clic"
+
+msgid "应用到所有"
+msgstr "Appliquer partout"
+
+msgid "普通"
+msgstr "Normal"
+
+msgid "大纲"
+msgstr "Plan"
+
+msgid "幻灯片浏览"
+msgstr "Trieuse"
+
+msgid "备注页面"
+msgstr "Pages de notes"
+
+msgid "阅读视图"
+msgstr "Mode lecture"
+
+msgid "母版视图"
+msgstr "Modes Masque"
+
+msgid "讲义母版"
+msgstr "Masque du document"
+
+msgid "备注母版"
+msgstr "Masque des notes"
+
+msgid "标尺"
+msgstr "Règle"
+
+msgid "参考线"
+msgstr "Repères"
+
+msgid "适应窗口"
+msgstr "Ajuster à la fenêtre"
+
+msgid "基本形状"
+msgstr "Formes de base"
+
+msgid "矩"
+msgstr "Rect."
+
+msgid "圆"
+msgstr "Ovale"
+
+msgid "三"
+msgstr "Tri."
+
+msgid "箭"
+msgstr "Flèche"
+
+msgid "线"
+msgstr "Ligne"
+
+msgid "文"
+msgstr "Texte"
+
+msgid "编辑形状"
+msgstr "Modifier la forme"
+
+msgid "编辑形状顶点"
+msgstr "Modifier les points"
+
+msgid "插入横排文本框"
+msgstr "Insérer une zone de texte horizontale"
+
+msgid "形状样式"
+msgstr "Styles de forme"
+
+msgid "形状样式 ⌄"
+msgstr "Styles de forme ⌄"
+
+msgid "形状填充"
+msgstr "Remplissage de forme"
+
+msgid "设置形状填充颜色"
+msgstr "Définir la couleur de remplissage de la forme"
+
+msgid "形状轮廓"
+msgstr "Contour de forme"
+
+msgid "设置形状边框颜色和宽度"
+msgstr "Définir la couleur et l'épaisseur du contour"
+
+msgid "形状效果"
+msgstr "Effets de forme"
+
+msgid "阴影、发光、柔化边缘等"
+msgstr "Ombre, lueur, bords adoucis, etc."
+
+msgid "艺术字样式"
+msgstr "Styles WordArt"
+
+msgid "艺术字 ⌄"
+msgstr "WordArt ⌄"
+
+msgid "文本填充"
+msgstr "Remplissage du texte"
+
+msgid "文字填充颜色"
+msgstr "Couleur de remplissage du texte"
+
+msgid "文本轮廓"
+msgstr "Contour du texte"
+
+msgid "文字轮廓颜色和宽度"
+msgstr "Couleur et épaisseur du contour du texte"
+
+msgid "文本效果"
+msgstr "Effets de texte"
+
+msgid "阴影、发光、映像等文字效果"
+msgstr "Effets de texte : ombre, lueur, reflet, etc."
+
+msgid "对齐文字"
+msgstr "Aligner le texte"
+
+msgid "文字垂直对齐方式"
+msgstr "Alignement vertical du texte"
+
+msgid "创建链接"
+msgstr "Créer un lien"
+
+msgid "链接到另一个文本框"
+msgstr "Lier à une autre zone de texte"
+
+msgid "排列"
+msgstr "Organiser"
+
+msgid "位置"
+msgstr "Position"
+
+msgid "设置形状在页面中的位置"
+msgstr "Définir la position de la forme sur la page"
+
+msgid "文字环绕"
+msgstr "Habillage"
+
+msgid "设置文字环绕方式"
+msgstr "Définir le style d'habillage du texte"
+
+msgid "嵌入型"
+msgstr "Aligné sur le texte"
+
+msgid "四周型"
+msgstr "Carré"
+
+msgid "紧密型"
+msgstr "Rapproché"
+
+msgid "上下型"
+msgstr "Haut et bas"
+
+msgid "衬于文字下方"
+msgstr "Derrière le texte"
+
+msgid "浮于文字上方"
+msgstr "Devant le texte"
+
+msgid "上移一层"
+msgstr "Avancer"
+
+msgid "下移一层"
+msgstr "Reculer"
+
+msgid "选择窗格"
+msgstr "Volet Sélection"
+
+msgid "显示选择窗格"
+msgstr "Afficher le volet Sélection"
+
+msgid "对齐"
+msgstr "Aligner"
+
+msgid "对齐所选对象"
+msgstr "Aligner les objets sélectionnés"
+
+msgid "将多个对象组合"
+msgstr "Grouper plusieurs objets"
+
+msgid "旋转"
+msgstr "Rotation"
+
+msgid "旋转或翻转对象"
+msgstr "Faire pivoter ou retourner l'objet"
+
+msgid "高度:"
+msgstr "Hauteur :"
+
+msgid "0 cm"
+msgstr "0 cm"
+
+msgid "宽度:"
+msgstr "Largeur :"
+
+msgid "辅助功能"
+msgstr "Accessibilité"
+
+msgid "替换文字"
+msgstr "Texte de remplacement"
+
+msgid "为形状添加替换文字（Alt Text）"
+msgstr "Ajouter un texte de remplacement à la forme"
+
+msgid "调整"
+msgstr "Ajuster"
+
+msgid "删除背景"
+msgstr "Supprimer l'arrière-plan"
+
+msgid "删除图片背景"
+msgstr "Supprimer l'arrière-plan de l'image"
+
+msgid "校正"
+msgstr "Corrections"
+
+msgid "亮度/对比度校正"
+msgstr "Corrections de luminosité/contraste"
+
+msgid "颜色"
+msgstr "Couleur"
+
+msgid "颜色调整"
+msgstr "Ajustements de couleur"
+
+msgid "艺术效果"
+msgstr "Effets artistiques"
+
+msgid "透明度"
+msgstr "Transparence"
+
+msgid "设置透明度"
+msgstr "Définir la transparence"
+
+msgid "压缩图片"
+msgstr "Compresser les images"
+
+msgid "压缩图片以减小文件大小"
+msgstr "Compresser les images pour réduire la taille du fichier"
+
+msgid "更改图片"
+msgstr "Modifier l'image"
+
+msgid "替换为其他图片"
+msgstr "Remplacer par une autre image"
+
+msgid "重置图片"
+msgstr "Réinitialiser l'image"
+
+msgid "撤销所有格式更改"
+msgstr "Annuler toutes les modifications de mise en forme"
+
+msgid "图片样式"
+msgstr "Styles d'image"
+
+msgid "无框"
+msgstr "Aucun"
+
+msgid "细框"
+msgstr "Fin"
+
+msgid "圆角"
+msgstr "Arrondi"
+
+msgid "投影"
+msgstr "Ombre"
+
+msgid "图片边框"
+msgstr "Bordure d'image"
+
+msgid "设置图片边框颜色和宽度"
+msgstr "Définir la couleur et l'épaisseur de la bordure de l'image"
+
+msgid "图片效果"
+msgstr "Effets d'image"
+
+msgid "图片版式"
+msgstr "Disposition d'image"
+
+msgid "转换为 SmartArt"
+msgstr "Convertir en SmartArt"
+
+msgid "为图片添加替换文字（Alt Text）"
+msgstr "Ajouter un texte de remplacement à l'image"
+
+msgid "设置图片在页面中的位置"
+msgstr "Définir la position de l'image sur la page"
+
+msgid "将多个对象组合为一个"
+msgstr "Grouper plusieurs objets en un seul"
+
+msgid "裁剪"
+msgstr "Rogner"
+
+msgid "裁剪图片"
+msgstr "Rogner l'image"
+
+msgid "表格样式"
+msgstr "Styles de tableau"
+
+msgid "底纹"
+msgstr "Trame de fond"
+
+msgid "行和列"
+msgstr "Lignes et colonnes"
+
+msgid "在上方插入"
+msgstr "Insérer au-dessus"
+
+msgid "在下方插入"
+msgstr "Insérer en dessous"
+
+msgid "在左侧插入"
+msgstr "Insérer à gauche"
+
+msgid "在右侧插入"
+msgstr "Insérer à droite"
+
+msgid "拆分单元格"
+msgstr "Fractionner les cellules"
+
+msgid "删除表格"
+msgstr "Supprimer le tableau"
+
+msgid "单元格大小"
+msgstr "Taille de cellule"
+
+msgid "平均分布各行"
+msgstr "Répartir les lignes"
+
+msgid "平均分布各列"
+msgstr "Répartir les colonnes"
+
+msgid "文档格式"
+msgstr "Mise en forme du document"
+
+msgid "主题"
+msgstr "Thèmes"
+
+msgid "更改文档主题"
+msgstr "Modifier le thème du document"
+
+msgid "更改主题颜色"
+msgstr "Modifier les couleurs du thème"
+
+msgid "更改主题字体"
+msgstr "Modifier les polices du thème"
+
+msgid "段落间距"
+msgstr "Espacement des paragraphes"
+
+msgid "更改段落间距"
+msgstr "Modifier l'espacement des paragraphes"
+
+msgid "更改主题效果"
+msgstr "Modifier les effets du thème"
+
+msgid "设为默认值"
+msgstr "Par défaut"
+
+msgid "页面背景"
+msgstr "Arrière-plan de page"
+
+msgid "水印"
+msgstr "Filigrane"
+
+msgid "插入水印"
+msgstr "Insérer un filigrane"
+
+msgid "页面颜色"
+msgstr "Couleur de page"
+
+msgid "设置页面背景色"
+msgstr "Définir la couleur d'arrière-plan de la page"
+
+msgid "页面边框"
+msgstr "Bordures de page"
+
+msgid "设置页面边框"
+msgstr "Définir les bordures de page"
+
+msgid "剪切 (Ctrl+X)"
+msgstr "Couper (Ctrl+X)"
+
+msgid "复制 (Ctrl+C)"
+msgstr "Copier (Ctrl+C)"
+
+msgid "格式刷（单击一次，双击连续）"
+msgstr "Reproduire la mise en forme (un clic ; double-clic pour garder actif)"
+
+msgid "增大字号 (Ctrl+>)"
+msgstr "Augmenter la taille (Ctrl+>)"
+
+msgid "减小字号 (Ctrl+<)"
+msgstr "Réduire la taille (Ctrl+<)"
+
+msgid "更改大小写"
+msgstr "Modifier la casse"
+
+msgid "删除线"
+msgstr "Barré"
+
+msgid "下标 (Ctrl+=)"
+msgstr "Indice (Ctrl+=)"
+
+msgid "上标 (Ctrl+Shift+=)"
+msgstr "Exposant (Ctrl+Maj+=)"
+
+msgid "文字效果"
+msgstr "Effets de texte"
+
+msgid "编号列表"
+msgstr "Numérotation"
+
+msgid "多级列表"
+msgstr "Liste à plusieurs niveaux"
+
+msgid "一 / (一) / 1."
+msgstr "1. / a. / i."
+
+msgid "标题样式多级"
+msgstr "Plan numéroté (titres)"
+
+msgid "减少缩进"
+msgstr "Diminuer le retrait"
+
+msgid "增加缩进"
+msgstr "Augmenter le retrait"
+
+msgid "显示/隐藏段落标记"
+msgstr "Afficher/masquer les marques de paragraphe"
+
+msgid "左对齐 (Ctrl+L)"
+msgstr "Aligner à gauche (Ctrl+L)"
+
+msgid "居中 (Ctrl+E)"
+msgstr "Centrer (Ctrl+E)"
+
+msgid "右对齐 (Ctrl+R)"
+msgstr "Aligner à droite (Ctrl+R)"
+
+msgid "两端对齐 (Ctrl+J)"
+msgstr "Justifier (Ctrl+J)"
+
+msgid "分散对齐"
+msgstr "Distribué"
+
+msgid "行与段落间距"
+msgstr "Interligne et espacement des paragraphes"
+
+msgid "段落底纹"
+msgstr "Trame du paragraphe"
+
+msgid "查找 (Ctrl+F)"
+msgstr "Rechercher (Ctrl+F)"
+
+msgid "替换 (Ctrl+H)"
+msgstr "Remplacer (Ctrl+H)"
+
+msgid "选择"
+msgstr "Sélectionner"
+
+msgid "页面"
+msgstr "Pages"
+
+msgid "封面"
+msgstr "Page de garde"
+
+msgid "插入封面页"
+msgstr "Insérer une page de garde"
+
+msgid "空白页"
+msgstr "Page vierge"
+
+msgid "插入空白页"
+msgstr "Insérer une page vierge"
+
+msgid "分页符"
+msgstr "Saut de page"
+
+msgid "插入分页符 (Ctrl+Enter)"
+msgstr "Insérer un saut de page (Ctrl+Entrée)"
+
+msgid "插入截图"
+msgstr "Insérer une capture"
+
+msgid "超链接"
+msgstr "Lien hypertexte"
+
+msgid "书签"
+msgstr "Signet"
+
+msgid "插入书签"
+msgstr "Insérer un signet"
+
+msgid "交叉引用"
+msgstr "Renvoi"
+
+msgid "插入交叉引用"
+msgstr "Insérer un renvoi"
+
+msgid "插入页眉"
+msgstr "Insérer un en-tête"
+
+msgid "插入页脚"
+msgstr "Insérer un pied de page"
+
+msgid "插入页码"
+msgstr "Insérer un numéro de page"
+
+msgid "艺术字"
+msgstr "WordArt"
+
+msgid "插入艺术字"
+msgstr "Insérer un WordArt"
+
+msgid "插入日期和时间"
+msgstr "Insérer la date et l'heure"
+
+msgid "插入公式"
+msgstr "Insérer une équation"
+
+msgid "插入域编号"
+msgstr "Insérer un numéro de champ"
+
+msgid "页边距"
+msgstr "Marges"
+
+msgid "设置页边距"
+msgstr "Définir les marges de la page"
+
+msgid "设置纸张方向"
+msgstr "Définir l'orientation du papier"
+
+msgid "设置纸张大小"
+msgstr "Définir la taille du papier"
+
+msgid "分栏"
+msgstr "Colonnes"
+
+msgid "点击循环切换 1/2/3 栏"
+msgstr "Cliquer pour alterner entre 1, 2 et 3 colonnes"
+
+msgid "分隔符"
+msgstr "Sauts"
+
+msgid "在光标处插入分栏符（需先设置多栏）"
+msgstr "Insérer un saut de colonne au curseur (définir d'abord plusieurs colonnes)"
+
+msgid "行号"
+msgstr "Numéros de ligne"
+
+msgid "添加行号（需页面对话框设置）"
+msgstr "Ajouter des numéros de ligne (à configurer dans la boîte Page)"
+
+msgid "断字"
+msgstr "Coupure des mots"
+
+msgid "自动断字设置"
+msgstr "Paramètres de coupure automatique"
+
+msgid "缩进左:"
+msgstr "Retrait gauche :"
+
+msgid "0 厘米"
+msgstr "0 cm"
+
+msgid "缩进右:"
+msgstr "Retrait droit :"
+
+msgid "间距前:"
+msgstr "Espacement avant :"
+
+msgid "0 行"
+msgstr "0 ligne"
+
+msgid "间距后:"
+msgstr "Espacement après :"
+
+msgid "设置对象位置"
+msgstr "Définir la position de l'objet"
+
+msgid "将对象上移一层"
+msgstr "Avancer l'objet"
+
+msgid "对齐对象"
+msgstr "Aligner les objets"
+
+msgid "组合对象"
+msgstr "Grouper les objets"
+
+msgid "旋转对象"
+msgstr "Faire pivoter l'objet"
+
+msgid "创建"
+msgstr "Créer"
+
+msgid "中文信封"
+msgstr "Enveloppe chinoise"
+
+msgid "创建中文信封"
+msgstr "Créer une enveloppe chinoise"
+
+msgid "信封"
+msgstr "Enveloppes"
+
+msgid "创建信封"
+msgstr "Créer des enveloppes"
+
+msgid "标签"
+msgstr "Étiquettes"
+
+msgid "创建标签"
+msgstr "Créer des étiquettes"
+
+msgid "开始邮件合并"
+msgstr "Démarrer le publipostage"
+
+msgid "邮件合并"
+msgstr "Publipostage"
+
+msgid "开始邮件合并向导"
+msgstr "Démarrer l'assistant de publipostage"
+
+msgid "选择收件人"
+msgstr "Sélectionner les destinataires"
+
+msgid "选择收件人列表"
+msgstr "Sélectionner une liste de destinataires"
+
+msgid "编辑收件人"
+msgstr "Modifier les destinataires"
+
+msgid "编辑收件人列表"
+msgstr "Modifier la liste des destinataires"
+
+msgid "编写和插入域"
+msgstr "Champs et rédaction"
+
+msgid "插入合并域"
+msgstr "Insérer un champ de fusion"
+
+msgid "规则"
+msgstr "Règles"
+
+msgid "插入规则"
+msgstr "Insérer une règle"
+
+msgid "更新标签"
+msgstr "Mettre à jour les étiquettes"
+
+msgid "预览结果"
+msgstr "Aperçu des résultats"
+
+msgid "预览合并结果"
+msgstr "Aperçu du résultat de la fusion"
+
+msgid "查找收件人"
+msgstr "Rechercher un destinataire"
+
+msgid "检查错误"
+msgstr "Vérifier les erreurs"
+
+msgid "检查合并错误"
+msgstr "Vérifier les erreurs de fusion"
+
+msgid "完成"
+msgstr "Terminer"
+
+msgid "完成并合并"
+msgstr "Terminer et fusionner"
+
+msgid "目录"
+msgstr "Table des matières"
+
+msgid "插入自动目录"
+msgstr "Insérer une table des matières automatique"
+
+msgid "添加文字"
+msgstr "Ajouter du texte"
+
+msgid "将所选内容添加为目录条目"
+msgstr "Ajouter la sélection comme entrée de la table des matières"
+
+msgid "更新目录"
+msgstr "Mettre à jour la table"
+
+msgid "刷新目录内容"
+msgstr "Actualiser la table des matières"
+
+msgid "脚注与尾注"
+msgstr "Notes de bas de page et de fin"
+
+msgid "插入脚注"
+msgstr "Insérer une note de bas de page"
+
+msgid "在当前位置插入脚注"
+msgstr "Insérer une note de bas de page à cet endroit"
+
+msgid "插入尾注"
+msgstr "Insérer une note de fin"
+
+msgid "在光标处插入尾注引用"
+msgstr "Insérer un renvoi de note de fin au curseur"
+
+msgid "上一条脚注"
+msgstr "Note précédente"
+
+msgid "跳转到上一条脚注"
+msgstr "Aller à la note de bas de page précédente"
+
+msgid "下一条脚注"
+msgstr "Note suivante"
+
+msgid "跳转到下一条脚注"
+msgstr "Aller à la note de bas de page suivante"
+
+msgid "注释管理"
+msgstr "Notes"
+
+msgid "删除脚注"
+msgstr "Supprimer la note de bas de page"
+
+msgid "删除光标所在段落的脚注"
+msgstr "Supprimer la note de bas de page du paragraphe actuel"
+
+msgid "删除尾注"
+msgstr "Supprimer la note de fin"
+
+msgid "删除光标所在段落的尾注"
+msgstr "Supprimer la note de fin du paragraphe actuel"
+
+msgid "题注"
+msgstr "Légendes"
+
+msgid "插入题注"
+msgstr "Insérer une légende"
+
+msgid "为图表插入题注"
+msgstr "Insérer une légende pour une figure ou un tableau"
+
+msgid "图表目录"
+msgstr "Table des illustrations"
+
+msgid "插入图表目录"
+msgstr "Insérer une table des illustrations"
+
+msgid "更新表格"
+msgstr "Mettre à jour la table"
+
+msgid "更新图表目录"
+msgstr "Mettre à jour la table des illustrations"
+
+msgid "拼写和语法"
+msgstr "Grammaire et orthographe"
+
+msgid "拼写和语法检查 (F7)"
+msgstr "Vérifier l'orthographe et la grammaire (F7)"
+
+msgid "字数统计"
+msgstr "Nombre de mots"
+
+msgid "查看字数统计"
+msgstr "Afficher le nombre de mots"
+
+msgid "删除当前批注"
+msgstr "Supprimer le commentaire actuel"
+
+msgid "上一条"
+msgstr "Précédent"
+
+msgid "上一条批注"
+msgstr "Commentaire précédent"
+
+msgid "下一条"
+msgstr "Suivant"
+
+msgid "下一条批注"
+msgstr "Commentaire suivant"
+
+msgid "显示/隐藏批注"
+msgstr "Afficher/masquer les commentaires"
+
+msgid "修订"
+msgstr "Suivi des modifications"
+
+msgid "启用/禁用修订跟踪"
+msgstr "Activer/désactiver le suivi des modifications"
+
+msgid "接受"
+msgstr "Accepter"
+
+msgid "接受所有修订"
+msgstr "Accepter toutes les modifications"
+
+msgid "拒绝"
+msgstr "Refuser"
+
+msgid "拒绝所有修订"
+msgstr "Refuser toutes les modifications"
+
+msgid "上一条修订"
+msgstr "Modification précédente"
+
+msgid "下一条修订"
+msgstr "Modification suivante"
+
+msgid "比较文档版本"
+msgstr "Comparer les versions du document"
+
+msgid "渐变填充"
+msgstr "Remplissage dégradé"
+
+msgid "页面视图"
+msgstr "Mode Page"
+
+msgid "切换到页面视图"
+msgstr "Passer en mode Page"
+
+msgid "切换到阅读视图"
+msgstr "Passer en mode Lecture"
+
+msgid "切换到大纲视图"
+msgstr "Passer en mode Plan"
+
+msgid "草稿"
+msgstr "Brouillon"
+
+msgid "切换到草稿视图"
+msgstr "Passer en mode Brouillon"
+
+msgid "导航窗格"
+msgstr "Volet Navigation"
+
+msgid "100%"
+msgstr "100 %"
+
+msgid "页宽"
+msgstr "Largeur de page"
+
+msgid "适应页面宽度"
+msgstr "Ajuster à la largeur de page"
+
+msgid "窗口"
+msgstr "Fenêtre"
+
+msgid "新建窗口"
+msgstr "Nouvelle fenêtre"
+
+msgid "在新窗口中打开文档"
+msgstr "Ouvrir le document dans une nouvelle fenêtre"
+
+msgid "拆分"
+msgstr "Fractionner"
+
+msgid "拆分窗口"
+msgstr "Fractionner la fenêtre"
+
+msgid "切换窗口"
+msgstr "Changer de fenêtre"
+
+msgid "切换到其他打开的文档"
+msgstr "Passer à un autre document ouvert"
+
+msgid "常用"
+msgstr "Général"
+
+msgid "AI 配置"
+msgstr "Configuration IA"
+
+msgid "界面语言"
+msgstr "Langue de l'interface"
+
+msgid "切换后立即生效；目前仅提供英文译文。"
+msgstr "Prend effet immédiatement."
+
+msgid "主题色"
+msgstr "Couleur du thème"
+
+msgid "主题色暂未生效。"
+msgstr "La couleur du thème n'a pas encore d'effet."
+
+msgid "本地模型 · 开发中"
+msgstr "Modèles locaux · En développement"
+
+msgid "Hugging Face 缓存目录"
+msgstr "Dossier de cache Hugging Face"
+
+msgid "默认 ~/.cache/huggingface"
+msgstr "Par défaut : ~/.cache/huggingface"
+
+msgid "用于存放 Gemma 等小模型,本地运行不上传文档。当前仅保存路径,下载与推理后续接入。"
+msgstr "Stocke de petits modèles comme Gemma ; exécution locale, sans envoi de documents. Seul le chemin est enregistré pour l'instant ; le téléchargement et l'inférence seront ajoutés plus tard."
+
+msgid "云端 API"
+msgstr "API cloud"
+
+msgid "+ 新建"
+msgstr "+ Nouveau"
+
+msgid "还没有配置。在右侧填写后点「保存并使用」。"
+msgstr "Rien n'est configuré. Remplissez le formulaire à droite et cliquez sur « Enregistrer et utiliser »."
+
+msgid "例如:工作用 Claude"
+msgstr "ex. : Claude pour le travail"
+
+msgid "服务商"
+msgstr "Fournisseur"
+
+msgid "其他"
+msgstr "Autre"
+
+msgid "接口地址(已按服务商预填,可修改)"
+msgstr "Point de terminaison (prérempli selon le fournisseur ; modifiable)"
+
+msgid "粘贴 API Key"
+msgstr "Coller la clé API"
+
+msgid "模型名称(自行填写,以服务商文档为准)"
+msgstr "Nom du modèle (à saisir ; voir la documentation du fournisseur)"
+
+msgid "填写模型名"
+msgstr "Saisir le nom du modèle"
+
+msgid "保存并使用"
+msgstr "Enregistrer et utiliser"
+
+msgid "请选择"
+msgstr "Sélectionner"
+
+msgid "复制幻灯片"
+msgstr "Dupliquer la diapositive"
+
+msgid "删除幻灯片"
+msgstr "Supprimer la diapositive"
+
+msgid "排序类型"
+msgstr "Type de tri"
+
+msgid "文字（拼音/字母）"
+msgstr "Texte (pinyin/alphabétique)"
+
+msgid "排序方向"
+msgstr "Sens du tri"
+
+msgid "创建迷你图"
+msgstr "Créer des sparklines"
+
+msgid "数据范围"
+msgstr "Plage de données"
+
+msgid "位置范围"
+msgstr "Plage d'emplacement"
+
+msgid "盈亏"
+msgstr "Gain/perte"
+
+msgid "SQL 查询(可 JOIN 多个数据集)"
+msgstr "Requête SQL (JOIN possible sur plusieurs jeux de données)"
+
+msgid "数据集(点击追加表名)"
+msgstr "Jeux de données (cliquer pour ajouter le nom de table)"
+
+msgid "运行预览不改动文档;保存才会生成新数据集"
+msgstr "L'aperçu ne modifie pas le document ; l'enregistrement crée un nouveau jeu de données"
+
+msgid "就绪"
+msgstr "Prêt"
+
+msgid "可用字段 (点击插入)"
+msgstr "Champs disponibles (cliquer pour insérer)"
+
+msgid "SQL 语句  (表名: {})"
+msgstr "Instruction SQL  (table : {})"
+
+msgid "执行查询  (Ctrl+Enter)"
+msgstr "Exécuter la requête  (Ctrl+Entrée)"
+
+msgid "历史记录"
+msgstr "Historique"
+
+msgid "执行过的查询会显示在这里"
+msgstr "Les requêtes exécutées s'affichent ici"
+
+msgid "输出位置"
+msgstr "Emplacement de sortie"
+
+msgid "第 {} 页，共 {} 页"
+msgstr "Page {} sur {}"
+
+msgid "范围:"
+msgstr "Plage :"
+
+msgid "选定汇总项:"
+msgstr "Ajouter un sous-total à :"
+
+msgid "清除所有分类汇总"
+msgstr "Effacer tous les sous-totaux"
+
+msgid "(勾选后点确定,只清除,不新建)"
+msgstr "(Si coché, OK efface seulement ; rien n'est créé)"
+
+msgid "汇总方式:"
+msgstr "Fonction :"
+
+msgid "分类字段:"
+msgstr "À chaque changement de :"
+
+msgid "分列"
+msgstr "Convertir"
+
+msgid "分隔符号"
+msgstr "Séparateurs"
+
+msgid "逗号"
+msgstr "Virgule"
+
+msgid "制表符"
+msgstr "Tabulation"
+
+msgid "分号"
+msgstr "Point-virgule"
+
+msgid "空格"
+msgstr "Espace"
+
+msgid "冒号"
+msgstr "Deux-points"
+
+msgid "连续分隔符视为一个"
+msgstr "Considérer les séparateurs consécutifs comme un seul"
+
+msgid "置于顶层"
+msgstr "Premier plan"
+
+msgid "置于底层"
+msgstr "Arrière-plan"
+

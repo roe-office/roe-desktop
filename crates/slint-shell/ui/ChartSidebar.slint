@@ -1,0 +1,207 @@
+// ChartSidebar.slint — 图表格式侧边栏(v2 重建,临时形态,后期会换成活动 ribbon)
+// 只含元素类参数;边框/主题色暂不做。控件只发回调,状态由 app.slint 写回(避免组件内赋值破坏外部绑定)。
+export struct ChartKindOption {
+    label: string,
+    kindidx: int,
+}
+
+export component ChartSidebar inherits Rectangle {
+    in property <bool> is-stat: false;
+    in property <int> chart-kind-index: 2;
+    in property <string> title-text: "";
+    in property <bool> show-legend: true;
+    in property <bool> show-grid: true;
+    in property <string> x-axis-label: "";
+    in property <string> y-axis-label: "";
+
+    // 下标与 main.rs chart_kind_index_to_str 一致
+    in property <[ChartKindOption]> kind-options: [
+        { label: @tr("柱形图"), kindidx: 0 },
+        { label: @tr("条形图"), kindidx: 1 },
+        { label: @tr("折线图"), kindidx: 2 },
+        { label: @tr("饼图"), kindidx: 3 },
+        { label: @tr("散点图"), kindidx: 4 },
+        { label: @tr("雷达图"), kindidx: 5 },
+        { label: @tr("面积图"), kindidx: 6 },
+        { label: @tr("圆环图"), kindidx: 7 },
+    ];
+
+    property <bool> kind-dropdown-open: false;
+
+    callback kind-changed(int);
+    callback title-edited(string);
+    callback legend-toggled(bool);
+    callback grid-toggled(bool);
+    callback x-label-edited(string);
+    callback y-label-edited(string);
+    callback closed();
+
+    // 外部值变化(切换选中图)时同步输入框;用户键入不会改动 root 属性
+    changed title-text => { title-input.text = self.title-text; }
+    changed x-axis-label => { x-input.text = self.x-axis-label; }
+    changed y-axis-label => { y-input.text = self.y-axis-label; }
+    changed is-stat => { self.kind-dropdown-open = false; }
+
+    background: #fafafa;
+
+    // 吞掉面板空白处的点击,避免穿透到背后的图表/单元格
+    TouchArea { }
+
+    VerticalLayout {
+        spacing: 0px;
+        alignment: start;
+
+        Rectangle {
+            width: parent.width; height: 36px; background: #f0f0f0;
+            Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: #e1e1e1; }
+            Text { x: 12px; y: (parent.height - self.height) / 2; text: root.is-stat ? @tr("图表格式（统计图）") : @tr("图表格式"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            Rectangle {
+                x: parent.width - 28px; y: (parent.height - 20px) / 2;
+                width: 20px; height: 20px; border-radius: 3px;
+                background: close-touch.has-hover ? #e0e0e0 : transparent;
+                Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "✕"; font-size: 11px; color: #666666; }
+                close-touch := TouchArea { clicked => { root.closed(); } }
+            }
+        }
+
+        VerticalLayout {
+            padding: 10px;
+            spacing: 10px;
+
+            // 图表类型(统计图置灰)
+            VerticalLayout {
+                spacing: 4px;
+                opacity: root.is-stat ? 0.45 : 1.0;
+                Text { text: @tr("图表类型"); font-size: 10px; color: #666666; }
+                Rectangle {
+                    height: 26px; border-radius: 3px; border-width: 1px;
+                    border-color: (kind-touch.has-hover && !root.is-stat) ? #217346 : #d0d0d0;
+                    background: root.is-stat ? #f2f2f2 : #ffffff;
+                    HorizontalLayout {
+                        padding-left: 8px; padding-right: 6px;
+                        alignment: space-between;
+                        Text {
+                            vertical-alignment: center;
+                            text: root.is-stat ? @tr("统计图") : root.kind-options[root.chart-kind-index].label;
+                            font-size: 11px; color: #222222;
+                        }
+                        Text { vertical-alignment: center; text: "▾"; font-size: 9px; color: #888888; }
+                    }
+                    kind-touch := TouchArea {
+                        enabled: !root.is-stat;
+                        clicked => { root.kind-dropdown-open = !root.kind-dropdown-open; }
+                    }
+                    if root.kind-dropdown-open && !root.is-stat : Rectangle {
+                        x: 0px; y: root.height;
+                        width: parent.width; height: kind-list.preferred-height + 8px;
+                        background: white; border-color: #c8c8c8; border-width: 1px; border-radius: 3px;
+                        z: 10;
+                        kind-list := VerticalLayout {
+                            y: 4px; padding: 0px; spacing: 1px;
+                            for opt in root.kind-options: Rectangle {
+                                height: 26px; border-radius: 3px;
+                                background: opt-touch.has-hover ? #e8f0fc : transparent;
+                                Text { x: 8px; y: (parent.height - self.height)/2; text: opt.label; font-size: 11px; color: #222222; }
+                                opt-touch := TouchArea {
+                                    clicked => {
+                                        root.kind-dropdown-open = false;
+                                        root.kind-changed(opt.kindidx);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: #e8e8e8; }
+
+            // 标题:清空后回车/失焦 => 无标题(发 null)
+            VerticalLayout {
+                spacing: 4px;
+                Text { text: @tr("标题"); font-size: 10px; color: #666666; }
+                Rectangle {
+                    height: 26px; border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                    title-input := TextInput {
+                        x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
+                        font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
+                        text: root.title-text;
+                        accepted => { if self.text != root.title-text { root.title-edited(self.text); } }
+                        changed has-focus => { if !self.has-focus && self.text != root.title-text { root.title-edited(self.text); } }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: #e8e8e8; }
+
+            // 图例 + 网格线
+            HorizontalLayout {
+                spacing: 16px;
+                HorizontalLayout {
+                    spacing: 6px;
+                    Rectangle {
+                        width: 14px; height: 14px; border-radius: 3px; border-width: 1px;
+                        border-color: legend-touch.has-hover ? #217346 : #cccccc;
+                        background: root.show-legend ? #217346 : #ffffff;
+                        Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "✓"; font-size: 9px; color: #ffffff; visible: root.show-legend; }
+                        legend-touch := TouchArea { clicked => { root.legend-toggled(!root.show-legend); } }
+                    }
+                    Text { text: @tr("图例"); font-size: 11px; color: #222222; }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Rectangle {
+                        width: 14px; height: 14px; border-radius: 3px; border-width: 1px;
+                        border-color: grid-touch.has-hover ? #217346 : #cccccc;
+                        background: root.show-grid ? #217346 : #ffffff;
+                        Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "✓"; font-size: 9px; color: #ffffff; visible: root.show-grid; }
+                        grid-touch := TouchArea { clicked => { root.grid-toggled(!root.show-grid); } }
+                    }
+                    Text { text: @tr("网格线"); font-size: 11px; color: #222222; }
+                }
+            }
+
+            Rectangle { height: 1px; background: #e8e8e8; }
+
+            // 坐标轴标题(统计图置灰)
+            VerticalLayout {
+                spacing: 6px;
+                opacity: root.is-stat ? 0.45 : 1.0;
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: @tr("X轴标题"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
+                    Rectangle {
+                        height: 24px;
+                        border-radius: 3px; border-width: 1px; border-color: #d0d0d0;
+                        background: root.is-stat ? #f2f2f2 : #ffffff;
+                        x-input := TextInput {
+                            x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
+                            font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
+                            enabled: !root.is-stat;
+                            text: root.x-axis-label;
+                            accepted => { if self.text != root.x-axis-label { root.x-label-edited(self.text); } }
+                            changed has-focus => { if !self.has-focus && self.text != root.x-axis-label { root.x-label-edited(self.text); } }
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: @tr("Y轴标题"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
+                    Rectangle {
+                        height: 24px;
+                        border-radius: 3px; border-width: 1px; border-color: #d0d0d0;
+                        background: root.is-stat ? #f2f2f2 : #ffffff;
+                        y-input := TextInput {
+                            x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
+                            font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
+                            enabled: !root.is-stat;
+                            text: root.y-axis-label;
+                            accepted => { if self.text != root.y-axis-label { root.y-label-edited(self.text); } }
+                            changed has-focus => { if !self.has-focus && self.text != root.y-axis-label { root.y-label-edited(self.text); } }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

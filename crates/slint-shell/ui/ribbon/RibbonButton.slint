@@ -1,0 +1,92 @@
+// 默认小图标模式 28x28；showLabel=true 时变成 图标+文字 横排（80x22）
+// 注意：iconSource 在QML里是运行时string路径，Slint里改为调用方传入构造好的image
+// （@image-url编译期字面量限制，调用方在外层用 @image-url("固定路径.svg") 构造好image传入）
+// Tooltip 本次未实现，仅占位属性，后续统一补一个 Tooltip 组件接入
+export component RibbonButton inherits Rectangle {
+    in property <image> icon-source;
+    in property <bool> has-icon: false;
+    in property <string> label: "";
+    in property <string> tooltip: "";
+    in property <bool> active: false;
+    in property <bool> show-label: false;
+
+    callback clicked();
+
+    width: root.show-label ? 80px : 28px;
+    height: root.show-label ? 22px : 28px;
+    border-radius: 3px;
+
+    // 选中态用内缩2px的高亮块，而不是铺满整个按钮，避免视觉上边框过大
+    Rectangle {
+        visible: root.active;
+        x: 2px;
+        y: 2px;
+        width: parent.width - 4px;
+        height: parent.height - 4px;
+        border-radius: 3px;
+        background: #dde8f8;
+        border-width: 1px;
+        border-color: #b8d0f0;
+    }
+
+    background: touch.pressed ? #d6d6d6
+        : (!root.active && touch.has-hover) ? #ebebeb
+        : transparent;
+
+    // 纯图标模式（无label）
+    Image {
+        visible: root.has-icon && !root.show-label;
+        source: root.icon-source;
+        width: 16px;
+        height: 16px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+
+    // 无图标纯文字模式
+    Text {
+        visible: !root.has-icon && root.label != "" && !root.show-label;
+        text: root.label;
+        font-size: 12px;
+        font-weight: 700;
+        color: #333333;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+
+    // showLabel 模式：图标左 + 文字右横排
+    HorizontalLayout {
+        visible: root.show-label;
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: parent.height;
+        alignment: start;
+        padding-left: 6px;
+        spacing: 5px;
+
+        VerticalLayout {
+            alignment: center;
+            Image {
+                visible: root.has-icon;
+                source: root.icon-source;
+                width: 14px;
+                height: 14px;
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Text {
+                text: root.label;
+                font-size: 11px;
+                color: #333333;
+            }
+        }
+    }
+
+    touch := TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+}

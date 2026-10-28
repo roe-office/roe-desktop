@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office-RS2 (WASM)</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #1e1e1e;
+        }
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+    <!-- Trunk 会自动提取 data-package 传递给 Cargo -->
+    <link rel="rust" data-package="slint-shell" />
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+</body>
+</html>

@@ -1,0 +1,799 @@
+// AgentView.slint — Agent 对话模式主视图
+import { AiStatusPill, AiProfileList } from "AiStatusBar.slint";
+// 三段式布局：左中侧栏(可折叠) + 对话区(消息流+输入) + 顶部/底部由外层app.slint的
+// TitleBar/StatusBar包裹，本组件只负责中间内容区
+
+// ══════════ 数据结构（供Rust侧填充） ══════════
+// 消息kind: "user" | "assistant" | "thinking" | "script"
+export struct AgentMessage {
+    kind: string,
+    raw: string,            // assistant 流式累计原文(markdown);text 是清洗后的显示文本
+    text: string,           // user/assistant/thinking 用；script 时是脚本摘要
+    script-code: string,    // kind=="script" 时的 Rhai 代码正文
+    script-status: string,  // "pending" | "confirmed" | "discarded" | "auto"
+    thinking-seconds: float, // kind=="thinking" 时展示的耗时
+    expanded: bool,          // kind=="thinking" 时是否展开
+    shadow-handle: string,  // kind=="script" 时对应 ShadowRegistry 的 u64 句柄（十进制文本存储，
+                             // slint int 是 i32 装不下 u64，Rust 侧用 .parse::<u64>()/.to_string() 转换）；
+                             // 非 script 消息或尚未接入真实后端时留空字符串 ""
+}
+
+export struct AgentConversation {
+    id: string,
+    title: string,
+}
+
+export struct AgentProject {
+    id: string,
+    name: string,
+}
+
+// ══════════ 单条消息渲染 ══════════
+export component AgentMessageBubble inherits Rectangle {
+    in property <AgentMessage> message;
+    in-out property <bool> copied: false;
+    callback copy-message(int);
+    in property <int> index;
+    callback script-preview(int);
+    callback script-confirm(int);
+    callback script-discard(int);
+    callback thinking-toggle(int);
+
+    height: content-layout.preferred-height;
+
+    content-layout := VerticalLayout {
+        width: parent.width;
+
+        // ── 用户消息：右对齐气泡 ──
+        if root.message.kind == "user" : Rectangle {
+            height: user-text.preferred-height + 20px;
+            Rectangle {
+                x: parent.width - self.width;
+                width: min(user-text.preferred-width + 28px, parent.width * 0.75);
+                height: parent.height;
+                background: #5E60A8;
+                border-radius: 12px;
+                user-text := Text {
+                    x: 14px; y: 10px;
+                    width: parent.width - 28px;
+                    text: root.message.text;
+                    color: #ffffff;
+                    font-size: 13px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        // ── AI 文本消息（markdown-rs 渲染后应为纯文本/富文本，这里先按纯文本占位） ──
+        if root.message.kind == "assistant" : Rectangle {
+            height: assistant-text.preferred-height + 34px;
+            Rectangle {
+                width: parent.width * 0.85;
+                height: parent.height;
+                background: #f7f7fa;
+                border-radius: 12px;
+                assistant-text := Text {
+                    x: 14px; y: 8px;
+                    width: parent.width - 28px;
+                    text: root.message.text;
+                    color: #1f2937;
+                    font-size: 13px;
+                    wrap: word-wrap;
+                }
+                Rectangle {
+                    x: parent.width - 80px; y: parent.height - 26px;
+                    width: 72px; height: 20px;
+                    border-radius: 4px;
+                    background: copy-touch.has-hover ? #e5e7eb : transparent;
+                    copy-touch := TouchArea { clicked => { root.copy-message(root.index); root.copied = true; } }
+                    Timer { interval: 1500ms; running: root.copied; triggered => { root.copied = false; } }
+                    Text { text: root.copied ? @tr("已复制 ✓") : @tr("复制"); font-size: 11px; color: #6b7280; horizontal-alignment: center; vertical-alignment: center; }
+                }
+            }
+        }
+
+        // ── 提示行：已添加文件、已保存路径等界面反馈(不进后台对话历史) ──
+        if root.message.kind == "notice" : Rectangle {
+            height: 24px;
+            Text {
+                width: parent.width;
+                height: parent.height;
+                text: root.message.text;
+                color: #9ca3af;
+                font-size: 11px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+
+        // ── 思考过程：默认折叠的小条 ──
+        if root.message.kind == "thinking" : Rectangle {
+            height: 28px;
+            thinking-touch := TouchArea {
+                clicked => { root.thinking-toggle(root.index); }
+                HorizontalLayout {
+                    spacing: 6px;
+                    x: 0px;
+                    Text { text: "⚙"; font-size: 12px; color: #9ca3af; y: (parent.height - self.height) / 2; }
+                    Text {
+                        text: root.message.expanded
+                            ? @tr("思考中… {}s（点击收起）", Math.round(root.message.thinking-seconds))
+                            : @tr("已思考 {}s（点击展开）", Math.round(root.message.thinking-seconds));
+                        color: #9ca3af;
+                        font-size: 11px;
+                        y: (parent.height - self.height) / 2;
+                    }
+                }
+            }
+            if root.message.expanded : Rectangle {
+                y: 28px;
+                width: parent.width * 0.85;
+                background: #fafafa;
+                border-color: #eeeeee;
+                border-width: 1px;
+                border-radius: 8px;
+                Text {
+                    x: 12px; y: 8px;
+                    width: parent.width - 24px;
+                    text: root.message.text;
+                    color: #6b7280;
+                    font-size: 11.5px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+
+        // ── Rhai 脚本块：预览/确认/丢弃 三按钮 ──
+        if root.message.kind == "script" : Rectangle {
+            height: script-col.preferred-height;
+            background: #fefce8;
+            border-color: #fde68a;
+            border-width: 1px;
+            border-radius: 10px;
+
+            script-col := VerticalLayout {
+                width: parent.width;
+                padding: 12px;
+                padding-left: 14px;
+                padding-right: 14px;
+                spacing: 8px;
+
+                Text {
+                    text: root.message.text;
+                    color: #4b5563;
+                    font-size: 11px;
+                    font-weight: 600;
+                    wrap: word-wrap;
+                }
+
+                Text {
+                    text: root.message.script-code;
+                    color: #374151;
+                    font-size: 11.5px;
+                    font-family: "monospace";
+                    wrap: word-wrap;
+                }
+                // 三按钮：pending 时可点击，非 pending 时禁用（不再消失）
+                status-row := Rectangle {
+                    height: 36px;
+                    // 顶部预留 20px，与下方状态文字的高度对称
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        height: 36px;
+
+                        preview-btn := TouchArea {
+                            enabled: root.message.script-status == "pending";
+                            clicked => { root.script-preview(root.index); }
+                            Rectangle {
+                                width: 100%;
+                                height: 100%;
+                                border-radius: 6px;
+                                border-width: 1px;
+                                border-color: preview-btn.enabled ? #d97757 : #d1d5db;
+                                background: preview-btn.enabled && preview-btn.has-hover ? #fdf1ec : transparent;
+                                Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("预览"); color: preview-btn.enabled ? #d97757 : #b0b6be; font-size: 11px; font-weight: 600; }
+                            }
+                        }
+                        confirm-btn := TouchArea {
+                            enabled: root.message.script-status == "pending";
+                            clicked => { root.script-confirm(root.index); }
+                            Rectangle {
+                                width: 100%;
+                                height: 100%;
+                                border-radius: 6px;
+                                border-width: 1px;
+                                border-color: confirm-btn.enabled ? #10a37f : #d1d5db;
+                                background: confirm-btn.enabled && confirm-btn.has-hover ? #e6f7f3 : transparent;
+                                Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("确认"); color: confirm-btn.enabled ? #10a37f : #b0b6be; font-size: 11px; font-weight: 600; }
+                            }
+                        }
+                        discard-btn := TouchArea {
+                            enabled: root.message.script-status == "pending";
+                            clicked => { root.script-discard(root.index); }
+                            Rectangle {
+                                width: 100%;
+                                height: 100%;
+                                border-radius: 6px;
+                                border-width: 1px;
+                                border-color: discard-btn.enabled ? #94605a : #d1d5db;
+                                background: discard-btn.enabled && discard-btn.has-hover ? #f3ebea : transparent;
+                                Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("丢弃"); color: discard-btn.enabled ? #94605a : #b0b6be; font-size: 11px; font-weight: 600; }
+                            }
+                        }
+                    }
+                }
+
+                // 状态文字：放在按钮下方，pending 时为空（占位高度不变，避免卡片跳动）
+                status-text := Text {
+                    height: root.message.script-status == "pending" ? 0px : 20px;
+                    text: root.message.script-status == "confirmed" ? @tr("已确认执行")
+                        : root.message.script-status == "discarded" ? @tr("已丢弃")
+                        : root.message.script-status == "pending" ? ""
+                        : @tr("自主模式已执行");
+                    color: root.message.script-status == "confirmed" ? #10a37f
+                        : root.message.script-status == "discarded" ? #94605a
+                        : #6b7280;
+                    font-size: 11px;
+                }
+            }
+        }
+    }
+}
+
+
+export component AgentView inherits Rectangle {
+    // ── 侧栏状态 ──
+    in-out property <bool> sidebar-collapsed: false;
+    in-out property <bool> projects-expanded: false;
+    in-out property <bool> model-dropdown-open: false;
+    in property <[AgentConversation]> history: [];
+    in property <[AgentProject]> projects: [];
+
+    // ── 对话状态 ──
+    in property <[AgentMessage]> messages: [];
+    in-out property <string> input-text: "";
+    in-out property <bool> autonomous-mode: false; // false=逐步确认 true=自主模式
+    in-out property <bool> sending: false;
+    // 消息流是否贴底:贴底时内容变高自动跟随到最新一条,用户上滚离底超过 24px 则停止跟随
+    property <bool> stick: true;
+
+    // ── 状态栏相关（向上传递给外层StatusBar使用，这里只持有） ──
+    in property <bool> configured: false;
+    in property <[string]> profile-names: [];
+    in property <int> active-profile: -1;
+
+    // ── Callbacks ──
+    callback new-chat-clicked();
+    callback new-project-clicked();
+    callback open-workspace-clicked();
+    callback conversation-selected(string);
+    callback project-selected(string);
+    callback sidebar-toggle();
+    callback home-clicked();
+    callback profile-selected(int);
+    callback open-settings();
+    callback mode-changed(bool);
+    callback send-message(string);
+    callback add-clicked();
+    callback copy-message(int);
+    callback copy-all();
+    in-out property <bool> all-copied: false;
+    callback script-preview(int);   // 消息索引
+    callback script-confirm(int);
+    callback script-discard(int);
+    callback thinking-toggle(int);
+
+    background: #ffffff;
+
+    HorizontalLayout {
+        width: parent.width;
+        height: parent.height;
+
+        // ══════════ 左中侧栏 ══════════
+        if !root.sidebar-collapsed : Rectangle {
+            width: 220px;
+            background: #f0f0f4;
+            border-color: #e0e0e6;
+            border-width: 1px;
+
+            VerticalLayout {
+                x: 0px; y: 0px;
+                width: parent.width;
+                height: parent.height;
+
+                // 顶部：返回主页按钮 + 软件名，同一行
+                Rectangle {
+                    height: 44px;
+                    HorizontalLayout {
+                        x: 0px; y: 0px;
+                        width: parent.width;
+                        height: parent.height;
+                        padding-left: 8px;
+                        spacing: 6px;
+                        alignment: start;
+
+                        agent-home-btn := TouchArea {
+                            width: 32px;
+                            clicked => { root.home-clicked(); }
+                            Image {
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                                source: @image-url("icons/fluent/home.svg");
+                                width: 16px;
+                                height: 16px;
+                                colorize: agent-home-btn.has-hover ? #3F4189 : #9ca3af;
+                            }
+                        }
+
+                        Text {
+                            vertical-alignment: center;
+                            text: "office-Agent";
+                            color: #374151;
+                            font-size: 14px;
+                            font-weight: 700;
+                        }
+                    }
+                }
+
+                // New Chat 条目
+                Rectangle {
+                    height: 40px;
+                    new-chat-touch := TouchArea {
+                        clicked => { if (!root.sending) { root.new-chat-clicked(); } }
+                        Rectangle {
+                            x: 8px; y: 2px;
+                            width: parent.width - 16px;
+                            height: parent.height - 4px;
+                            border-radius: 6px;
+                            background: (new-chat-touch.has-hover && !root.sending) ? #e5e5ec : transparent;
+                            opacity: root.sending ? 0.4 : 1.0;
+                            HorizontalLayout {
+                                x: 10px;
+                                width: parent.width - 10px;
+                                height: parent.height;
+                                spacing: 8px;
+                                alignment: start;
+                                Text {
+                                    text: "+";
+                                    color: #3F4189;
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: @tr("新对话");
+                                    color: #374151;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 项目目录条目（点击用系统文件管理器打开 Agent 工作区）
+                Rectangle {
+                    height: 40px;
+                    open-ws-touch := TouchArea {
+                        clicked => { root.open-workspace-clicked(); }
+                        Rectangle {
+                            x: 8px; y: 2px;
+                            width: parent.width - 16px;
+                            height: parent.height - 4px;
+                            border-radius: 6px;
+                            background: open-ws-touch.has-hover ? #e5e5ec : transparent;
+                            HorizontalLayout {
+                                x: 10px;
+                                width: parent.width - 10px;
+                                height: parent.height;
+                                spacing: 8px;
+                                alignment: start;
+                                Rectangle {
+                                    width: 16px;
+                                    Image {
+                                        x: 0px;
+                                        y: (parent.height - self.height) / 2;
+                                        source: @image-url("icons/fluent/folder.svg");
+                                        width: 16px;
+                                        height: 16px;
+                                        colorize: #3F4189;
+                                    }
+                                }
+                                Text {
+                                    text: @tr("项目目录");
+                                    color: #374151;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Projects 条目（点击原地展开/折叠）
+                Rectangle {
+                    height: 40px;
+                    proj-header-touch := TouchArea {
+                        clicked => { root.projects-expanded = !root.projects-expanded; }
+                        Rectangle {
+                            x: 8px; y: 2px;
+                            width: parent.width - 16px;
+                            height: parent.height - 4px;
+                            border-radius: 6px;
+                            background: proj-header-touch.has-hover ? #e5e5ec : transparent;
+                            HorizontalLayout {
+                                x: 10px;
+                                width: parent.width - 10px;
+                                height: parent.height;
+                                spacing: 8px;
+                                alignment: start;
+                                Text {
+                                    text: root.projects-expanded ? "▾" : "▸";
+                                    color: #6b7280;
+                                    font-size: 11px;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: "Projects";
+                                    color: #374151;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Projects 展开区（占位骨架：新建项目 + 项目列表，暂不做子对话树）
+                if root.projects-expanded : Rectangle {
+                    // 高度按内容撑开，不参与 vertical-stretch 争抢
+                    height: proj-expand-layout.preferred-height;
+                    clip: true;
+
+                    proj-expand-layout := VerticalLayout {
+                        x: 22px;
+                        width: parent.width - 30px;
+                        spacing: 2px;
+
+                        Rectangle {
+                            height: 28px;
+                            new-proj-touch := TouchArea {
+                                clicked => { root.new-project-clicked(); }
+                                Text {
+                                    x: 0px;
+                                    y: (parent.height - self.height) / 2;
+                                    text: @tr("+ 新建项目");
+                                    color: #3F4189;
+                                    font-size: 12px;
+                                }
+                            }
+                        }
+
+                        if root.projects.length == 0 : Text {
+                            height: 24px;
+                            text: @tr("暂无项目");
+                            color: #b0b0b8;
+                            font-size: 11px;
+                        }
+
+                        for proj in root.projects : Rectangle {
+                            height: 30px;
+                            border-radius: 6px;
+                            background: proj-item-touch.has-hover ? #e5e5ec : transparent;
+                            Text {
+                                x: 6px;
+                                y: (parent.height - self.height) / 2;
+                                width: parent.width - 12px;
+                                text: proj.name;
+                                color: #374151;
+                                font-size: 12px;
+                                overflow: elide;
+                            }
+                            proj-item-touch := TouchArea {
+                                clicked => { root.project-selected(proj.id); }
+                            }
+                        }
+                    }
+                }
+
+                // 分隔线
+                Rectangle {
+                    height: 1px;
+                    background: #e0e0e6;
+                }
+
+                // 最近会话列表（占主要空间，可滚动；不管是否属于project都显示在这里）
+                Rectangle {
+                    vertical-stretch: 1;
+                    clip: true;
+
+                    Flickable {
+                        width: parent.width;
+                        height: parent.height;
+                        viewport-height: chats-layout.preferred-height;
+
+                        chats-layout := VerticalLayout {
+                            x: 6px; y: 6px;
+                            width: parent.width - 12px;
+                            spacing: 2px;
+
+                            if root.history.length == 0 : Text {
+                                text: @tr("暂无历史对话");
+                                color: #b0b0b8;
+                                font-size: 11px;
+                                horizontal-alignment: center;
+                            }
+
+                            for conv in root.history : Rectangle {
+                                height: 34px;
+                                border-radius: 6px;
+                                background: conv-touch.has-hover ? #e5e5ec : transparent;
+                                Text {
+                                    x: 8px;
+                                    y: (parent.height - self.height) / 2;
+                                    width: parent.width - 16px;
+                                    text: conv.title;
+                                    color: #374151;
+                                    font-size: 12px;
+                                    overflow: elide;
+                                }
+                                conv-touch := TouchArea {
+                                    clicked => { root.conversation-selected(conv.id); }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // ══════════ 对话区 ══════════
+        Rectangle {
+            horizontal-stretch: 1;
+            background: #ffffff;
+
+            VerticalLayout {
+                x: 0px; y: 0px;
+                width: parent.width;
+                height: parent.height;
+
+                // 顶部小工具条：折叠侧栏按钮 + 模型/隐私下拉
+                Rectangle {
+                    height: 36px;
+
+                    Rectangle {
+                        y: parent.height - 1px;
+                        width: parent.width;
+                        height: 1px;
+                        background: #f0f0f3;
+                    }
+
+                    HorizontalLayout {
+                        x: 0px; y: 0px;
+                        width: parent.width;
+                        height: parent.height;
+
+                        collapse-btn := TouchArea {
+                            width: 40px;
+                            clicked => { root.sidebar-collapsed = !root.sidebar-collapsed; root.sidebar-toggle(); }
+                            Image {
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                                source: @image-url("icons/fluent/sidebar_toggle.svg");
+                                width: 16px;
+                                height: 16px;
+                                colorize: root.sidebar-collapsed ? #9ca3af : #3F4189;
+                            }
+                        }
+
+                        Rectangle { horizontal-stretch: 1; }
+
+                        AiStatusPill {
+                            configured: root.configured;
+                            profile-names: root.profile-names;
+                            active-profile: root.active-profile;
+                            toggle-list => { root.model-dropdown-open = !root.model-dropdown-open; }
+                            open-settings => { root.model-dropdown-open = false; root.open-settings(); }
+                        }
+
+                        Rectangle { width: 14px; }
+                    }
+                }
+
+                // 消息流
+                Rectangle {
+                    vertical-stretch: 1;
+                    clip: true;
+
+                    if root.messages.length == 0 : Rectangle {
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 8px;
+                            Text {
+                                text: "✦";
+                                color: #A9ABD6;
+                                font-size: 32px;
+                                horizontal-alignment: center;
+                            }
+                            Text {
+                                text: @tr("开始一段对话，让 AI 帮你操作文档");
+                                color: #9ca3af;
+                                font-size: 13px;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+
+                    Flickable {
+                        width: parent.width;
+                        height: parent.height;
+                        viewport-height: msg-layout.preferred-height + 24px;
+                        changed viewport-height => {
+                            if (root.stick) {
+                                self.viewport-y = min(0px, self.height - self.viewport-height);
+                            }
+                        }
+                        changed viewport-y => {
+                            root.stick = (self.viewport-height + self.viewport-y - self.height) < 24px;
+                        }
+
+                        msg-layout := VerticalLayout {
+                            x: 24px;
+                            y: 12px;
+                            width: parent.width - 48px;
+                            spacing: 14px;
+
+                            for msg[i] in root.messages : AgentMessageBubble {
+                                message: msg;
+                                index: i;
+                                script-preview(idx) => { root.script-preview(idx); }
+                                script-confirm(idx) => { root.script-confirm(idx); }
+                                script-discard(idx) => { root.script-discard(idx); }
+                                thinking-toggle(idx) => { root.thinking-toggle(idx); }
+                                copy-message(idx) => { root.copy-message(idx); }
+                            }
+                            if root.messages.length > 0 : Rectangle {
+                                height: 26px;
+                                copy-all-touch := TouchArea { clicked => { root.copy-all(); root.all-copied = true; } }
+                                Timer { interval: 1500ms; running: root.all-copied; triggered => { root.all-copied = false; } }
+                                Text {
+                                    text: root.all-copied ? @tr("已复制全部对话 ✓") : @tr("复制全部对话");
+                                    font-size: 11px;
+                                    color: copy-all-touch.has-hover ? #5E60A8 : #9ca3af;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ══════════ 输入区 ══════════
+                Rectangle {
+                    height: 160px;
+                    background: #fafafa;
+
+                    Rectangle {
+                        y: 0px;
+                        width: parent.width;
+                        height: 1px;
+                        background: #e5e7eb;
+                    }
+
+                    VerticalLayout {
+                        x: 20px;
+                        y: 10px;
+                        width: parent.width - 40px;
+                        height: parent.height - 20px;
+                        spacing: 8px;
+
+                        // 附件 + 号(本轮只有外观;点击回调 add-clicked 待接线:上传写入 inputs/)
+                        Rectangle {
+                            height: 26px;
+                            if add-btn.has-hover : Text {
+                                x: 34px;
+                                y: (parent.height - self.height) / 2;
+                                text: @tr("支持 xlsx / docx / pptx / csv 与 png / jpg");
+                                font-size: 11px;
+                                color: #9ca3af;
+                            }
+                            add-btn := TouchArea {
+                                x: 0px;
+                                width: 26px;
+                                height: 26px;
+                                clicked => { root.add-clicked(); }
+                                Rectangle {
+                                    border-radius: 13px;
+                                    background: add-btn.has-hover ? #ECECF7 : #f0f0f3;
+                                    Text {
+                                        width: parent.width;
+                                        height: parent.height;
+                                        text: "+";
+                                        font-size: 18px;
+                                        color: add-btn.has-hover ? #3F4189 : #6b7280;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+
+                        // 输入框（最小高度固定，随内容增高，有上限，超出内部滚动）
+                        Rectangle {
+                            vertical-stretch: 1;
+                            min-height: 56px;
+                            max-height: 160px;
+                            background: #ffffff;
+                            border-color: #d1d5db;
+                            border-width: 1px;
+                            border-radius: 10px;
+
+                            Flickable {
+                                x: 10px; y: 8px;
+                                width: parent.width - 20px;
+                                height: parent.height - 16px;
+                                viewport-height: max(self.height, input-box.preferred-height);
+
+                                input-box := TextInput {
+                                    width: parent.width;
+                                    text <=> root.input-text;
+                                    font-size: 13px;
+                                    color: #1f2937;
+                                    wrap: word-wrap;
+                                    accepted => {
+                                        if (root.input-text != "" && !root.sending) {
+                                            root.stick = true;
+                                            root.send-message(root.input-text);
+                                            root.input-text = "";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 发送按钮行
+                        Rectangle {
+                            height: 30px;
+                            send-btn := TouchArea {
+                                x: parent.width - 76px;
+                                width: 76px;
+                                height: parent.height;
+                                clicked => {
+                                    if (root.input-text != "" && !root.sending) {
+                                        root.stick = true;
+                                        root.send-message(root.input-text);
+                                        root.input-text = "";
+                                    }
+                                }
+                                Rectangle {
+                                    border-radius: 15px;
+                                    background: root.sending ? #A9ABD6 : (send-btn.has-hover ? #3F4189 : #5E60A8);
+                                    Text {
+                                        x: (parent.width - self.width) / 2;
+                                        y: (parent.height - self.height) / 2;
+                                        text: root.sending ? @tr("思考中…") : @tr("发送");
+                                        color: #ffffff;
+                                        font-size: 12px;
+                                        font-weight: 600;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ══════════ AI 配置下拉(AgentView 根层级,避免被消息流遮挡)══════════
+    if root.model-dropdown-open : AiProfileList {
+        x: root.width - self.width - 14px;
+        y: 36px;
+        z: 100;
+        profile-names: root.profile-names;
+        active-profile: root.active-profile;
+        selected(i) => { root.model-dropdown-open = false; root.profile-selected(i); }
+        open-settings => { root.model-dropdown-open = false; root.open-settings(); }
+    }
+}

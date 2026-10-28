@@ -1,0 +1,253 @@
+// DataValidationDialog.slint — "数据验证"设置对话框(仅 UI 骨架,尚未接线)
+// 外壳用 DialogShell。状态在 Rust,这里只是视图;
+// 唯一例外:四个输入框的文本(range/formula1/formula2/error-msg)由 Slint 持有,
+// 仅通过 *-edited 单向上报,避免 Rust 回灌打断光标(同 TextSplitDialog)。
+//
+// 下拉选项顺序固定(Rust 端只认 index):
+//   kind:     0 任何值(none) 1 整数(whole) 2 小数(decimal) 3 列表(list)
+//             4 日期(date) 5 时间(time) 6 文本长度(textLength) 7 自定义(custom)
+//   operator: 0 介于(between) 1 未介于(notBetween) 2 等于(equal) 3 不等于(notEqual)
+//             4 大于(greaterThan) 5 小于(lessThan)
+//             6 大于或等于(greaterThanOrEqual) 7 小于或等于(lessThanOrEqual)
+
+import { CheckBox16 } from "CheckBox16.slint";
+import { DialogShell } from "DialogShell.slint";
+import { SimpleDropdown } from "SimpleDropdown.slint";
+
+export component DataValidationDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> title: @tr("数据验证");
+
+    // 应用范围:默认只读置灰;range-editable=true 时可编辑
+    in property <bool> range-editable: false;
+    in-out property <string> range-input-text: "";
+
+    in property <int> kind-index: 0;
+    in property <int> operator-index: 0;
+    in property <bool> allow-blank: true;
+    in property <bool> show-error: false;
+    in property <bool> can-confirm: true;
+    in property <string> warn-text: "";
+
+    // 打开对话框时由 Rust 单向设值;之后由输入框持有
+    in-out property <string> formula1-text: "";
+    in-out property <string> formula2-text: "";
+    in-out property <string> error-msg-text: "";
+
+    callback kind-selected(int);
+    callback operator-selected(int);
+    callback toggle-allow-blank();
+    callback toggle-show-error();
+    callback range-edited(string);
+    callback formula1-edited(string);
+    callback formula2-edited(string);
+    callback error-msg-edited(string);
+    callback confirmed();
+    callback cancelled();
+
+    // 派生显示条件
+    property <bool> is-compare: root.kind-index == 1 || root.kind-index == 2
+        || root.kind-index == 4 || root.kind-index == 5 || root.kind-index == 6;
+    property <bool> is-list: root.kind-index == 3;
+    property <bool> is-custom: root.kind-index == 7;
+    property <bool> is-range: root.is-compare && (root.operator-index == 0 || root.operator-index == 1);
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: root.title;
+        card-width: 400px;
+        card-height: 406px;
+        confirm-enabled: root.can-confirm;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        // 最底层透明层:点空白处收起已展开的下拉
+        TouchArea {
+            x: 0px; y: 40px;
+            width: parent.width; height: parent.height - 88px;
+            clicked => {
+                kind-dd.open = false;
+                op-dd.open = false;
+            }
+        }
+
+        // ---- 应用范围(标签 + 输入框;只读时置灰) ----
+        Text {
+            x: 16px; y: 54px; text: @tr("应用范围"); font-size: 12px; color: #333333;
+        }
+        range-box := Rectangle {
+            x: 90px; y: 48px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: root.range-editable ? (range-input.has-focus ? #217346 : #c0c0c0) : #d8d8d8;
+            background: root.range-editable ? #ffffff : #f3f3f3;
+            range-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: root.range-editable ? #222222 : #888888;
+                read-only: !root.range-editable;
+                text <=> root.range-input-text;
+                edited => { root.range-edited(self.text); }
+            }
+        }
+
+        // ---- 数值/来源/公式区(先声明 = 在下层,避免遮住上方下拉展开的列表) ----
+
+        // 比较类:单值(非 between)
+        Text {
+            visible: root.is-compare && !root.is-range;
+            x: 16px; y: 172px; text: @tr("数值"); font-size: 12px; color: #333333;
+        }
+        // 比较类:between/notBetween 的最小值/最大值
+        Text {
+            visible: root.is-range;
+            x: 16px; y: 172px; text: @tr("最小值"); font-size: 12px; color: #333333;
+        }
+        Text {
+            visible: root.is-range;
+            x: 16px; y: 206px; text: @tr("最大值"); font-size: 12px; color: #333333;
+        }
+        // 来源(list)
+        Text {
+            visible: root.is-list;
+            x: 16px; y: 172px; text: @tr("来源"); font-size: 12px; color: #333333;
+        }
+        Text {
+            visible: root.is-list;
+            x: 90px; y: 198px;
+            text: @tr("用逗号分隔,如:A,B,C");
+            font-size: 11px; color: #999999;
+        }
+        // 公式(custom)
+        Text {
+            visible: root.is-custom;
+            x: 16px; y: 172px; text: @tr("公式"); font-size: 12px; color: #333333;
+        }
+
+        // formula1 输入框(比较类/list/custom 共用)
+        f1-box := Rectangle {
+            visible: root.is-compare || root.is-list || root.is-custom;
+            x: 90px; y: 166px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: f1-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            f1-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.formula1-text;
+                edited => { root.formula1-edited(self.text); }
+            }
+        }
+        // formula2 输入框(仅 between/notBetween)
+        f2-box := Rectangle {
+            visible: root.is-range;
+            x: 90px; y: 200px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: f2-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            f2-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.formula2-text;
+                edited => { root.formula2-edited(self.text); }
+            }
+        }
+
+        // ---- 忽略空值 / 显示错误警告 ----
+        TouchArea {
+            visible: root.kind-index != 0;
+            x: 16px; y: 242px; width: parent.width - 32px; height: 24px;
+            clicked => { root.toggle-allow-blank(); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.allow-blank; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("忽略空值"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+        TouchArea {
+            visible: root.kind-index != 0;
+            x: 16px; y: 270px; width: parent.width - 32px; height: 24px;
+            clicked => { root.toggle-show-error(); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.show-error; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("输入无效数据时显示错误警告"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+
+        // 错误信息输入框(仅勾选"显示错误警告"时)
+        Text {
+            visible: root.kind-index != 0 && root.show-error;
+            x: 16px; y: 306px; text: @tr("错误信息"); font-size: 12px; color: #333333;
+        }
+        err-box := Rectangle {
+            visible: root.kind-index != 0 && root.show-error;
+            x: 90px; y: 300px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: err-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            err-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.error-msg-text;
+                edited => { root.error-msg-edited(self.text); }
+            }
+        }
+
+        // 校验提示行(空串不显示)
+        Text {
+            visible: root.warn-text != "";
+            x: 16px; y: 336px;
+            width: parent.width - 32px;
+            text: root.warn-text;
+            font-size: 12px; color: #c0392b;
+        }
+
+        // ---- 两个下拉放最后声明 = 最上层,展开列表不被上面的元素遮住 ----
+        // "数据"(operator)下拉在"允许"下拉下方,先声明;
+        // "允许"(kind)下拉展开时会向下盖住"数据"下拉区域,所以它声明在最后。
+        Text {
+            visible: root.is-compare;
+            x: 16px; y: 132px; text: @tr("数据"); font-size: 12px; color: #333333;
+        }
+        op-dd := SimpleDropdown {
+            visible: root.is-compare;
+            x: 90px; y: 126px; width: 294px;
+            options: [@tr("介于"), @tr("未介于"), @tr("等于"), @tr("不等于"), @tr("大于"), @tr("小于"), @tr("大于或等于"), @tr("小于或等于")];
+            selected-index: root.operator-index;
+            selected(i) => { root.operator-selected(i); }
+            changed open => { if self.open { kind-dd.open = false; } }
+        }
+
+        Text {
+            x: 16px; y: 98px; text: @tr("允许"); font-size: 12px; color: #333333;
+        }
+        kind-dd := SimpleDropdown {
+            x: 90px; y: 92px; width: 294px;
+            options: [@tr("任何值"), @tr("整数"), @tr("小数"), @tr("列表"), @tr("日期"), @tr("时间"), @tr("文本长度"), @tr("自定义")];
+            selected-index: root.kind-index;
+            selected(i) => { root.kind-selected(i); }
+            changed open => { if self.open { op-dd.open = false; } }
+        }
+    }
+}

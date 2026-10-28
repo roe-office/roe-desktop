@@ -1,0 +1,46 @@
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component ImpressRibbonSlideShow inherits Rectangle {
+    height: 88px;
+    background: white;
+
+    HorizontalLayout {
+        x: 4px;
+        y: 0px;
+        height: parent.height;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 开始放映 ──
+        RibbonGroup {
+            label: @tr("开始放映");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/slide_play.svg");
+                    label: @tr("从头开始");
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/slide_play_current.svg");
+                    label: @tr("从当前开始");
+                }
+            }
+        }
+
+
+        // ── 设置 ──
+        RibbonGroup {
+            label: @tr("设置");
+            VerticalLayout {
+                spacing: 1px; alignment: center;
+                RibbonButton { label: @tr("放映设置");   show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/settings.svg"); }
+                RibbonButton { label: @tr("排练计时");   show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/timer.svg"); }
+                RibbonButton { label: @tr("隐藏幻灯片"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/eye_hide.svg"); }
+            }
+        }
+    }
+}

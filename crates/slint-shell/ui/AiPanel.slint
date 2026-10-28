@@ -1,0 +1,435 @@
+// AiPanel.slint — AI助手面板(两个 tab:Rhai 脚本 / AI 直连;Ribbon 式下划线 tab)
+
+export struct AiMsg { kind: int, text: string }  // kind: 0提示 1成功 2失败 3脚本 4用户消息 5AI回复
+
+export component AiPanel inherits Rectangle {
+    in-out property <int> active-tab: 1;
+    in-out property <int> privacy-level: 0;   // 0 仅文档结构 / 1 可获取标题 / 2 可获取全文
+    in-out property <string> index-json: "";
+    in-out property <string> script-text: "";
+    in property <[AiMsg]> log: [];
+    in property <bool> configured: false;
+    in property <[string]> profile-names: [];
+    in-out property <int> active-profile: -1;
+    in-out property <string> user-input: "";
+    in-out property <bool> sending: false;
+    property <bool> dd-open: false;
+    property <bool> stick: true;
+    property <bool> settings-hint: false;
+    in-out property <bool> copied: false;
+    // 绿灯条件:已配置 + 选中了一个有效 profile
+    property <bool> ready: root.configured && root.active-profile >= 0 && root.active-profile < root.profile-names.length;
+
+    callback fetch-index();
+    callback copy-index();
+    callback run-script(string);
+    callback undo-script();
+    callback send-message(string);
+    callback copy-all();
+    callback privacy-changed(int);
+    callback profile-selected(int);
+    callback open-settings();
+
+    width: 280px;
+    background: #f9fafb;
+    border-color: #e5e7eb;
+    border-width: 1px;
+
+    // 吞掉鼠标事件,防止点击穿透到下层网格
+    TouchArea { width: parent.width; height: parent.height; }
+
+    // ── 顶部:Ribbon 式 tab(选中=文字高亮+下划线) ──
+    Rectangle {
+        x: 0; y: 0;
+        width: parent.width;
+        height: 36px;
+        background: #ffffff;
+
+        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: #e5e7eb; }
+
+        HorizontalLayout {
+            padding-left: 8px;
+            spacing: 4px;
+            alignment: start;
+            for tab-info[i] in [@tr("Rhai 脚本"), @tr("AI 直连")] : Rectangle {
+                width: 84px;
+                Text {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    text: tab-info;
+                    color: root.active-tab == i ? #7c3aed : (tab-ta.has-hover ? #374151 : #6b7280);
+                    font-size: 12px;
+                    font-weight: root.active-tab == i ? 600 : 400;
+                }
+                Rectangle {
+                    y: parent.height - 2px;
+                    width: parent.width;
+                    height: 2px;
+                    background: root.active-tab == i ? #7c3aed : transparent;
+                }
+                tab-ta := TouchArea { clicked => { root.active-tab = i; root.dd-open = false; } }
+            }
+        }
+    }
+
+    // ── Tab 0:Rhai 脚本模式 ──
+    Rectangle {
+        x: 0; y: 36px;
+        width: parent.width;
+        height: parent.height - 36px;
+        visible: root.active-tab == 0;
+
+        VerticalLayout {
+            padding: 10px;
+            spacing: 8px;
+
+            // 对话流:第一条是固定使用说明,其余消息按产生顺序往下追加
+            Rectangle {
+                vertical-stretch: 1;
+                background: #ffffff;
+                border-color: #e5e7eb;
+                border-width: 1px;
+                border-radius: 6px;
+
+                Flickable {
+                    x: 0; y: 0;
+                    width: parent.width;
+                    height: parent.height;
+                    viewport-y: min(0px, self.height - self.viewport-height);
+
+                    VerticalLayout {
+                        padding: 6px;
+                        spacing: 6px;
+                        alignment: start;
+
+                        Rectangle {
+                            background: #f9fafb;
+                            border-radius: 6px;
+                            VerticalLayout {
+                                padding: 6px;
+                                Text {
+                                    text: @tr("① 点「获取索引」,把文档结构复制给外部 AI\n② 把 AI 返回的 Rhai 脚本粘贴到下方输入框,点「运行」\n运行后可点「撤销」回退");
+                                    wrap: word-wrap;
+                                    font-size: 10px;
+                                    color: #6b7280;
+                                }
+                            }
+                        }
+
+                        for m in root.log : VerticalLayout {
+                            if m.kind < 4 : Rectangle {
+                                background: m.kind == 1 ? #f0fdf4 : (m.kind == 2 ? #fef2f2 : (m.kind == 3 ? #eff6ff : #f3f4f6));
+                                border-radius: 6px;
+                                VerticalLayout {
+                                    padding: 6px;
+                                    Text {
+                                        text: m.text;
+                                        wrap: word-wrap;
+                                        font-size: 10px;
+                                        color: m.kind == 1 ? #166534 : (m.kind == 2 ? #b91c1c : (m.kind == 3 ? #1e40af : #374151));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 隐私档位:三段式分段控件
+            Rectangle {
+                height: 24px;
+                background: #ffffff;
+                border-color: #d1d5db;
+                border-width: 1px;
+                border-radius: 5px;
+                clip: true;
+                HorizontalLayout {
+                    for lv[i] in [@tr("仅文档结构"), @tr("可获取标题"), @tr("可获取全文")] : Rectangle {
+                        background: root.privacy-level == i ? #ede9fe : transparent;
+                        Text {
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                            text: lv;
+                            font-size: 10px;
+                            color: root.privacy-level == i ? #6d28d9 : #4b5563;
+                            font-weight: root.privacy-level == i ? 600 : 400;
+                        }
+                        TouchArea { clicked => { root.privacy-level = i; root.privacy-changed(i); } }
+                    }
+                }
+            }
+
+            // 工具行:获取索引 / 复制索引
+            HorizontalLayout {
+                spacing: 6px;
+                height: 26px;
+
+                Rectangle {
+                    background: #f5f3ff; border-color: #6d28d9; border-width: 1px; border-radius: 5px;
+                    Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("⟳ 获取索引"); color: #6d28d9; font-size: 10px; }
+                    TouchArea { clicked => { root.fetch-index(); } }
+                }
+                Rectangle {
+                    background: #f0f9ff; border-color: #3b82f6; border-width: 1px; border-radius: 5px;
+                    opacity: root.index-json == "" ? 0.4 : 1.0;
+                    Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("⎘ 复制索引"); color: #3b82f6; font-size: 10px; }
+                    TouchArea { clicked => { if (root.index-json != "") { root.copy-index(); } } }
+                }
+            }
+
+            // 脚本输入
+            Rectangle {
+                min-height: 80px;
+                max-height: 160px;
+                background: #ffffff;
+                border-color: #e5e7eb;
+                border-width: 1px;
+                border-radius: 6px;
+                clip: true;
+                VerticalLayout {
+                    padding: 8px;
+                    TextInput {
+                        text <=> root.script-text;
+                        color: #1f2937;
+                        font-size: 10px;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            // 运行 / 撤销
+            HorizontalLayout {
+                spacing: 6px;
+                height: 28px;
+                Rectangle {
+                    background: #f0fdf4; border-color: #16a34a; border-width: 1px; border-radius: 5px;
+                    Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("▶  运行"); color: #16a34a; font-size: 11px; }
+                    TouchArea { clicked => { root.run-script(root.script-text); } }
+                }
+                Rectangle {
+                    background: #eff6ff; border-color: #2563eb; border-width: 1px; border-radius: 5px;
+                    Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("↶  撤销"); color: #2563eb; font-size: 11px; }
+                    TouchArea { clicked => { root.undo-script(); } }
+                }
+            }
+        }
+    }
+
+    // ── Tab 1:AI 直连模式(框架,后端未接) ──
+    Rectangle {
+        x: 0; y: 36px;
+        width: parent.width;
+        height: parent.height - 36px;
+        visible: root.active-tab == 1;
+
+        VerticalLayout {
+            padding: 10px;
+            spacing: 8px;
+
+            // 模型选择框 + 红绿灯
+            Rectangle {
+                height: 28px;
+                background: #ffffff;
+                border-width: 1px;
+                border-radius: 5px;
+                border-color: root.ready ? #16a34a : #dc2626;
+                Rectangle {
+                    x: 8px;
+                    y: (parent.height - self.height) / 2;
+                    width: 10px; height: 10px; border-radius: 5px;
+                    background: root.ready ? #16a34a : #dc2626;
+                }
+                Text {
+                    x: 26px;
+                    y: (parent.height - self.height) / 2;
+                    width: parent.width - 48px;
+                    overflow: elide;
+                    text: root.ready ? root.profile-names[root.active-profile] : @tr("未配置模型");
+                    font-size: 11px;
+                    color: root.ready ? #1f2937 : #b91c1c;
+                }
+                Text {
+                    x: parent.width - 18px;
+                    y: (parent.height - self.height) / 2;
+                    text: "▾";
+                    font-size: 11px;
+                    color: #6b7280;
+                }
+                TouchArea { clicked => { root.dd-open = !root.dd-open; } }
+            }
+
+            // 对话区:顶部固定状态提示
+            Rectangle {
+                vertical-stretch: 1;
+                background: #ffffff;
+                border-color: #e5e7eb;
+                border-width: 1px;
+                border-radius: 6px;
+                VerticalLayout {
+                    padding: 8px;
+                    spacing: 6px;
+                    alignment: start;
+                    Text {
+                        text: root.ready ? @tr("描述你想对文档做的修改,AI 会直接执行,可用标题栏撤销回退") : @tr("尚未配置 API Key 或未选择模型。");
+                        color: root.ready ? #374151 : #b45309;
+                        font-size: 10px;
+                        wrap: word-wrap;
+                    }
+                    if !root.ready : Rectangle {
+                        height: 16px;
+                        Text { x: 0px; y: 0px; text: @tr("去设置 →"); color: #2563eb; font-size: 10px; }
+                        TouchArea { clicked => { root.open-settings(); } }
+                    }
+                    Rectangle {
+                        height: 18px;
+                        HorizontalLayout {
+                            alignment: end;
+                            padding-right: 6px;
+                            Rectangle {
+                                width: 90px;
+                                copy-touch := TouchArea { clicked => { root.copy-all(); root.copied = true; } }
+                                Timer { interval: 1500ms; running: root.copied; triggered => { root.copied = false; } }
+                                Text {
+                                    text: root.copied ? @tr("已复制 ✓") : @tr("复制全部");
+                                    font-size: 10px;
+                                    color: #6b7280;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                    chat-fl := Flickable {
+                        vertical-stretch: 1;
+                        changed viewport-height => {
+                            if (root.stick) {
+                                self.viewport-y = min(0px, self.height - self.viewport-height);
+                            }
+                        }
+                        changed viewport-y => {
+                            root.stick = (self.viewport-height + self.viewport-y - self.height) < 24px;
+                        }
+                        VerticalLayout {
+                            spacing: 6px;
+                            alignment: start;
+                            for m in root.log : VerticalLayout {
+                                if m.kind != 3 && m.kind != 0 : Rectangle {
+                                    background: m.kind == 4 ? #ede9fe : (m.kind == 1 ? #f0fdf4 : (m.kind == 2 ? #fef2f2 : #f9fafb));
+                                    border-radius: 6px;
+                                    VerticalLayout {
+                                        padding: 6px;
+                                        Text {
+                                            text: m.text;
+                                            wrap: word-wrap;
+                                            font-size: 10px;
+                                            color: m.kind == 4 ? #5b21b6 : (m.kind == 1 ? #166534 : (m.kind == 2 ? #b91c1c : #1f2937));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if chat-fl.viewport-height > chat-fl.height : Rectangle {
+                            property <length> bar-h: max(24px, chat-fl.height * chat-fl.height / chat-fl.viewport-height);
+                            property <length> track: chat-fl.height - self.bar-h;
+                            property <length> scrollable: chat-fl.viewport-height - chat-fl.height;
+                            x: chat-fl.width - 5px;
+                            width: 3px;
+                            height: self.bar-h;
+                            y: -chat-fl.viewport-y / self.scrollable * self.track;
+                            border-radius: 1.5px;
+                            background: #d1d5db;
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                min-height: 60px;
+                max-height: 120px;
+                background: #ffffff;
+                border-color: #e5e7eb;
+                border-width: 1px;
+                border-radius: 6px;
+                clip: true;
+                VerticalLayout {
+                    padding: 8px;
+                    TextInput {
+                        text <=> root.user-input;
+                        color: #1f2937;
+                        font-size: 11px;
+                        wrap: word-wrap;
+                        accepted => {
+                            if (root.ready && !root.sending && root.user-input != "") {
+                                root.stick = true;
+                                root.send-message(root.user-input);
+                                root.user-input = "";
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 32px;
+                border-radius: 6px;
+                background: (root.sending || !root.ready) ? #9ca3af : #7c3aed;
+                Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: root.sending ? @tr("思考中…") : @tr("✦  发送"); color: #ffffff; font-size: 12px; font-weight: 500; }
+                TouchArea {
+                    clicked => {
+                        if (root.ready && !root.sending && root.user-input != "") {
+                            root.stick = true;
+                            root.send-message(root.user-input);
+                            root.user-input = "";
+                        }
+                    }
+                }
+            }
+        }
+
+        // 自绘下拉列表(不用 PopupWindow,避开 HiDPI 坑);放在最后以盖在上层
+        if root.dd-open : Rectangle {
+            x: 10px;
+            y: 10px + 28px + 2px;
+            width: parent.width - 20px;
+            height: (root.profile-names.length + 1) * 26px + 2px;
+            background: #ffffff;
+            border-color: #d1d5db;
+            border-width: 1px;
+            border-radius: 5px;
+            VerticalLayout {
+                for n[i] in root.profile-names : Rectangle {
+                    height: 26px;
+                    background: item-ta.has-hover ? #f5f3ff : transparent;
+                    Text {
+                        x: 10px;
+                        y: (parent.height - self.height) / 2;
+                        width: parent.width - 20px;
+                        overflow: elide;
+                        text: (root.active-profile == i ? "● " : "○ ") + n;
+                        font-size: 11px;
+                        color: #1f2937;
+                    }
+                    item-ta := TouchArea {
+                        clicked => {
+                            root.active-profile = i;
+                            root.dd-open = false;
+                            root.profile-selected(i);
+                        }
+                    }
+                }
+                Rectangle {
+                    height: 26px;
+                    background: set-ta.has-hover ? #f5f3ff : transparent;
+                    Text {
+                        x: 10px;
+                        y: (parent.height - self.height) / 2;
+                        text: @tr("⚙ 去设置…");
+                        font-size: 11px;
+                        color: #2563eb;
+                    }
+                    set-ta := TouchArea { clicked => { root.dd-open = false; root.open-settings(); } }
+                }
+            }
+        }
+    }
+}

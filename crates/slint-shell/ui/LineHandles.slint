@@ -1,0 +1,86 @@
+// 直线选中：只显示起点/终点两个句柄，拖端点改线，拖线身整体平移。
+// 必须放在画布左上角并铺满画布，坐标全部是画布逻辑 px。
+export component LineHandles inherits Rectangle {
+    in property <bool> active: false;
+    in property <float> x1;
+    in property <float> y1;
+    in property <float> x2;
+    in property <float> y2;
+    property <string> active-mode: "";
+
+    callback drag-started(string, float, float);
+    callback drag-moved(float, float);
+    callback drag-ended();
+    callback miss-clicked(float, float);
+    callback right-clicked(float, float, bool);
+
+    pure function dist-seg(px: float, py: float) -> float {
+        let dx = root.x2 - root.x1;
+        let dy = root.y2 - root.y1;
+        let l2 = dx * dx + dy * dy;
+        let t = l2 > 0.0 ? Math.clamp(((px - root.x1) * dx + (py - root.y1) * dy) / l2, 0.0, 1.0) : 0.0;
+        let qx = root.x1 + t * dx - px;
+        let qy = root.y1 + t * dy - py;
+        return Math.sqrt(qx * qx + qy * qy);
+    }
+
+    pure function hit-mode(px: float, py: float) -> string {
+        if (!root.active) { return ""; }
+        let d1 = Math.sqrt((px - root.x1) * (px - root.x1) + (py - root.y1) * (py - root.y1));
+        let d2 = Math.sqrt((px - root.x2) * (px - root.x2) + (py - root.y2) * (py - root.y2));
+        if (d1 < 9.0) { return "p1"; }
+        if (d2 < 9.0) { return "p2"; }
+        if (root.dist-seg(px, py) < 6.0) { return "move"; }
+        return "";
+    }
+
+    pure function cursor-for(mode: string) -> MouseCursor {
+        if (mode == "p1" || mode == "p2") { return MouseCursor.crosshair; }
+        if (mode == "move") { return MouseCursor.move; }
+        return MouseCursor.default;
+    }
+
+    if root.active : Path {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        viewbox-x: 0; viewbox-y: 0;
+        viewbox-width: self.width / 1px;
+        viewbox-height: self.height / 1px;
+        commands: "M " + root.x1 + " " + root.y1 + " L " + root.x2 + " " + root.y2;
+        stroke: #f9e2af;
+        stroke-width: 1px;
+    }
+    if root.active : Rectangle {
+        x: root.x1 * 1px - 4px; y: root.y1 * 1px - 4px; width: 8px; height: 8px;
+        background: white; border-width: 1px; border-color: #7f6a2d;
+    }
+    if root.active : Rectangle {
+        x: root.x2 * 1px - 4px; y: root.y2 * 1px - 4px; width: 8px; height: 8px;
+        background: white; border-width: 1px; border-color: #7f6a2d;
+    }
+
+    // 只在激活时存在，不影响下层 SelectionBox 的点击
+    if root.active : TouchArea {
+        mouse-cursor: root.cursor-for(self.pressed ? root.active-mode : root.hit-mode(self.mouse-x / 1px, self.mouse-y / 1px));
+        pointer-event(e) => {
+            if (e.button == PointerEventButton.right && e.kind == PointerEventKind.down) {
+                root.right-clicked(self.mouse-x / 1px, self.mouse-y / 1px, root.hit-mode(self.mouse-x / 1px, self.mouse-y / 1px) != "");
+            } else if (e.button == PointerEventButton.left && e.kind == PointerEventKind.down) {
+                let m = root.hit-mode(self.mouse-x / 1px, self.mouse-y / 1px);
+                if (m == "") {
+                    root.miss-clicked(self.mouse-x / 1px, self.mouse-y / 1px);
+                } else {
+                    root.drag-started(m, self.mouse-x / 1px, self.mouse-y / 1px);
+                    root.active-mode = m;
+                }
+            } else if (root.active-mode != "" && (e.kind == PointerEventKind.up || e.kind == PointerEventKind.cancel)) {
+                root.active-mode = "";
+                root.drag-ended();
+            }
+        }
+        moved => {
+            if (root.active-mode != "") {
+                root.drag-moved(self.mouse-x / 1px, self.mouse-y / 1px);
+            }
+        }
+    }
+}

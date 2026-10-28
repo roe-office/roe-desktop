@@ -1,0 +1,155 @@
+// PivotSourceDialog.slint — 创建数据透视表：选数据源+放置位置
+// 外壳改用 DialogShell 通用组件(2026-09-23，DialogShell抽取)。
+// confirmed 回调由原来的 (range,new_sheet,location) 三参改为无参：
+// range-text/new-sheet-selected/location-text 本来就是 in-out property，
+// app.slint 挂载处的 confirmed 转发时直接读这三个属性再喂给顶层
+// pivot-source-range-accepted 回调，Rust 端 main.rs 签名不变。
+// 底部按钮栏原为自定义绝对定位样式，本次顺带统一为 DialogShell 标准 footer 样式。
+//
+// 重要坑(2026-09-23实测确认，写入DialogShell.slint头部注释同步说明)：
+// 直接作为 DialogShell(@children) 顶层子元素的必须是 Rectangle，不能是
+// VerticalLayout/HorizontalLayout —— Layout 类顶层子元素的 parent.width 会解析到
+// DialogShell 根节点宽度(即铺满全屏的调用方根Rectangle)而非卡片实际宽度，导致布局跑偏
+// 越界。下面用一层 Rectangle 包裹内容区，宽度用 card-width 对应的常量值代替 parent.width。
+
+import { DialogShell } from "DialogShell.slint";
+
+export component PivotSourceDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> initial-range: "";
+    in-out property <string> range-text: "";
+    in-out property <bool> new-sheet-selected: true;
+    in-out property <string> location-text: "";
+
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+
+    changed initial-range => { root.range-text = root.initial-range; }
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("创建数据透视表");
+        card-width: 360px;
+        card-height: 320px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        // 内容区外包裹层：必须是 Rectangle，见文件头注释
+        Rectangle {
+            x: 16px; y: 56px;
+            width: 328px;   // = card-width(360px) - 32px
+            height: 192px;
+
+            VerticalLayout {
+                width: parent.width;
+                height: parent.height;
+                spacing: 16px;
+
+                // 数据源
+                VerticalLayout {
+                    spacing: 8px;
+                    Text { text: @tr("请选择要分析的数据"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        Text { text: @tr("选择表格或区域:"); font-size: 11px; color: #333333; vertical-alignment: center; }
+                        Rectangle {
+                            width: 180px; height: 24px;
+                            border-radius: 3px;
+                            border-color: range-input.has-focus ? #217346 : #c0c0c0;
+                            border-width: range-input.has-focus ? 2px : 1px;
+                            background: #ffffff;
+                            range-input := TextInput {
+                                x: 4px; y: 4px;
+                                width: parent.width - 8px; height: parent.height - 8px;
+                                text <=> root.range-text;
+                                font-size: 11px; color: #1a1a1a;
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { height: 1px; background: #e8e8e8; }
+
+                // 放置位置
+                VerticalLayout {
+                    spacing: 10px;
+                    Text { text: @tr("选择放置数据透视表的位置"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        new-sheet-touch := TouchArea {
+                            width: 16px; height: 16px;
+                            clicked => { root.new-sheet-selected = true; }
+                            Rectangle {
+                                border-radius: 8px;
+                                border-color: root.new-sheet-selected ? #217346 : #999999;
+                                border-width: root.new-sheet-selected ? 2px : 1px;
+                                background: #ffffff;
+                                Rectangle {
+                                    x: (parent.width - 8px) / 2; y: (parent.height - 8px) / 2;
+                                    width: 8px; height: 8px; border-radius: 4px;
+                                    background: #217346;
+                                    visible: root.new-sheet-selected;
+                                }
+                            }
+                        }
+                        new-sheet-label-touch := TouchArea {
+                            width: new-sheet-label.width; height: 16px;
+                            clicked => { root.new-sheet-selected = true; }
+                            new-sheet-label := Text { text: @tr("新建工作表"); font-size: 11px; color: #333333; vertical-alignment: center; }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        existing-sheet-touch := TouchArea {
+                            width: 16px; height: 16px;
+                            clicked => { root.new-sheet-selected = false; }
+                            Rectangle {
+                                border-radius: 8px;
+                                border-color: !root.new-sheet-selected ? #217346 : #999999;
+                                border-width: !root.new-sheet-selected ? 2px : 1px;
+                                background: #ffffff;
+                                Rectangle {
+                                    x: (parent.width - 8px) / 2; y: (parent.height - 8px) / 2;
+                                    width: 8px; height: 8px; border-radius: 4px;
+                                    background: #217346;
+                                    visible: !root.new-sheet-selected;
+                                }
+                            }
+                        }
+                        existing-sheet-label-touch := TouchArea {
+                            width: existing-sheet-label.width; height: 16px;
+                            clicked => { root.new-sheet-selected = false; }
+                            existing-sheet-label := Text { text: @tr("现有工作表"); font-size: 11px; color: #333333; vertical-alignment: center; }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        opacity: root.new-sheet-selected ? 0.4 : 1.0;
+                        alignment: start;
+                        Text { text: @tr("位置:"); font-size: 11px; color: #333333; vertical-alignment: center; }
+                        Rectangle {
+                            width: 200px; height: 24px;
+                            border-radius: 3px;
+                            border-color: location-input.has-focus ? #217346 : #c0c0c0;
+                            border-width: location-input.has-focus ? 2px : 1px;
+                            background: root.new-sheet-selected ? #f5f5f5 : #ffffff;
+                            location-input := TextInput {
+                                x: 4px; y: 4px;
+                                width: parent.width - 8px; height: parent.height - 8px;
+                                text <=> root.location-text;
+                                font-size: 11px; color: #1a1a1a;
+                                enabled: !root.new-sheet-selected;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,46 @@
+// 缩略图右键菜单（新建 / 复制 / 删除）。组件铺满窗口，px/py 为菜单左上角。
+// 打开时底层有一层全屏透明遮罩，点菜单外任意位置关闭。
+component SItem inherits Rectangle {
+    in property <string> label;
+    callback clicked();
+    height: 28px;
+    background: ta.has-hover ? #dbe8fb : transparent;
+    Text {
+        x: 12px;
+        y: (parent.height - self.height) / 2;
+        text: root.label;
+        color: #202020;
+        font-size: 13px;
+    }
+    ta := TouchArea { clicked => { root.clicked(); } }
+}
+
+export component SlideMenu inherits Rectangle {
+    in property <bool> open: false;
+    in property <length> px;
+    in property <length> py;
+    callback pick(string);
+    callback dismiss();
+
+    TouchArea {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down) { root.dismiss(); }
+        }
+    }
+    Rectangle {
+        x: Math.max(0px, Math.min(root.px, root.width - 150px));
+        y: Math.max(0px, Math.min(root.py, root.height - 90px));
+        width: 150px;
+        height: 88px;
+        background: #fdfdfd;
+        border-width: 1px;
+        border-color: #b8b8b8;
+        VerticalLayout {
+            padding: 1px;
+            SItem { label: @tr("新建幻灯片"); clicked => { root.pick("new"); } }
+            SItem { label: @tr("复制幻灯片"); clicked => { root.pick("dup"); } }
+            SItem { label: @tr("删除幻灯片"); clicked => { root.pick("del"); } }
+        }
+    }
+}

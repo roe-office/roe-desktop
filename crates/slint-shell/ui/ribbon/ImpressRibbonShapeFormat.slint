@@ -1,0 +1,100 @@
+// v318o: Impress「形状格式」「设计」功能区（复用 Writer 的色块与按钮）
+import { RibbonGroup } from "RibbonGroup.slint";
+import { SwatchGrid, FmtBtn } from "WriterRibbonShapeFormat.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component ImpressRibbonShapeFormat inherits Rectangle {
+    callback apply(string);
+    height: 88px;
+    HorizontalLayout {
+        x: 4px; spacing: 0px; alignment: start;
+        RibbonGroup {
+            label: @tr("填充");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                SwatchGrid { prefix: "fill"; picked(s) => { root.apply(s); } }
+                FmtBtn { label: @tr("无填充"); clicked => { root.apply("fill:none"); } }
+            }
+        }
+        RibbonGroup {
+            label: @tr("边框颜色");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                SwatchGrid { prefix: "line"; picked(s) => { root.apply(s); } }
+                FmtBtn { label: @tr("无边框"); clicked => { root.apply("line:none"); } }
+            }
+        }
+        RibbonGroup {
+            label: @tr("边框粗细");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: "0.5 pt"; clicked => { root.apply("width:0.5"); } }
+                    FmtBtn { label: "1 pt"; clicked => { root.apply("width:1"); } }
+                    FmtBtn { label: "1.5 pt"; clicked => { root.apply("width:1.5"); } }
+                    FmtBtn { label: "2.25 pt"; clicked => { root.apply("width:2.25"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: "3 pt"; clicked => { root.apply("width:3"); } }
+                    FmtBtn { label: "4.5 pt"; clicked => { root.apply("width:4.5"); } }
+                    FmtBtn { label: "6 pt"; clicked => { root.apply("width:6"); } }
+                }
+            }
+        }
+    }
+}
+
+export component ImpressRibbonDesign inherits Rectangle {
+    callback pick-image();
+    callback apply(string);
+    height: 88px;
+    HorizontalLayout {
+        x: 4px; spacing: 0px; alignment: start;
+        RibbonGroup {
+            label: @tr("纯色");
+            VerticalLayout {
+                alignment: center;
+                SwatchGrid { prefix: "bg"; picked(s) => { root.apply(s); } }
+            }
+        }
+        RibbonGroup {
+            label: @tr("渐变");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: @tr("蓝白横"); clicked => { root.apply("bg:grad:#4F81BD,#FFFFFF,0"); } }
+                    FmtBtn { label: @tr("蓝白竖"); clicked => { root.apply("bg:grad:#4F81BD,#FFFFFF,90"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: @tr("橙白横"); clicked => { root.apply("bg:grad:#F79646,#FFFFFF,0"); } }
+                    FmtBtn { label: @tr("橙白竖"); clicked => { root.apply("bg:grad:#F79646,#FFFFFF,90"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: @tr("灰黑横"); clicked => { root.apply("bg:grad:#D9D9D9,#000000,0"); } }
+                    FmtBtn { label: @tr("灰黑竖"); clicked => { root.apply("bg:grad:#D9D9D9,#000000,90"); } }
+                }
+            }
+        }
+        RibbonGroup {
+            label: @tr("图片");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/page_color.svg");
+                label: @tr("图片背景");
+                clicked => { root.pick-image(); }
+            }
+        }
+        RibbonGroup {
+            label: @tr("重置");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/undo.svg");
+                label: @tr("恢复默认");
+                clicked => { root.apply("bg:none"); }
+            }
+        }
+    }
+}

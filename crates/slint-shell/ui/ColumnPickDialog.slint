@@ -1,0 +1,99 @@
+// ColumnPickDialog.slint — 通用"列勾选"对话框(删除重复值等共用)
+// 外壳改用 DialogShell 通用组件(2026-09-23，DialogShell抽取)。状态在 Rust,这里只是视图:
+// 点击只上报回调,Rust 改状态后整体 set 回 columns/checked/has-header。
+
+import { ScrollView } from "std-widgets.slint";
+import { CheckBox16 } from "CheckBox16.slint";
+import { DialogShell } from "DialogShell.slint";
+
+export component ColumnPickDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> title: "";
+    in property <string> range-text: "";
+    in property <[string]> columns: [];
+    in property <[bool]> checked: [];
+    in property <bool> has-header: false;
+    in property <bool> all-checked: false;
+
+    callback toggle-column(int);
+    callback toggle-all();
+    callback toggle-header();
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: root.title;
+        card-width: 360px;
+        card-height: 420px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        // 范围小字
+        Text {
+            x: 16px; y: 48px;
+            width: parent.width - 32px;
+            text: root.range-text;
+            font-size: 12px; color: #666666;
+        }
+
+        // "数据包含标题"
+        header-touch := TouchArea {
+            x: 16px; y: 72px;
+            width: parent.width - 32px; height: 24px;
+            clicked => { root.toggle-header(); }
+            HorizontalLayout {
+                padding-left: 4px;
+                spacing: 8px;
+                alignment: start;
+                CheckBox16 { on: root.has-header; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("数据包含标题"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+
+        // "全选"
+        all-touch := TouchArea {
+            x: 16px; y: 100px;
+            width: parent.width - 32px; height: 24px;
+            clicked => { root.toggle-all(); }
+            HorizontalLayout {
+                padding-left: 4px;
+                spacing: 8px;
+                alignment: start;
+                CheckBox16 {
+                    on: root.all-checked;
+                    y: (parent.height - self.height) / 2;
+                }
+                Text { text: @tr("全选"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+        Rectangle { x: 16px; y: 128px; width: parent.width - 32px; height: 1px; background: #e8e8e8; }
+
+        // 列列表
+        ScrollView {
+            x: 16px; y: 134px;
+            width: parent.width - 32px;
+            height: parent.height - 134px - 48px - 8px;
+            VerticalLayout {
+                spacing: 2px;
+                for name[idx] in root.columns: Rectangle {
+                    height: 26px;
+                    background: row-touch.has-hover ? #f4f8f6 : transparent;
+                    border-radius: 3px;
+                    row-touch := TouchArea {
+                        clicked => { root.toggle-column(idx); }
+                    }
+                    HorizontalLayout {
+                        padding-left: 4px;
+                        spacing: 8px;
+                        alignment: start;
+                        CheckBox16 { on: root.checked[idx]; y: (parent.height - self.height) / 2; }
+                        Text { text: name; font-size: 12px; color: #222222; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,516 @@
+// FindBar.slint — 查找/替换/转到 浮动弹窗
+// 用条件显示+绝对定位模拟QML Popup
+// UNO命令派发暂为空壳callback，由Rust端实现
+
+export component FindBar inherits Rectangle {
+    in property <string> doc-type: "writer";
+    in-out property <bool> visible-panel: false;
+    in-out property <string> query: "";
+    in-out property <length> pos-x: -1px;
+    in-out property <length> pos-y: -1px;
+    property <length> drag-ox: 0px;
+    property <length> drag-oy: 0px;
+    in-out property <string> repl-text: "";
+    in-out property <string> active-tab: "find";   // "find" | "replace" | "goto"
+
+    // 搜索选项
+    in-out property <bool> opt-match-case: false;
+    in-out property <bool> opt-whole-word: false;
+    in-out property <bool> opt-regex: false;
+
+    callback find-next(string);           // 查找下一个
+    callback find-prev(string);           // 查找上一个
+    callback replace-one(string, string); // 替换一个
+    callback replace-all(string, string); // 全部替换
+    callback goto-page(string);           // 转到页码（Rust端转int）
+    callback closed();
+
+    // 透明背景，尺寸由父级决定（通常撑满整个工作区）
+    background: transparent;
+
+    function accent-color() -> color {
+        if (root.doc-type == "calc") { return #217346; }
+        if (root.doc-type == "impress") { return #c43e1b; }
+        return #2b579a;
+    }
+    function accent-light() -> color {
+        if (root.doc-type == "calc") { return #32ae6a; }
+        if (root.doc-type == "impress") { return #e66746; }
+        return #467bcb;
+    }
+
+    function do-close() {
+        root.visible-panel = false;
+        root.pos-x = -1px;
+        root.pos-y = -1px;
+        root.closed();
+    }
+
+    if root.visible-panel : Rectangle {
+        // 居中弹窗
+        width: 440px;
+        height: (root.active-tab == "goto" ? 160px : 220px) + 36px;
+        x: root.pos-x >= 0px ? root.pos-x : (parent.width - self.width) / 2;
+        y: root.pos-y >= 0px ? root.pos-y : (parent.height - self.height) * 0.45;
+        background: white;
+        border-radius: 6px;
+        border-width: 1px;
+        border-color: #b0b0b0;
+        drop-shadow-blur: 12px;
+        drop-shadow-color: #00000033;
+        drop-shadow-offset-x: 0px;
+        drop-shadow-offset-y: 4px;
+
+        VerticalLayout {
+            spacing: 0px;
+            padding: 0px;
+
+            // ── 标题栏（可拖动）
+            title-bar := Rectangle {
+                height: 36px;
+                background: root.accent-color();
+                border-radius: 6px;
+                Rectangle {
+                    y: parent.height - 6px;
+                    width: parent.width;
+                    height: 6px;
+                    background: root.accent-color();
+                }
+                Text {
+                    text: @tr("查找和替换");
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: white;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    width: parent.width;
+                    height: parent.height;
+                }
+                drag-area := TouchArea {
+                    width: parent.width - 36px;
+                    height: parent.height;
+                    mouse-cursor: MouseCursor.move;
+                    pointer-event(e) => {
+                        if (e.kind == PointerEventKind.down) {
+                            root.drag-ox = self.mouse-x;
+                            root.drag-oy = self.mouse-y;
+                            if (root.pos-x < 0px) {
+                                root.pos-x = (root.width - 440px) / 2;
+                                root.pos-y = (root.height - (root.active-tab == "goto" ? 196px : 256px)) * 0.45;
+                            }
+                        }
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            root.pos-x = max(0px, min(root.width - 440px, root.pos-x + self.mouse-x - root.drag-ox));
+                            root.pos-y = max(0px, min(root.height - 60px, root.pos-y + self.mouse-y - root.drag-oy));
+                        }
+                    }
+                }
+                close-btn := TouchArea {
+                    x: parent.width - 30px;
+                    y: (parent.height - 24px) / 2;
+                    width: 24px;
+                    height: 24px;
+                    clicked => {
+                        root.visible-panel = false;
+                        root.pos-x = -1px;
+                        root.pos-y = -1px;
+                        root.closed();
+                    }
+                    Rectangle {
+                        border-radius: 4px;
+                        background: close-btn.has-hover ? #00000040 : transparent;
+                        Text {
+                            text: "✕";
+                            font-size: 13px;
+                            color: white;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            width: parent.width;
+                            height: parent.height;
+                        }
+                    }
+                }
+            }
+
+            // ── 标签行（同 Ribbon：激活项蓝色加粗 + 底部蓝色下划线）
+            tab-row := Rectangle {
+                height: 36px;
+                background: white;
+                border-width: 0px;
+                Rectangle {
+                    y: parent.height - 1px;
+                    height: 1px;
+                    background: #e0e0e0;
+                }
+                HorizontalLayout {
+                    padding-left: 8px;
+                    spacing: 0px;
+                    alignment: start;
+                    for tab-info in [
+                        {label: @tr("查找"),  key: "find"},
+                        {label: @tr("替换"),  key: "replace"},
+                        {label: @tr("转到"),  key: "goto"}
+                    ] : Rectangle {
+                        width: 72px;
+                        height: 36px;
+                        background: tab-touch.has-hover && root.active-tab != tab-info.key ? #f0f0f0 : transparent;
+                        Text {
+                            text: tab-info.label;
+                            font-size: 13px;
+                            font-weight: root.active-tab == tab-info.key ? 700 : 400;
+                            color: root.active-tab == tab-info.key ? root.accent-color() : #333333;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            width: parent.width;
+                            height: parent.height;
+                        }
+                        if root.active-tab == tab-info.key : Rectangle {
+                            x: 8px;
+                            y: parent.height - 3px;
+                            width: parent.width - 16px;
+                            height: 3px;
+                            background: root.accent-color();
+                        }
+                        tab-touch := TouchArea {
+                            clicked => { root.active-tab = tab-info.key; }
+                        }
+                    }
+                }
+            }
+
+            // ── 查找 Tab 内容
+            if root.active-tab == "find" : Rectangle {
+                Timer { interval: 80ms; running: true; triggered => { self.running = false; find-input.focus(); } }
+                height: 182px;
+                background: transparent;
+
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    // 搜索框
+                    find-box := Rectangle {
+                        height: 30px;
+                        border-radius: 4px;
+                        border-width: 1px;
+                        border-color: find-input.has-focus ? root.accent-color() : #c0c0c0;
+                        background: white;
+
+                        find-input := TextInput {
+            key-pressed(event) => {
+                if (event.text == Key.Escape) { root.do-close(); return accept; }
+                reject
+            }
+
+                            text <=> root.query;
+                            x: 10px;
+                            y: (parent.height - self.height) / 2;
+                            width: parent.width - 20px;
+                            height: 18px;
+                            font-size: 13px;
+                            color: #222222;
+                            accepted => {
+                                root.find-next(self.text);
+                            }
+                        }
+                        if find-input.text == "" : Text {
+                            x: 10px;
+                            y: (parent.height - self.height) / 2;
+                            text: @tr("输入搜索词…");
+                            color: #aaaaaa;
+                            font-size: 12px;
+                        }
+                    }
+
+                    // 选项行
+                    HorizontalLayout {
+                        spacing: 16px;
+                        height: 18px;
+
+                        for opt in [
+                            {label: @tr("区分大小写"), idx: 0},
+                            {label: @tr("全词匹配"),   idx: 1},
+                            {label: @tr("正则表达式"), idx: 2}
+                        ] : HorizontalLayout {
+                            spacing: 5px;
+                            alignment: start;
+                            opt-box := TouchArea {
+                                width: 14px; height: 14px;
+                                clicked => {
+                                    if (opt.idx == 0) { root.opt-match-case = !root.opt-match-case; }
+                                    if (opt.idx == 1) { root.opt-whole-word = !root.opt-whole-word; }
+                                    if (opt.idx == 2) { root.opt-regex = !root.opt-regex; }
+                                }
+                                Rectangle {
+                                    border-radius: 2px;
+                                    border-width: 1px;
+                                    border-color: #999999;
+                                    background: (opt.idx==0 ? root.opt-match-case : opt.idx==1 ? root.opt-whole-word : root.opt-regex)
+                                        ? root.accent-color() : white;
+                                    Text {
+                                        visible: (opt.idx==0 ? root.opt-match-case : opt.idx==1 ? root.opt-whole-word : root.opt-regex);
+                                        text: "✓";
+                                        font-size: 9px;
+                                        color: white;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                        width: parent.width;
+                                        height: parent.height;
+                                    }
+                                }
+                            }
+                            Text {
+                                text: opt.label;
+                                font-size: 11px;
+                                color: #555555;
+                                vertical-alignment: center;
+                                height: 14px;
+                            }
+                        }
+                    }
+
+                    // 按钮行
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        height: 28px;
+
+                        prev-btn := TouchArea {
+                            width: 84px; height: 28px;
+                            clicked => { root.find-prev(find-input.text); }
+                            Rectangle {
+                                border-radius: 4px;
+                                border-width: 1px;
+                                border-color: #c0c0c0;
+                                background: prev-btn.has-hover ? #e8e8e8 : #f5f5f5;
+                                Text { text: @tr("↑ 上一个"); font-size: 12px; color: #333333;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                        next-btn := TouchArea {
+                            width: 84px; height: 28px;
+                            clicked => { root.find-next(find-input.text); }
+                            Rectangle {
+                                border-radius: 4px;
+                                background: next-btn.has-hover ? root.accent-light() : root.accent-color();
+                                Text { text: @tr("↓ 下一个"); font-size: 12px; color: white;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 替换 Tab 内容
+            if root.active-tab == "replace" : Rectangle {
+                Timer { interval: 80ms; running: true; triggered => { self.running = false; rep-find-input.focus(); } }
+                height: 182px;
+                background: transparent;
+
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    // 查找框
+                    HorizontalLayout {
+                        spacing: 8px; height: 28px;
+                        Text { text: @tr("查找："); font-size: 12px; color: #444444;
+                            vertical-alignment: center; width: 42px; }
+                        rep-find-box := Rectangle {
+                            horizontal-stretch: 1; height: 28px;
+                            border-radius: 4px; border-width: 1px;
+                            border-color: rep-find-input.has-focus ? root.accent-color() : #c0c0c0;
+                            background: white;
+                            rep-find-input := TextInput {
+            key-pressed(event) => {
+                if (event.text == Key.Escape) { root.do-close(); return accept; }
+                reject
+            }
+
+                                text <=> root.query;
+                                x: 8px; y: (parent.height - self.height)/2;
+                                width: parent.width - 16px; height: 18px;
+                                font-size: 13px; color: #222222;
+                            }
+                            if rep-find-input.text == "" : Text {
+                                x: 10px; y: (parent.height - self.height)/2;
+                                text: @tr("输入搜索词…"); color: #aaaaaa; font-size: 12px;
+                            }
+                        }
+                    }
+
+                    // 替换框
+                    HorizontalLayout {
+                        spacing: 8px; height: 28px;
+                        Text { text: @tr("替换："); font-size: 12px; color: #444444;
+                            vertical-alignment: center; width: 42px; }
+                        rep-repl-box := Rectangle {
+                            horizontal-stretch: 1; height: 28px;
+                            border-radius: 4px; border-width: 1px;
+                            border-color: rep-repl-input.has-focus ? root.accent-color() : #c0c0c0;
+                            background: white;
+                            rep-repl-input := TextInput {
+            key-pressed(event) => {
+                if (event.text == Key.Escape) { root.do-close(); return accept; }
+                reject
+            }
+
+                                text <=> root.repl-text;
+                                x: 8px; y: (parent.height - self.height)/2;
+                                width: parent.width - 16px; height: 18px;
+                                font-size: 13px; color: #222222;
+                            }
+                            if rep-repl-input.text == "" : Text {
+                                x: 10px; y: (parent.height - self.height)/2;
+                                text: @tr("替换为…"); color: #aaaaaa; font-size: 12px;
+                            }
+                        }
+                    }
+
+                    // 选项行（复用同样的opt-match-case等属性）
+                    HorizontalLayout {
+                        spacing: 16px; height: 18px;
+                        for opt in [
+                            {label: @tr("区分大小写"), idx: 0},
+                            {label: @tr("全词匹配"),   idx: 1},
+                            {label: @tr("正则表达式"), idx: 2}
+                        ] : HorizontalLayout {
+                            spacing: 5px; alignment: start;
+                            ropt-box := TouchArea {
+                                width: 14px; height: 14px;
+                                clicked => {
+                                    if (opt.idx == 0) { root.opt-match-case = !root.opt-match-case; }
+                                    if (opt.idx == 1) { root.opt-whole-word = !root.opt-whole-word; }
+                                    if (opt.idx == 2) { root.opt-regex = !root.opt-regex; }
+                                }
+                                Rectangle {
+                                    border-radius: 2px; border-width: 1px; border-color: #999999;
+                                    background: (opt.idx==0 ? root.opt-match-case : opt.idx==1 ? root.opt-whole-word : root.opt-regex)
+                                        ? root.accent-color() : white;
+                                    Text {
+                                        visible: (opt.idx==0 ? root.opt-match-case : opt.idx==1 ? root.opt-whole-word : root.opt-regex);
+                                        text: "✓"; font-size: 9px; color: white;
+                                        horizontal-alignment: center; vertical-alignment: center;
+                                        width: parent.width; height: parent.height;
+                                    }
+                                }
+                            }
+                            Text { text: opt.label; font-size: 11px; color: #555555;
+                                vertical-alignment: center; height: 14px; }
+                        }
+                    }
+
+                    // 按钮行
+                    HorizontalLayout {
+                        alignment: end; spacing: 8px; height: 28px;
+                        rprev-btn := TouchArea {
+                            width: 84px; height: 28px;
+                            clicked => { root.find-prev(rep-find-input.text); }
+                            Rectangle {
+                                border-radius: 4px; border-width: 1px; border-color: #c0c0c0;
+                                background: rprev-btn.has-hover ? #e8e8e8 : #f5f5f5;
+                                Text { text: @tr("↑ 上一个"); font-size: 12px; color: #333333;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                        rnext-btn := TouchArea {
+                            width: 84px; height: 28px;
+                            clicked => { root.find-next(rep-find-input.text); }
+                            Rectangle {
+                                border-radius: 4px; border-width: 1px; border-color: #c0c0c0;
+                                background: rnext-btn.has-hover ? #e8e8e8 : #f5f5f5;
+                                Text { text: @tr("↓ 下一个"); font-size: 12px; color: #333333;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                        repl-btn := TouchArea {
+                            width: 72px; height: 28px;
+                            clicked => { root.replace-one(rep-find-input.text, rep-repl-input.text); }
+                            Rectangle {
+                                border-radius: 4px;
+                                background: repl-btn.has-hover ? root.accent-light() : root.accent-color();
+                                Text { text: @tr("替换"); font-size: 12px; color: white;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                        repl-all-btn := TouchArea {
+                            width: 88px; height: 28px;
+                            clicked => { root.replace-all(rep-find-input.text, rep-repl-input.text); }
+                            Rectangle {
+                                border-radius: 4px;
+                                background: repl-all-btn.has-hover ? root.accent-light() : root.accent-color();
+                                Text { text: @tr("全部替换"); font-size: 12px; color: white;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 转到 Tab 内容
+            if root.active-tab == "goto" : Rectangle {
+                Timer { interval: 80ms; running: true; triggered => { self.running = false; goto-input.focus(); } }
+                height: 122px;
+                background: transparent;
+
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    HorizontalLayout {
+                        spacing: 8px; height: 28px;
+                        Text { text: @tr("页码："); font-size: 12px; color: #444444;
+                            vertical-alignment: center; width: 42px; }
+                        goto-box := Rectangle {
+                            width: 120px; height: 28px;
+                            border-radius: 4px; border-width: 1px;
+                            border-color: goto-input.has-focus ? root.accent-color() : #c0c0c0;
+                            background: white;
+                            goto-input := TextInput {
+            key-pressed(event) => {
+                if (event.text == Key.Escape) { root.do-close(); return accept; }
+                reject
+            }
+
+                                x: 8px; y: (parent.height - self.height)/2;
+                                width: parent.width - 16px; height: 18px;
+                                font-size: 13px; color: #222222;
+                                input-type: number;
+                                accepted => {
+                                    root.goto-page(self.text);
+                                }
+                            }
+                            if goto-input.text == "" : Text {
+                                x: 8px; y: (parent.height - self.height)/2;
+                                text: @tr("页码…"); color: #aaaaaa; font-size: 12px;
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        alignment: end; height: 28px;
+                        goto-btn := TouchArea {
+                            width: 72px; height: 28px;
+                            clicked => { root.goto-page(goto-input.text); }
+                            Rectangle {
+                                border-radius: 4px;
+                                background: goto-btn.has-hover ? root.accent-light() : root.accent-color();
+                                Text { text: @tr("转到"); font-size: 12px; color: white;
+                                    horizontal-alignment: center; vertical-alignment: center;
+                                    width: parent.width; height: parent.height; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

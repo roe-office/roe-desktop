@@ -1,0 +1,3139 @@
+# Korean translation for slint-shell
+msgid ""
+msgstr ""
+"Project-Id-Version: slint-shell\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "主页"
+msgstr "홈"
+
+msgid "设置"
+msgstr "설정"
+
+msgid "已复制 ✓"
+msgstr "복사됨 ✓"
+
+msgid "复制"
+msgstr "복사"
+
+msgid "思考中… {}s（点击收起）"
+msgstr "생각 중… {}초 (클릭하여 접기)"
+
+msgid "已思考 {}s（点击展开）"
+msgstr "{}초 동안 생각함 (클릭하여 펼치기)"
+
+msgid "预览"
+msgstr "미리 보기"
+
+msgid "确认"
+msgstr "확인"
+
+msgid "丢弃"
+msgstr "취소"
+
+msgid "已确认执行"
+msgstr "확인 후 실행됨"
+
+msgid "已丢弃"
+msgstr "취소됨"
+
+msgid "自主模式已执行"
+msgstr "자율 모드로 실행됨"
+
+msgid "新对话"
+msgstr "새 대화"
+
+msgid "项目目录"
+msgstr "프로젝트"
+
+msgid "+ 新建项目"
+msgstr "+ 새 프로젝트"
+
+msgid "暂无项目"
+msgstr "프로젝트 없음"
+
+msgid "暂无历史对话"
+msgstr "대화 기록 없음"
+
+msgid "开始一段对话，让 AI 帮你操作文档"
+msgstr "대화를 시작하고 AI가 문서를 작업하도록 하세요"
+
+msgid "已复制全部对话 ✓"
+msgstr "전체 대화가 복사됨 ✓"
+
+msgid "复制全部对话"
+msgstr "전체 대화 복사"
+
+msgid "支持 xlsx / docx / pptx / csv 与 png / jpg"
+msgstr "xlsx / docx / pptx / csv 및 png / jpg 지원"
+
+msgid "发送中"
+msgstr "전송 중"
+
+msgid "发送"
+msgstr "보내기"
+
+msgid "Rhai 脚本"
+msgstr "Rhai 스크립트"
+
+msgid "AI 直连"
+msgstr "AI 직접 연결"
+
+msgid "① 点「获取索引」,把文档结构复制给外部 AI\n② 把 AI 返回的 Rhai 脚本粘贴到下方输入框,点「运行」\n运行后可点「撤销」回退"
+msgstr "① '인덱스 가져오기'를 클릭하여 문서 구조를 외부 AI에 복사합니다\n② AI가 반환한 Rhai 스크립트를 아래 입력란에 붙여넣고 '실행'을 클릭합니다\n실행 후 '실행 취소'로 되돌릴 수 있습니다"
+
+msgid "仅文档结构"
+msgstr "문서 구조만"
+
+msgid "可获取标题"
+msgstr "제목 읽기 가능"
+
+msgid "可获取全文"
+msgstr "전체 텍스트 읽기 가능"
+
+msgid "⟳ 获取索引"
+msgstr "⟳ 인덱스 가져오기"
+
+msgid "⎘ 复制索引"
+msgstr "⎘ 인덱스 복사"
+
+msgid "▶  运行"
+msgstr "▶  실행"
+
+msgid "↶  撤销"
+msgstr "↶  실행 취소"
+
+msgid "未配置模型"
+msgstr "모델이 설정되지 않음"
+
+msgid "描述你想对文档做的修改,AI 会直接执行,可用标题栏撤销回退"
+msgstr "문서에 적용할 변경 내용을 설명하세요. AI가 바로 실행하며, 제목 표시줄의 실행 취소로 되돌릴 수 있습니다"
+
+msgid "尚未配置 API Key 或未选择模型。"
+msgstr "API 키가 설정되지 않았거나 모델이 선택되지 않았습니다."
+
+msgid "去设置 →"
+msgstr "설정으로 이동 →"
+
+msgid "复制全部"
+msgstr "모두 복사"
+
+msgid "思考中…"
+msgstr "생각 중…"
+
+msgid "✦  发送"
+msgstr "✦  보내기"
+
+msgid "⚙ 去设置…"
+msgstr "⚙ 설정 열기…"
+
+msgid "未接线 · 请到设置添加 API Key →"
+msgstr "연결되지 않음 · 설정에서 API 키를 추가하세요 →"
+
+msgid "自动保存"
+msgstr "자동 저장"
+
+msgid "AI Agent - 对话1"
+msgstr "AI 에이전트 - 대화 1"
+
+msgid "常规"
+msgstr "표준"
+
+msgid "数字"
+msgstr "숫자"
+
+msgid "货币"
+msgstr "통화"
+
+msgid "会计专用"
+msgstr "회계"
+
+msgid "百分比"
+msgstr "백분율"
+
+msgid "短日期"
+msgstr "간단한 날짜"
+
+msgid "文本"
+msgstr "텍스트"
+
+msgid "差"
+msgstr "나쁨"
+
+msgid "好"
+msgstr "좋음"
+
+msgid "适中"
+msgstr "보통"
+
+msgid "计算"
+msgstr "계산"
+
+msgid "检查单元格"
+msgstr "셀 확인"
+
+msgid "解释性文本"
+msgstr "설명 텍스트"
+
+msgid "警告文本"
+msgstr "경고 텍스트"
+
+msgid "链接单元格"
+msgstr "연결된 셀"
+
+msgid "输出"
+msgstr "출력"
+
+msgid "输入"
+msgstr "입력"
+
+msgid "注释"
+msgstr "메모"
+
+msgid "标题"
+msgstr "제목"
+
+msgid "标题 1"
+msgstr "제목 1"
+
+msgid "标题 2"
+msgstr "제목 2"
+
+msgid "标题 3"
+msgstr "제목 3"
+
+msgid "标题 4"
+msgstr "제목 4"
+
+msgid "汇总"
+msgstr "요약"
+
+msgid "20% - 着色 1"
+msgstr "20% - 강조색1"
+
+msgid "20% - 着色 2"
+msgstr "20% - 강조색2"
+
+msgid "20% - 着色 3"
+msgstr "20% - 강조색3"
+
+msgid "20% - 着色 4"
+msgstr "20% - 강조색4"
+
+msgid "20% - 着色 5"
+msgstr "20% - 강조색5"
+
+msgid "20% - 着色 6"
+msgstr "20% - 강조색6"
+
+msgid "40% - 着色 1"
+msgstr "40% - 강조색1"
+
+msgid "40% - 着色 2"
+msgstr "40% - 강조색2"
+
+msgid "40% - 着色 3"
+msgstr "40% - 강조색3"
+
+msgid "40% - 着色 4"
+msgstr "40% - 강조색4"
+
+msgid "40% - 着色 5"
+msgstr "40% - 강조색5"
+
+msgid "40% - 着色 6"
+msgstr "40% - 강조색6"
+
+msgid "60% - 着色 1"
+msgstr "60% - 강조색1"
+
+msgid "60% - 着色 2"
+msgstr "60% - 강조색2"
+
+msgid "60% - 着色 3"
+msgstr "60% - 강조색3"
+
+msgid "60% - 着色 4"
+msgstr "60% - 강조색4"
+
+msgid "60% - 着色 5"
+msgstr "60% - 강조색5"
+
+msgid "60% - 着色 6"
+msgstr "60% - 강조색6"
+
+msgid "着色 1"
+msgstr "강조색1"
+
+msgid "着色 2"
+msgstr "강조색2"
+
+msgid "着色 3"
+msgstr "강조색3"
+
+msgid "着色 4"
+msgstr "강조색4"
+
+msgid "着色 5"
+msgstr "강조색5"
+
+msgid "着色 6"
+msgstr "강조색6"
+
+msgid "货币[0]"
+msgstr "통화 [0]"
+
+msgid "千位分隔"
+msgstr "쉼표"
+
+msgid "千位分隔[0]"
+msgstr "쉼표 [0]"
+
+msgid "底部边框"
+msgstr "아래쪽 테두리"
+
+msgid "顶部边框"
+msgstr "위쪽 테두리"
+
+msgid "左边框"
+msgstr "왼쪽 테두리"
+
+msgid "右边框"
+msgstr "오른쪽 테두리"
+
+msgid "无边框"
+msgstr "테두리 없음"
+
+msgid "所有边框"
+msgstr "모든 테두리"
+
+msgid "外部边框"
+msgstr "바깥쪽 테두리"
+
+msgid "内部边框"
+msgstr "안쪽 테두리"
+
+msgid "内水平边框"
+msgstr "안쪽 가로 테두리"
+
+msgid "内部垂直边框"
+msgstr "안쪽 세로 테두리"
+
+msgid "句首字母大写"
+msgstr "문장의 첫 글자를 대문자로"
+
+msgid "全部小写"
+msgstr "소문자로"
+
+msgid "全部大写"
+msgstr "대문자로"
+
+msgid "每个单词首字母大写"
+msgstr "각 단어의 첫 글자를 대문자로"
+
+msgid "切换大小写"
+msgstr "대/소문자 전환"
+
+msgid "1.0 单倍行距"
+msgstr "1.0 단일"
+
+msgid "1.5 倍行距"
+msgstr "1.5줄"
+
+msgid "2.0 双倍行距"
+msgstr "2.0 두 줄"
+
+msgid "段前加间距"
+msgstr "단락 앞 간격 추가"
+
+msgid "段后加间距"
+msgstr "단락 뒤 간격 추가"
+
+msgid "清除段间距"
+msgstr "단락 간격 지우기"
+
+msgid "行距选项…"
+msgstr "줄 간격 옵션…"
+
+msgid "正文"
+msgstr "본문"
+
+msgid "副标题"
+msgstr "부제목"
+
+msgid "无"
+msgstr "없음"
+
+msgid "●  实心圆"
+msgstr "●  채워진 원"
+
+msgid "○  空心圆"
+msgstr "○  빈 원"
+
+msgid "■  实心方"
+msgstr "■  채워진 사각형"
+
+msgid "–  短横线"
+msgstr "–  대시"
+
+msgid "✓  勾选"
+msgstr "✓  확인 표시"
+
+msgid "开始"
+msgstr "홈"
+
+msgid "插入"
+msgstr "삽입"
+
+msgid "设计"
+msgstr "디자인"
+
+msgid "布局"
+msgstr "레이아웃"
+
+msgid "引用"
+msgstr "참조"
+
+msgid "邮件"
+msgstr "편지"
+
+msgid "审阅"
+msgstr "검토"
+
+msgid "视图"
+msgstr "보기"
+
+msgid "形状格式"
+msgstr "도형 서식"
+
+msgid "绘图"
+msgstr "그리기"
+
+msgid "页面布局"
+msgstr "페이지 레이아웃"
+
+msgid "公式"
+msgstr "수식"
+
+msgid "数据"
+msgstr "데이터"
+
+msgid "告诉我"
+msgstr "도움말"
+
+msgid "数据透视表"
+msgstr "피벗 테이블"
+
+msgid "幻灯片母版"
+msgstr "슬라이드 마스터"
+
+msgid "动画"
+msgstr "애니메이션"
+
+msgid "切换"
+msgstr "화면 전환"
+
+msgid "幻灯片放映"
+msgstr "슬라이드 쇼"
+
+msgid "该功能待实现"
+msgstr "준비 중인 기능입니다"
+
+msgid "插入表格"
+msgstr "표 삽입"
+
+msgid "{} × {} 表格"
+msgstr "{} × {} 표"
+
+msgid "无填充"
+msgstr "채우기 없음"
+
+msgid "自动(默认色)"
+msgstr "자동"
+
+msgid "边框颜色"
+msgstr "테두리 색"
+
+msgid "获取数据"
+msgstr "데이터 가져오기"
+
+msgid "CSV 文件…"
+msgstr "CSV 파일…"
+
+msgid "Parquet / Hive 目录…"
+msgstr "Parquet / Hive 디렉터리…"
+
+msgid "Excel 文件…"
+msgstr "Excel 파일…"
+
+msgid "数据分析"
+msgstr "데이터 분석"
+
+msgid "描述性统计"
+msgstr "기술 통계"
+
+msgid "相关性分析"
+msgstr "상관 분석"
+
+msgid "协方差"
+msgstr "공분산"
+
+msgid "卡方检验(独立性)"
+msgstr "카이제곱 검정(독립성)"
+
+msgid "F 检验"
+msgstr "F 검정"
+
+msgid "配对 t 检验"
+msgstr "쌍체 t 검정"
+
+msgid "Z 检验(已知方差)"
+msgstr "Z 검정(분산 기지)"
+
+msgid "回归分析"
+msgstr "회귀 분석"
+
+msgid "单因素方差分析"
+msgstr "일원 분산 분석"
+
+msgid "双因素方差分析"
+msgstr "이원 분산 분석"
+
+msgid "移动平均"
+msgstr "이동 평균"
+
+msgid "指数平滑"
+msgstr "지수 평활"
+
+msgid "突出显示单元格规则"
+msgstr "셀 강조 규칙"
+
+msgid "大于…"
+msgstr "보다 큼…"
+
+msgid "小于…"
+msgstr "보다 작음…"
+
+msgid "介于…"
+msgstr "해당 범위…"
+
+msgid "等于…"
+msgstr "같음…"
+
+msgid "文本包含…"
+msgstr "텍스트 포함…"
+
+msgid "其他规则…"
+msgstr "기타 규칙…"
+
+msgid "数据条"
+msgstr "데이터 막대"
+
+msgid "色阶"
+msgstr "색조"
+
+msgid "图标集…"
+msgstr "아이콘 집합…"
+
+msgid "清除所选单元格的规则"
+msgstr "선택한 셀의 규칙 지우기"
+
+msgid "清除整个工作表的规则"
+msgstr "시트 전체의 규칙 지우기"
+
+msgid "浅色"
+msgstr "밝게"
+
+msgid "中等色"
+msgstr "보통"
+
+msgid "深色"
+msgstr "어둡게"
+
+msgid "清除"
+msgstr "지우기"
+
+msgid "好、差和适中"
+msgstr "좋음, 나쁨 및 보통"
+
+msgid "数据和模型"
+msgstr "데이터 및 모델"
+
+msgid "主题单元格样式"
+msgstr "테마 셀 스타일"
+
+msgid "数字格式"
+msgstr "표시 형식"
+
+msgid "清除格式"
+msgstr "서식 지우기"
+
+msgid "添加回复"
+msgstr "답글 추가"
+
+msgid "编辑数据"
+msgstr "데이터 편집"
+
+msgid "应用"
+msgstr "적용"
+
+msgid "关闭"
+msgstr "닫기"
+
+msgid "母版"
+msgstr "마스터"
+
+msgid "幻灯片"
+msgstr "슬라이드"
+
+msgid "新建"
+msgstr "새로 만들기"
+
+msgid "Writer 文档"
+msgstr "Writer 문서"
+
+msgid "Calc 表格"
+msgstr "Calc 스프레드시트"
+
+msgid "Impress 演示"
+msgstr "Impress 프레젠테이션"
+
+msgid "打开文件..."
+msgstr "파일 열기..."
+
+msgid "最近文件"
+msgstr "최근 파일"
+
+msgid "暂无最近文件"
+msgstr "최근 파일 없음"
+
+msgid "编辑文字"
+msgstr "텍스트 편집"
+
+msgid "文字内容(回车换行)"
+msgstr "텍스트 (Enter로 줄 바꿈)"
+
+msgid "最小值"
+msgstr "최소값"
+
+msgid "包含文本"
+msgstr "텍스트 포함"
+
+msgid "数值"
+msgstr "값"
+
+msgid "最大值"
+msgstr "최대값"
+
+msgid "样式"
+msgstr "스타일"
+
+msgid "浅红填充 + 深红文本"
+msgstr "연한 빨강 채우기 및 진한 빨강 텍스트"
+
+msgid "黄填充 + 深黄文本"
+msgstr "노랑 채우기 및 진한 노랑 텍스트"
+
+msgid "绿填充 + 深绿文本"
+msgstr "녹색 채우기 및 진한 녹색 텍스트"
+
+msgid "仅浅红填充"
+msgstr "연한 빨강 채우기"
+
+msgid "仅红色文本"
+msgstr "빨강 텍스트"
+
+msgid "条件"
+msgstr "조건"
+
+msgid "大于"
+msgstr "보다 큼"
+
+msgid "小于"
+msgstr "보다 작음"
+
+msgid "介于"
+msgstr "해당 범위"
+
+msgid "等于"
+msgstr "같음"
+
+msgid "文本包含"
+msgstr "텍스트 포함"
+
+msgid "不等于"
+msgstr "같지 않음"
+
+msgid "大于或等于"
+msgstr "크거나 같음"
+
+msgid "小于或等于"
+msgstr "작거나 같음"
+
+msgid "未介于"
+msgstr "해당 범위 아님"
+
+msgid "介于(不含端点)"
+msgstr "해당 범위(경계 제외)"
+
+msgid "图标集"
+msgstr "아이콘 집합"
+
+msgid "反转图标顺序"
+msgstr "아이콘 순서 반대로"
+
+msgid "更多颜色"
+msgstr "다른 색"
+
+msgid "编辑图表数据"
+msgstr "차트 데이터 편집"
+
+msgid "加行"
+msgstr "행 추가"
+
+msgid "加列"
+msgstr "열 추가"
+
+msgid "删行"
+msgstr "행 삭제"
+
+msgid "删列"
+msgstr "열 삭제"
+
+msgid "行列互换"
+msgstr "행/열 전환"
+
+msgid "首行为系列名，首列为类别名；非数字按 0 处理"
+msgstr "첫 행 = 계열 이름, 첫 열 = 항목 이름, 숫자가 아닌 값은 0으로 처리됩니다"
+
+msgid "插入图表"
+msgstr "차트 삽입"
+
+msgid "取消"
+msgstr "취소"
+
+msgid "确定"
+msgstr "확인"
+
+msgid "柱形图"
+msgstr "세로 막대형"
+
+msgid "条形图"
+msgstr "가로 막대형"
+
+msgid "折线图"
+msgstr "꺾은선형"
+
+msgid "饼图"
+msgstr "원형"
+
+msgid "散点图"
+msgstr "분산형"
+
+msgid "雷达图"
+msgstr "방사형"
+
+msgid "面积图"
+msgstr "영역형"
+
+msgid "圆环图"
+msgstr "도넛형"
+
+msgid "图表格式（统计图）"
+msgstr "차트 서식(통계 차트)"
+
+msgid "图表格式"
+msgstr "차트 서식"
+
+msgid "图表类型"
+msgstr "차트 종류"
+
+msgid "统计图"
+msgstr "통계 차트"
+
+msgid "图例"
+msgstr "범례"
+
+msgid "网格线"
+msgstr "눈금선"
+
+msgid "X轴标题"
+msgstr "X축 제목"
+
+msgid "Y轴标题"
+msgstr "Y축 제목"
+
+msgid "数据包含标题"
+msgstr "데이터에 머리글 포함"
+
+msgid "全选"
+msgstr "모두 선택"
+
+msgid "新建批注"
+msgstr "새 메모"
+
+msgid "批注内容"
+msgstr "메모 내용"
+
+msgid "数据验证"
+msgstr "데이터 유효성 검사"
+
+msgid "应用范围"
+msgstr "적용 대상"
+
+msgid "来源"
+msgstr "원본"
+
+msgid "用逗号分隔,如:A,B,C"
+msgstr "쉼표로 구분(예: A,B,C)"
+
+msgid "忽略空值"
+msgstr "공백 무시"
+
+msgid "输入无效数据时显示错误警告"
+msgstr "잘못된 데이터를 입력하면 오류 메시지 표시"
+
+msgid "错误信息"
+msgstr "오류 메시지"
+
+msgid "允许"
+msgstr "허용"
+
+msgid "任何值"
+msgstr "모든 값"
+
+msgid "整数"
+msgstr "정수"
+
+msgid "小数"
+msgstr "소수"
+
+msgid "列表"
+msgstr "목록"
+
+msgid "日期"
+msgstr "날짜"
+
+msgid "时间"
+msgstr "시간"
+
+msgid "文本长度"
+msgstr "텍스트 길이"
+
+msgid "自定义"
+msgstr "사용자 지정"
+
+msgid "您输入的值无效"
+msgstr "입력한 값이 올바르지 않습니다"
+
+msgid "此单元格中输入的值不符合数据验证限制。"
+msgstr "이 셀에 입력한 값이 데이터 유효성 검사 제한에 맞지 않습니다."
+
+msgid "全部"
+msgstr "모두"
+
+msgid "前10"
+msgstr "상위 10"
+
+msgid "前20"
+msgstr "상위 20"
+
+msgid "前50"
+msgstr "상위 50"
+
+msgid "降序"
+msgstr "내림"
+
+msgid "升序"
+msgstr "오름"
+
+msgid "求和"
+msgstr "합계"
+
+msgid "平均值"
+msgstr "평균"
+
+msgid "计数"
+msgstr "개수"
+
+msgid "第一个"
+msgstr "첫 번째"
+
+msgid "最后一个"
+msgstr "마지막"
+
+msgid "标准差"
+msgstr "표준편차"
+
+msgid "方差"
+msgstr "분산"
+
+msgid "取前N行"
+msgstr "상위 N행"
+
+msgid "选列"
+msgstr "열 선택"
+
+msgid "排序"
+msgstr "정렬"
+
+msgid "去重"
+msgstr "중복 제거"
+
+msgid "删空值"
+msgstr "널 삭제"
+
+msgid "重命名"
+msgstr "이름 바꾸기"
+
+msgid "分组聚合"
+msgstr "그룹화"
+
+msgid "派生列"
+msgstr "새 열"
+
+msgid "DF 链式查询(一行一条语句,以 df_use 开头)"
+msgstr "DF 체인 쿼리(한 줄에 문 하나, df_use로 시작)"
+
+msgid "数据集(点击载入)"
+msgstr "데이터 집합(클릭하여 불러오기)"
+
+msgid "列名(点击选中/取消;最后选中的列在「分组聚合」中作为被聚合列)"
+msgstr "열 이름(클릭하여 선택/해제, 마지막으로 선택한 열이 '그룹화'에서 집계 대상 열이 됨)"
+
+msgid "函数模板(用已选列生成一行)"
+msgstr "템플릿(선택한 열로 한 줄 생성)"
+
+msgid "输出行数"
+msgstr "출력 행 수"
+
+msgid "聚合"
+msgstr "집계"
+
+msgid "▶ 运行预览"
+msgstr "▶ 미리 보기"
+
+msgid "清空代码"
+msgstr "코드 지우기"
+
+msgid "运行预览不改动文档;保存才会生成 chain_N"
+msgstr "미리 보기는 문서를 변경하지 않으며, 저장하면 chain_N이 생성됩니다"
+
+msgid "保存为数据集并预览"
+msgstr "데이터 집합으로 저장 및 미리 보기"
+
+msgid "列名"
+msgstr "열 이름"
+
+msgid "类型"
+msgstr "형식"
+
+msgid "空值数"
+msgstr "널 수"
+
+msgid "最小"
+msgstr "최소"
+
+msgid "最大"
+msgstr "최대"
+
+msgid "均值"
+msgstr "평균"
+
+msgid "前 10 行"
+msgstr "처음 10행"
+
+msgid "导入并预览"
+msgstr "가져오기 및 미리 보기"
+
+msgid "上一页"
+msgstr "이전"
+
+msgid "下一页"
+msgstr "다음"
+
+msgid "筛选"
+msgstr "필터"
+
+msgid "(空白)"
+msgstr "(비어 있음)"
+
+msgid "查找和替换"
+msgstr "찾기 및 바꾸기"
+
+msgid "查找"
+msgstr "찾기"
+
+msgid "替换"
+msgstr "바꾸기"
+
+msgid "转到"
+msgstr "이동"
+
+msgid "输入搜索词…"
+msgstr "검색어 입력…"
+
+msgid "区分大小写"
+msgstr "대/소문자 구분"
+
+msgid "全词匹配"
+msgstr "전체 단어"
+
+msgid "正则表达式"
+msgstr "정규식"
+
+msgid "↑ 上一个"
+msgstr "↑ 이전"
+
+msgid "↓ 下一个"
+msgstr "↓ 다음"
+
+msgid "查找："
+msgstr "찾기:"
+
+msgid "替换："
+msgstr "바꾸기:"
+
+msgid "替换为…"
+msgstr "바꿀 내용…"
+
+msgid "全部替换"
+msgstr "모두 바꾸기"
+
+msgid "页码："
+msgstr "페이지 번호:"
+
+msgid "页码…"
+msgstr "페이지 번호…"
+
+msgid "页眉和页脚"
+msgstr "머리글/바닥글"
+
+msgid "页眉"
+msgstr "머리글"
+
+msgid "页脚"
+msgstr "바닥글"
+
+msgid "页码"
+msgstr "페이지 번호"
+
+msgid "页眉文字"
+msgstr "머리글 텍스트"
+
+msgid "页眉对齐"
+msgstr "머리글 맞춤"
+
+msgid "居左"
+msgstr "왼쪽"
+
+msgid "居中"
+msgstr "가운데"
+
+msgid "居右"
+msgstr "오른쪽"
+
+msgid "页脚文字"
+msgstr "바닥글 텍스트"
+
+msgid "页脚对齐"
+msgstr "바닥글 맞춤"
+
+msgid "页码位置"
+msgstr "페이지 번호 위치"
+
+msgid "不显示"
+msgstr "표시 안 함"
+
+msgid "页码格式"
+msgstr "페이지 번호 형식"
+
+msgid "第 1 页"
+msgstr "1페이지"
+
+msgid "1 / 总页数"
+msgstr "1 / 전체 페이지 수"
+
+msgid "页码对齐"
+msgstr "페이지 번호 맞춤"
+
+msgid "首页不同（首页不显示页眉页脚）"
+msgstr "첫 페이지 다르게(첫 페이지에 머리글/바닥글 없음)"
+
+msgid "奇偶页不同"
+msgstr "홀수/짝수 페이지 다르게"
+
+msgid "对整篇文档生效；会覆盖原有首页/偶数页内容"
+msgstr "문서 전체에 적용되며, 기존 첫 페이지/짝수 페이지 내용은 덮어씁니다"
+
+msgid "方向"
+msgstr "방향"
+
+msgid "形状"
+msgstr "도형"
+
+msgid "标记"
+msgstr "표식"
+
+msgid "等级"
+msgstr "수준"
+
+msgid "插入占位符"
+msgstr "자리 표시자 삽입"
+
+msgid "{}（已存在）"
+msgstr "{}(이미 있음)"
+
+msgid "重命名版式"
+msgstr "레이아웃 이름 바꾸기"
+
+msgid "版式名称"
+msgstr "레이아웃 이름"
+
+msgid "柱状图"
+msgstr "세로 막대형 차트"
+
+msgid "图表标题："
+msgstr "차트 제목:"
+
+msgid "预览加载中…"
+msgstr "미리 보기 로드 중…"
+
+msgid "行距选项"
+msgstr "줄 간격 옵션"
+
+msgid "行距类型"
+msgstr "줄 간격 종류"
+
+msgid "多倍行距"
+msgstr "배수"
+
+msgid "固定值"
+msgstr "고정"
+
+msgid "倍数（0.5–10）"
+msgstr "배수(0.5–10)"
+
+msgid "磅值（pt）"
+msgstr "포인트(pt)"
+
+msgid "段前（pt）"
+msgstr "단락 앞(pt)"
+
+msgid "段后（pt）"
+msgstr "단락 뒤(pt)"
+
+msgid "段前、段后留空表示不修改"
+msgstr "앞/뒤를 비워 두면 변경하지 않습니다"
+
+msgid "名称管理器"
+msgstr "이름 관리자"
+
+msgid "名称"
+msgstr "이름"
+
+msgid "引用位置"
+msgstr "참조 대상"
+
+msgid "名称:"
+msgstr "이름:"
+
+msgid "引用位置:"
+msgstr "참조 대상:"
+
+msgid "新增"
+msgstr "추가"
+
+msgid "删除选中"
+msgstr "선택 항목 삭제"
+
+msgid "提示:局部名称按全局名称处理,同名的局部名称会丢失。"
+msgstr "참고: 로컬 이름은 전역 이름으로 처리되며, 이름이 같은 로컬 이름은 사라집니다."
+
+msgid "页面设置"
+msgstr "페이지 설정"
+
+msgid "纸张大小"
+msgstr "용지 크기"
+
+msgid "自定义(保持当前)"
+msgstr "사용자 지정(현재 유지)"
+
+msgid "纸张方向"
+msgstr "용지 방향"
+
+msgid "纵向"
+msgstr "세로"
+
+msgid "横向"
+msgstr "가로"
+
+msgid "页边距预设"
+msgstr "여백 미리 설정"
+
+msgid "窄"
+msgstr "좁게"
+
+msgid "宽"
+msgstr "넓게"
+
+msgid "上（cm）"
+msgstr "위쪽(cm)"
+
+msgid "下（cm）"
+msgstr "아래쪽(cm)"
+
+msgid "左（cm）"
+msgstr "왼쪽(cm)"
+
+msgid "右（cm）"
+msgstr "오른쪽(cm)"
+
+msgid "设置对整篇文档（所有分节）生效"
+msgstr "설정은 문서 전체(모든 구역)에 적용됩니다"
+
+msgid "选择透视表字段"
+msgstr "피벗 테이블 필드 선택"
+
+msgid "数据透视表字段"
+msgstr "피벗 테이블 필드"
+
+msgid "选择要添加到报表的字段:"
+msgstr "보고서에 추가할 필드 선택:"
+
+msgid "添加到筛选"
+msgstr "필터에 추가"
+
+msgid "添加到行"
+msgstr "행에 추가"
+
+msgid "添加到列"
+msgstr "열에 추가"
+
+msgid "添加到值"
+msgstr "값에 추가"
+
+msgid "行"
+msgstr "행"
+
+msgid "列"
+msgstr "열"
+
+msgid "值"
+msgstr "값"
+
+msgid "创建数据透视表"
+msgstr "피벗 테이블 만들기"
+
+msgid "请选择要分析的数据"
+msgstr "분석할 데이터를 선택하십시오"
+
+msgid "选择表格或区域:"
+msgstr "표 또는 범위 선택:"
+
+msgid "选择放置数据透视表的位置"
+msgstr "피벗 테이블을 배치할 위치를 선택하십시오"
+
+msgid "新建工作表"
+msgstr "새 워크시트"
+
+msgid "现有工作表"
+msgstr "기존 워크시트"
+
+msgid "位置:"
+msgstr "위치:"
+
+msgid "拖放字段至此"
+msgstr "여기로 필드를 끌어 놓으세요"
+
+msgid "获取并转换数据"
+msgstr "데이터 가져오기 및 변환"
+
+msgid "获取数据(Polars)"
+msgstr "데이터 가져오기(Polars)"
+
+msgid "导入 CSV / Parquet(含 Hive 目录) / Excel 为数据集"
+msgstr "CSV / Parquet(Hive 디렉터리 포함) / Excel을 데이터 집합으로 가져오기"
+
+msgid "来自图片的数据"
+msgstr "그림에서 데이터"
+
+msgid "从图片OCR提取数据（开发中）"
+msgstr "OCR로 그림에서 데이터 추출(개발 중)"
+
+msgid "SQL查询"
+msgstr "SQL 쿼리"
+
+msgid "使用SQL查询当前表格数据（Polars SQLContext）"
+msgstr "SQL로 현재 시트 쿼리(Polars SQLContext)"
+
+msgid "DF分析"
+msgstr "DF 분석"
+
+msgid "Polars数据分析脚本（df_info/pivot/sql/unique_values）"
+msgstr "Polars 데이터 분석 스크립트(df_info/pivot/sql/unique_values)"
+
+msgid "查询和连接"
+msgstr "쿼리 및 연결"
+
+msgid "全部刷新"
+msgstr "모두 새로 고침"
+
+msgid "刷新所有数据连接"
+msgstr "모든 데이터 연결 새로 고침"
+
+msgid "查询&连接"
+msgstr "쿼리 및 연결"
+
+msgid "查看查询和连接"
+msgstr "쿼리 및 연결 보기"
+
+msgid "属性"
+msgstr "속성"
+
+msgid "数据连接属性"
+msgstr "연결 속성"
+
+msgid "编辑链接"
+msgstr "링크 편집"
+
+msgid "编辑外部链接"
+msgstr "외부 링크 편집"
+
+msgid "排序和筛选"
+msgstr "정렬 및 필터"
+
+msgid "升序排序 (A→Z)"
+msgstr "오름차순 정렬 (A→Z)"
+
+msgid "降序排序 (Z→A)"
+msgstr "내림차순 정렬 (Z→A)"
+
+msgid "自定义排序"
+msgstr "사용자 지정 정렬"
+
+msgid "自动筛选(开/关)"
+msgstr "자동 필터(켜기/끄기)"
+
+msgid "清除筛选"
+msgstr "필터 지우기"
+
+msgid "重新应用"
+msgstr "다시 적용"
+
+msgid "重新应用筛选"
+msgstr "필터 다시 적용"
+
+msgid "高级"
+msgstr "고급"
+
+msgid "高级筛选"
+msgstr "고급 필터"
+
+msgid "数据工具"
+msgstr "데이터 도구"
+
+msgid "文本拆分为列"
+msgstr "텍스트 나누기"
+
+msgid "将文本按分隔符拆分为多列"
+msgstr "구분 기호로 텍스트를 여러 열로 나눕니다"
+
+msgid "快速填充"
+msgstr "빠른 채우기"
+
+msgid "Flash Fill — 智能识别填充规律"
+msgstr "빠른 채우기 — 채우기 패턴을 자동으로 인식합니다"
+
+msgid "删除重复值"
+msgstr "중복된 항목 제거"
+
+msgid "删除重复行"
+msgstr "중복된 행 제거"
+
+msgid "设置单元格输入规则和下拉列表"
+msgstr "셀 입력 규칙과 드롭다운 목록 설정"
+
+msgid "合并计算"
+msgstr "통합"
+
+msgid "合并多个区域的数据"
+msgstr "여러 범위의 데이터를 결합합니다"
+
+msgid "模拟分析"
+msgstr "가상 분석"
+
+msgid "模拟分析工具（开发中）"
+msgstr "가상 분석 도구(개발 중)"
+
+msgid "描述性统计 / 相关 / 检验 / 方差分析 / 回归 / 移动平均 / 指数平滑"
+msgstr "기술 통계 / 상관 / 검정 / 분산 분석 / 회귀 / 이동 평균 / 지수 평활"
+
+msgid "分级显示"
+msgstr "윤곽선"
+
+msgid "组合"
+msgstr "그룹"
+
+msgid "将行列组合为分级显示"
+msgstr "행 또는 열을 윤곽선으로 그룹화합니다"
+
+msgid "取消组合"
+msgstr "그룹 해제"
+
+msgid "取消行列组合"
+msgstr "행 또는 열의 그룹을 해제합니다"
+
+msgid "分类汇总"
+msgstr "부분합"
+
+msgid "按分类汇总数据"
+msgstr "범주별로 데이터를 요약합니다"
+
+msgid "显示详细"
+msgstr "세부 정보 표시"
+
+msgid "展开分组"
+msgstr "그룹 펼치기"
+
+msgid "隐藏详细"
+msgstr "세부 정보 숨기기"
+
+msgid "折叠分组"
+msgstr "그룹 접기"
+
+msgid "函数库"
+msgstr "함수 라이브러리"
+
+msgid "插入函数"
+msgstr "함수 삽입"
+
+msgid "插入函数向导 (Shift+F3)"
+msgstr "함수 마법사 삽입 (Shift+F3)"
+
+msgid "自动求和"
+msgstr "자동 합계"
+
+msgid "SUM — 对选定区域求和"
+msgstr "SUM — 선택한 범위의 합계"
+
+msgid "财务 ▾"
+msgstr "재무 ▾"
+
+msgid "财务函数"
+msgstr "재무 함수"
+
+msgid "逻辑 ▾"
+msgstr "논리 ▾"
+
+msgid "逻辑函数"
+msgstr "논리 함수"
+
+msgid "文本 ▾"
+msgstr "텍스트 ▾"
+
+msgid "文本函数"
+msgstr "텍스트 함수"
+
+msgid "日期和时间 ▾"
+msgstr "날짜 및 시간 ▾"
+
+msgid "日期和时间函数"
+msgstr "날짜 및 시간 함수"
+
+msgid "查找与引用 ▾"
+msgstr "찾기/참조 ▾"
+
+msgid "查找与引用函数"
+msgstr "찾기 및 참조 함수"
+
+msgid "数学和三角 ▾"
+msgstr "수학/삼각 ▾"
+
+msgid "数学和三角函数"
+msgstr "수학 및 삼각 함수"
+
+msgid "其他函数 ▾"
+msgstr "함수 더 보기 ▾"
+
+msgid "统计/工程/信息等其他函数"
+msgstr "통계, 공학, 정보 등 기타 함수"
+
+msgid "管理命名区域 (Ctrl+F3)"
+msgstr "이름 범위 관리 (Ctrl+F3)"
+
+msgid "定义名称"
+msgstr "이름 정의"
+
+msgid "为单元格区域定义名称"
+msgstr "셀 범위의 이름을 정의합니다"
+
+msgid "在公式中使用"
+msgstr "수식에서 사용"
+
+msgid "在公式中插入已定义的名称"
+msgstr "정의된 이름을 수식에 삽입합니다"
+
+msgid "由所选区域创建"
+msgstr "선택 영역에서 만들기"
+
+msgid "根据选定区域自动创建名称"
+msgstr "선택 영역에서 이름을 자동으로 만듭니다"
+
+msgid "公式审核"
+msgstr "수식 분석"
+
+msgid "追踪引用单元格"
+msgstr "참조되는 셀 추적"
+
+msgid "显示影响当前单元格的单元格"
+msgstr "현재 셀에 영향을 주는 셀을 표시합니다"
+
+msgid "追踪从属单元格"
+msgstr "참조하는 셀 추적"
+
+msgid "显示依赖当前单元格的单元格"
+msgstr "현재 셀에 의존하는 셀을 표시합니다"
+
+msgid "删除箭头"
+msgstr "연결선 제거"
+
+msgid "删除所有追踪箭头"
+msgstr "모든 추적 화살표를 제거합니다"
+
+msgid "显示公式"
+msgstr "수식 표시"
+
+msgid "切换显示公式/值 (Ctrl+`)"
+msgstr "수식/값 표시 전환 (Ctrl+`)"
+
+msgid "错误检查"
+msgstr "오류 검사"
+
+msgid "检查公式错误"
+msgstr "수식 오류를 검사합니다"
+
+msgid "监视窗口"
+msgstr "조사식 창"
+
+msgid "监视单元格值变化"
+msgstr "셀 값의 변화를 감시합니다"
+
+msgid "计算选项"
+msgstr "계산 옵션"
+
+msgid "设置自动/手动计算模式（占位，未接列表）"
+msgstr "자동/수동 계산 설정(자리 표시자, 목록 미연결)"
+
+msgid "立即计算"
+msgstr "지금 계산"
+
+msgid "立即重新计算所有公式 (F9)"
+msgstr "모든 수식을 지금 다시 계산합니다 (F9)"
+
+msgid "计算工作表"
+msgstr "시트 계산"
+
+msgid "计算当前工作表 (Shift+F9)"
+msgstr "현재 시트를 계산합니다 (Shift+F9)"
+
+msgid "剪贴板"
+msgstr "클립보드"
+
+msgid "粘贴"
+msgstr "붙여넣기"
+
+msgid "粘贴 (Ctrl+V)"
+msgstr "붙여넣기 (Ctrl+V)"
+
+msgid "剪切"
+msgstr "잘라내기"
+
+msgid "格式刷"
+msgstr "서식 복사"
+
+msgid "格式刷(单击一次,双击连续)"
+msgstr "서식 복사(한 번 클릭하면 1회, 더블클릭하면 계속)"
+
+msgid "字体"
+msgstr "글꼴"
+
+msgid "增大字号"
+msgstr "글꼴 크기 크게"
+
+msgid "减小字号"
+msgstr "글꼴 크기 작게"
+
+msgid "加粗 (Ctrl+B)"
+msgstr "굵게 (Ctrl+B)"
+
+msgid "斜体 (Ctrl+I)"
+msgstr "기울임꼴 (Ctrl+I)"
+
+msgid "下划线 (Ctrl+U)"
+msgstr "밑줄 (Ctrl+U)"
+
+msgid "边框"
+msgstr "테두리"
+
+msgid "填充颜色"
+msgstr "채우기 색"
+
+msgid "字体颜色"
+msgstr "글꼴 색"
+
+msgid "对齐方式"
+msgstr "맞춤"
+
+msgid "顶端对齐"
+msgstr "위쪽 맞춤"
+
+msgid "垂直居中"
+msgstr "가운데 맞춤"
+
+msgid "底端对齐"
+msgstr "아래쪽 맞춤"
+
+msgid "自动换行"
+msgstr "텍스트 줄 바꿈"
+
+msgid "左对齐"
+msgstr "왼쪽 맞춤"
+
+msgid "右对齐"
+msgstr "오른쪽 맞춤"
+
+msgid "合并"
+msgstr "병합"
+
+msgid "合并单元格"
+msgstr "셀 병합"
+
+msgid "货币格式"
+msgstr "통화 형식"
+
+msgid "百分比格式"
+msgstr "백분율 스타일"
+
+msgid "千分位格式"
+msgstr "쉼표 스타일"
+
+msgid "增加小数位"
+msgstr "자릿수 늘림"
+
+msgid "减少小数位"
+msgstr "자릿수 줄임"
+
+msgid "条件格式"
+msgstr "조건부 서식"
+
+msgid "套用格式"
+msgstr "표 서식"
+
+msgid "单元格样式"
+msgstr "셀 스타일"
+
+msgid "单元格"
+msgstr "셀"
+
+msgid "插入行"
+msgstr "행 삽입"
+
+msgid "在选区上方插入一行"
+msgstr "선택 영역 위에 행을 삽입합니다"
+
+msgid "删除行"
+msgstr "행 삭제"
+
+msgid "删除选区所在行"
+msgstr "선택 영역의 행을 삭제합니다"
+
+msgid "格式"
+msgstr "서식"
+
+msgid "插入列"
+msgstr "열 삽입"
+
+msgid "在选区左侧插入一列"
+msgstr "선택 영역 왼쪽에 열을 삽입합니다"
+
+msgid "删除列"
+msgstr "열 삭제"
+
+msgid "删除选区所在列"
+msgstr "선택 영역의 열을 삭제합니다"
+
+msgid "编辑"
+msgstr "편집"
+
+msgid "查找和选择"
+msgstr "찾기 및 선택"
+
+msgid "表格"
+msgstr "표"
+
+msgid "插入数据透视表"
+msgstr "피벗 테이블 삽입"
+
+msgid "建议透视表"
+msgstr "추천 피벗 테이블"
+
+msgid "插入建议的数据透视表"
+msgstr "추천 피벗 테이블을 삽입합니다"
+
+msgid "将区域转换为表格"
+msgstr "범위를 표로 변환"
+
+msgid "插图"
+msgstr "일러스트레이션"
+
+msgid "图片"
+msgstr "그림"
+
+msgid "插入图片"
+msgstr "그림 삽입"
+
+msgid "插入形状"
+msgstr "도형 삽입"
+
+msgid "图标"
+msgstr "아이콘"
+
+msgid "插入图标"
+msgstr "아이콘 삽입"
+
+msgid "截图"
+msgstr "스크린샷"
+
+msgid "插入屏幕截图"
+msgstr "화면 캡처를 삽입합니다"
+
+msgid "图表"
+msgstr "차트"
+
+msgid "插入图表（选择类型）"
+msgstr "차트 삽입(종류 선택)"
+
+msgid "透视图"
+msgstr "피벗 차트"
+
+msgid "数据透视图"
+msgstr "피벗 차트"
+
+msgid "迷你图"
+msgstr "스파크라인"
+
+msgid "在单元格内插入迷你图(类型可在对话框中选择)"
+msgstr "셀 안에 스파크라인을 삽입합니다(종류는 대화 상자에서 선택)"
+
+msgid "折线"
+msgstr "꺾은선형"
+
+msgid "插入折线迷你图"
+msgstr "꺾은선형 스파크라인 삽입"
+
+msgid "柱形"
+msgstr "열"
+
+msgid "插入柱形迷你图"
+msgstr "열 스파크라인 삽입"
+
+msgid "清除迷你图"
+msgstr "스파크라인 지우기"
+
+msgid "清除所选单元格中的迷你图"
+msgstr "선택한 셀의 스파크라인을 지웁니다"
+
+msgid "切片器"
+msgstr "슬라이서"
+
+msgid "插入切片器，用于筛选数据透视表"
+msgstr "피벗 테이블을 필터링할 슬라이서를 삽입합니다"
+
+msgid "日程表"
+msgstr "시간 표시 막대"
+
+msgid "按日期范围筛选（开发中）"
+msgstr "날짜 범위로 필터링(개발 중)"
+
+msgid "链接"
+msgstr "링크"
+
+msgid "插入超链接 (Ctrl+K)"
+msgstr "하이퍼링크 삽입 (Ctrl+K)"
+
+msgid "批注"
+msgstr "메모"
+
+msgid "插入批注 (Ctrl+Alt+C)"
+msgstr "메모 삽입 (Ctrl+Alt+C)"
+
+msgid "文本框"
+msgstr "텍스트 상자"
+
+msgid "插入文本框"
+msgstr "텍스트 상자 삽입"
+
+msgid "文字方向"
+msgstr "텍스트 방향"
+
+msgid "更改文字方向"
+msgstr "텍스트 방향 변경"
+
+msgid "公式和符号"
+msgstr "수식 및 기호"
+
+msgid "插入数学公式"
+msgstr "수식 삽입"
+
+msgid "符号"
+msgstr "기호"
+
+msgid "插入特殊符号"
+msgstr "특수 기호 삽입"
+
+msgid "数据透视表1"
+msgstr "피벗 테이블1"
+
+msgid "更改数据源"
+msgstr "데이터 원본 변경"
+
+msgid "操作"
+msgstr "동작"
+
+msgid "移动透视表"
+msgstr "피벗 테이블 이동"
+
+msgid "显示详情"
+msgstr "세부 정보 표시"
+
+msgid "筛选器"
+msgstr "필터"
+
+msgid "插入切片器"
+msgstr "슬라이서 삽입"
+
+msgid "样式选项"
+msgstr "스타일 옵션"
+
+msgid "行标题"
+msgstr "행 머리글"
+
+msgid "镶边行"
+msgstr "줄무늬 행"
+
+msgid "列标题"
+msgstr "열 머리글"
+
+msgid "镶边列"
+msgstr "줄무늬 열"
+
+msgid "数据透视表样式"
+msgstr "피벗 테이블 스타일"
+
+msgid "填充"
+msgstr "채우기"
+
+msgid "边框粗细"
+msgstr "테두리 두께"
+
+msgid "冻结窗格"
+msgstr "틀 고정"
+
+msgid "冻结当前单元格上方和左侧的行列（图标占位）"
+msgstr "현재 셀 위쪽 행과 왼쪽 열을 고정합니다(아이콘 자리 표시자)"
+
+msgid "冻结首行"
+msgstr "첫 행 고정"
+
+msgid "始终显示第一行（图标占位）"
+msgstr "첫 행을 항상 표시합니다(아이콘 자리 표시자)"
+
+msgid "冻结首列"
+msgstr "첫 열 고정"
+
+msgid "始终显示第一列（图标占位）"
+msgstr "첫 열을 항상 표시합니다(아이콘 자리 표시자)"
+
+msgid "取消冻结"
+msgstr "틀 고정 취소"
+
+msgid "取消所有冻结（图标占位）"
+msgstr "모든 고정을 해제합니다(아이콘 자리 표시자)"
+
+msgid "显示"
+msgstr "표시"
+
+msgid "编辑栏"
+msgstr "수식 입력줄"
+
+msgid "行列标题"
+msgstr "머리글"
+
+msgid "缩放"
+msgstr "확대/축소"
+
+msgid "恢复100%大小"
+msgstr "100%로 되돌리기"
+
+msgid "放大"
+msgstr "확대"
+
+msgid "放大视图"
+msgstr "보기를 확대합니다"
+
+msgid "缩小"
+msgstr "축소"
+
+msgid "缩小视图"
+msgstr "보기를 축소합니다"
+
+msgid "动画效果"
+msgstr "애니메이션 효과"
+
+msgid "淡入"
+msgstr "페이드"
+
+msgid "飞入"
+msgstr "날아오기"
+
+msgid "擦除"
+msgstr "지우기"
+
+msgid "效果"
+msgstr "효과"
+
+msgid "效果选项"
+msgstr "효과 옵션"
+
+msgid "动画窗格"
+msgstr "애니메이션 창"
+
+msgid "动画刷"
+msgstr "애니메이션 복사"
+
+msgid "自动播放"
+msgstr "자동"
+
+msgid "开始时机"
+msgstr "시작"
+
+msgid "持续时间"
+msgstr "재생 시간"
+
+msgid "字号"
+msgstr "글꼴 크기"
+
+msgid "新建幻灯片"
+msgstr "새 슬라이드"
+
+msgid "版式"
+msgstr "레이아웃"
+
+msgid "重置"
+msgstr "원래대로"
+
+msgid "节"
+msgstr "구역"
+
+msgid "上标"
+msgstr "위 첨자"
+
+msgid "下标"
+msgstr "아래 첨자"
+
+msgid "文本高亮颜色"
+msgstr "텍스트 강조 색"
+
+msgid "段落"
+msgstr "단락"
+
+msgid "项目符号"
+msgstr "글머리 기호"
+
+msgid "编号"
+msgstr "번호 매기기"
+
+msgid "行距与段间距"
+msgstr "줄 및 단락 간격"
+
+msgid "大小"
+msgstr "크기"
+
+msgid "幻灯片编号"
+msgstr "슬라이드 번호"
+
+msgid "隐藏幻灯片"
+msgstr "슬라이드 숨기기"
+
+msgid "竖排文本框"
+msgstr "세로 텍스트 상자"
+
+msgid "日期时间"
+msgstr "날짜 및 시간"
+
+msgid "页眉页脚"
+msgstr "머리글/바닥글"
+
+msgid "背景颜色"
+msgstr "배경색"
+
+msgid "背景与图片"
+msgstr "배경 및 그림"
+
+msgid "背景图片"
+msgstr "배경 그림"
+
+msgid "清除背景"
+msgstr "배경 지우기"
+
+msgid "编辑母版"
+msgstr "마스터 편집"
+
+msgid "复制版式"
+msgstr "레이아웃 복제"
+
+msgid "删除版式"
+msgstr "레이아웃 삭제"
+
+msgid "关闭母版视图"
+msgstr "마스터 보기 닫기"
+
+msgid "校对"
+msgstr "언어 교정"
+
+msgid "拼写检查"
+msgstr "맞춤법 검사"
+
+msgid "语言"
+msgstr "언어"
+
+msgid "翻译"
+msgstr "번역"
+
+msgid "删除"
+msgstr "삭제"
+
+msgid "上一个"
+msgstr "이전"
+
+msgid "下一个"
+msgstr "다음"
+
+msgid "显示批注"
+msgstr "메모 표시"
+
+msgid "解决"
+msgstr "해결"
+
+msgid "比较"
+msgstr "비교"
+
+msgid "纯色"
+msgstr "단색"
+
+msgid "渐变"
+msgstr "그라데이션"
+
+msgid "蓝白横"
+msgstr "파랑-흰색 가로"
+
+msgid "蓝白竖"
+msgstr "파랑-흰색 세로"
+
+msgid "橙白横"
+msgstr "주황-흰색 가로"
+
+msgid "橙白竖"
+msgstr "주황-흰색 세로"
+
+msgid "灰黑横"
+msgstr "회색-검정 가로"
+
+msgid "灰黑竖"
+msgstr "회색-검정 세로"
+
+msgid "图片背景"
+msgstr "그림 배경"
+
+msgid "恢复默认"
+msgstr "기본값 복원"
+
+msgid "开始放映"
+msgstr "슬라이드 쇼 시작"
+
+msgid "从头开始"
+msgstr "처음부터"
+
+msgid "从当前开始"
+msgstr "현재 슬라이드부터"
+
+msgid "放映设置"
+msgstr "슬라이드 쇼 설정"
+
+msgid "排练计时"
+msgstr "예행 연습"
+
+msgid "播放效果"
+msgstr "화면 전환 효과"
+
+msgid "推入"
+msgstr "밀기"
+
+msgid "分割"
+msgstr "분할"
+
+msgid "播放时间"
+msgstr "타이밍"
+
+msgid "声音"
+msgstr "소리"
+
+msgid "播放设置"
+msgstr "재생 설정"
+
+msgid "单击时"
+msgstr "클릭할 때"
+
+msgid "应用到所有"
+msgstr "모두 적용"
+
+msgid "普通"
+msgstr "기본"
+
+msgid "大纲"
+msgstr "개요"
+
+msgid "幻灯片浏览"
+msgstr "슬라이드 정렬"
+
+msgid "备注页面"
+msgstr "노트 페이지"
+
+msgid "阅读视图"
+msgstr "읽기용 보기"
+
+msgid "母版视图"
+msgstr "마스터 보기"
+
+msgid "讲义母版"
+msgstr "유인물 마스터"
+
+msgid "备注母版"
+msgstr "슬라이드 노트 마스터"
+
+msgid "标尺"
+msgstr "눈금자"
+
+msgid "参考线"
+msgstr "안내선"
+
+msgid "适应窗口"
+msgstr "창에 맞춤"
+
+msgid "基本形状"
+msgstr "기본 도형"
+
+msgid "矩"
+msgstr "사각형"
+
+msgid "圆"
+msgstr "원"
+
+msgid "三"
+msgstr "삼각형"
+
+msgid "箭"
+msgstr "화살표"
+
+msgid "线"
+msgstr "선"
+
+msgid "文"
+msgstr "텍스트"
+
+msgid "编辑形状"
+msgstr "도형 편집"
+
+msgid "编辑形状顶点"
+msgstr "점 편집"
+
+msgid "插入横排文本框"
+msgstr "가로 텍스트 상자 삽입"
+
+msgid "形状样式"
+msgstr "도형 스타일"
+
+msgid "形状样式 ⌄"
+msgstr "도형 스타일 ⌄"
+
+msgid "形状填充"
+msgstr "도형 채우기"
+
+msgid "设置形状填充颜色"
+msgstr "도형 채우기 색을 설정합니다"
+
+msgid "形状轮廓"
+msgstr "도형 윤곽선"
+
+msgid "设置形状边框颜色和宽度"
+msgstr "도형 테두리 색과 두께를 설정합니다"
+
+msgid "形状效果"
+msgstr "도형 효과"
+
+msgid "阴影、发光、柔化边缘等"
+msgstr "그림자, 네온, 부드러운 가장자리 등"
+
+msgid "艺术字样式"
+msgstr "워드아트 스타일"
+
+msgid "艺术字 ⌄"
+msgstr "워드아트 ⌄"
+
+msgid "文本填充"
+msgstr "텍스트 채우기"
+
+msgid "文字填充颜色"
+msgstr "텍스트 채우기 색"
+
+msgid "文本轮廓"
+msgstr "텍스트 윤곽선"
+
+msgid "文字轮廓颜色和宽度"
+msgstr "텍스트 윤곽선 색과 두께"
+
+msgid "文本效果"
+msgstr "텍스트 효과"
+
+msgid "阴影、发光、映像等文字效果"
+msgstr "그림자, 네온, 반사 등의 텍스트 효과"
+
+msgid "对齐文字"
+msgstr "텍스트 맞춤"
+
+msgid "文字垂直对齐方式"
+msgstr "텍스트 세로 맞춤"
+
+msgid "创建链接"
+msgstr "링크 만들기"
+
+msgid "链接到另一个文本框"
+msgstr "다른 텍스트 상자에 연결"
+
+msgid "排列"
+msgstr "정렬"
+
+msgid "位置"
+msgstr "위치"
+
+msgid "设置形状在页面中的位置"
+msgstr "페이지에서 도형의 위치를 설정합니다"
+
+msgid "文字环绕"
+msgstr "텍스트 줄 바꿈"
+
+msgid "设置文字环绕方式"
+msgstr "텍스트 줄 바꿈 방식을 설정합니다"
+
+msgid "嵌入型"
+msgstr "텍스트와 함께 이동"
+
+msgid "四周型"
+msgstr "사각형"
+
+msgid "紧密型"
+msgstr "빽빽하게"
+
+msgid "上下型"
+msgstr "위쪽 및 아래쪽"
+
+msgid "衬于文字下方"
+msgstr "텍스트 뒤"
+
+msgid "浮于文字上方"
+msgstr "텍스트 앞"
+
+msgid "上移一层"
+msgstr "앞으로 가져오기"
+
+msgid "下移一层"
+msgstr "뒤로 보내기"
+
+msgid "选择窗格"
+msgstr "선택 창"
+
+msgid "显示选择窗格"
+msgstr "선택 창을 표시합니다"
+
+msgid "对齐"
+msgstr "맞춤"
+
+msgid "对齐所选对象"
+msgstr "선택한 개체를 정렬합니다"
+
+msgid "将多个对象组合"
+msgstr "여러 개체를 그룹화합니다"
+
+msgid "旋转"
+msgstr "회전"
+
+msgid "旋转或翻转对象"
+msgstr "개체를 회전하거나 대칭 이동합니다"
+
+msgid "高度:"
+msgstr "높이:"
+
+msgid "0 cm"
+msgstr "0 cm"
+
+msgid "宽度:"
+msgstr "너비:"
+
+msgid "辅助功能"
+msgstr "접근성"
+
+msgid "替换文字"
+msgstr "대체 텍스트"
+
+msgid "为形状添加替换文字（Alt Text）"
+msgstr "도형에 대체 텍스트를 추가합니다"
+
+msgid "调整"
+msgstr "조정"
+
+msgid "删除背景"
+msgstr "배경 제거"
+
+msgid "删除图片背景"
+msgstr "그림 배경을 제거합니다"
+
+msgid "校正"
+msgstr "수정"
+
+msgid "亮度/对比度校正"
+msgstr "밝기/대비 수정"
+
+msgid "颜色"
+msgstr "색"
+
+msgid "颜色调整"
+msgstr "색 조정"
+
+msgid "艺术效果"
+msgstr "꾸밈 효과"
+
+msgid "透明度"
+msgstr "투명도"
+
+msgid "设置透明度"
+msgstr "투명도를 설정합니다"
+
+msgid "压缩图片"
+msgstr "그림 압축"
+
+msgid "压缩图片以减小文件大小"
+msgstr "그림을 압축하여 파일 크기를 줄입니다"
+
+msgid "更改图片"
+msgstr "그림 변경"
+
+msgid "替换为其他图片"
+msgstr "다른 그림으로 바꿉니다"
+
+msgid "重置图片"
+msgstr "그림 원래대로"
+
+msgid "撤销所有格式更改"
+msgstr "모든 서식 변경을 취소합니다"
+
+msgid "图片样式"
+msgstr "그림 스타일"
+
+msgid "无框"
+msgstr "없음"
+
+msgid "细框"
+msgstr "얇게"
+
+msgid "圆角"
+msgstr "둥근 모서리"
+
+msgid "投影"
+msgstr "그림자"
+
+msgid "图片边框"
+msgstr "그림 테두리"
+
+msgid "设置图片边框颜色和宽度"
+msgstr "그림 테두리 색과 두께를 설정합니다"
+
+msgid "图片效果"
+msgstr "그림 효과"
+
+msgid "图片版式"
+msgstr "그림 레이아웃"
+
+msgid "转换为 SmartArt"
+msgstr "SmartArt로 변환"
+
+msgid "为图片添加替换文字（Alt Text）"
+msgstr "그림에 대체 텍스트를 추가합니다"
+
+msgid "设置图片在页面中的位置"
+msgstr "페이지에서 그림의 위치를 설정합니다"
+
+msgid "将多个对象组合为一个"
+msgstr "여러 개체를 하나로 그룹화합니다"
+
+msgid "裁剪"
+msgstr "자르기"
+
+msgid "裁剪图片"
+msgstr "그림을 자릅니다"
+
+msgid "表格样式"
+msgstr "표 스타일"
+
+msgid "底纹"
+msgstr "음영"
+
+msgid "行和列"
+msgstr "행 및 열"
+
+msgid "在上方插入"
+msgstr "위에 삽입"
+
+msgid "在下方插入"
+msgstr "아래에 삽입"
+
+msgid "在左侧插入"
+msgstr "왼쪽에 삽입"
+
+msgid "在右侧插入"
+msgstr "오른쪽에 삽입"
+
+msgid "拆分单元格"
+msgstr "셀 분할"
+
+msgid "删除表格"
+msgstr "표 삭제"
+
+msgid "单元格大小"
+msgstr "셀 크기"
+
+msgid "平均分布各行"
+msgstr "행 높이를 같게"
+
+msgid "平均分布各列"
+msgstr "열 너비를 같게"
+
+msgid "文档格式"
+msgstr "문서 서식"
+
+msgid "主题"
+msgstr "테마"
+
+msgid "更改文档主题"
+msgstr "문서 테마를 변경합니다"
+
+msgid "更改主题颜色"
+msgstr "테마 색을 변경합니다"
+
+msgid "更改主题字体"
+msgstr "테마 글꼴을 변경합니다"
+
+msgid "段落间距"
+msgstr "단락 간격"
+
+msgid "更改段落间距"
+msgstr "단락 간격을 변경합니다"
+
+msgid "更改主题效果"
+msgstr "테마 효과를 변경합니다"
+
+msgid "设为默认值"
+msgstr "기본값으로 설정"
+
+msgid "页面背景"
+msgstr "페이지 배경"
+
+msgid "水印"
+msgstr "워터마크"
+
+msgid "插入水印"
+msgstr "워터마크 삽입"
+
+msgid "页面颜色"
+msgstr "페이지 색"
+
+msgid "设置页面背景色"
+msgstr "페이지 배경색을 설정합니다"
+
+msgid "页面边框"
+msgstr "페이지 테두리"
+
+msgid "设置页面边框"
+msgstr "페이지 테두리를 설정합니다"
+
+msgid "剪切 (Ctrl+X)"
+msgstr "잘라내기 (Ctrl+X)"
+
+msgid "复制 (Ctrl+C)"
+msgstr "복사 (Ctrl+C)"
+
+msgid "格式刷（单击一次，双击连续）"
+msgstr "서식 복사(한 번 클릭하면 1회, 더블클릭하면 계속)"
+
+msgid "增大字号 (Ctrl+>)"
+msgstr "글꼴 크기 크게 (Ctrl+>)"
+
+msgid "减小字号 (Ctrl+<)"
+msgstr "글꼴 크기 작게 (Ctrl+<)"
+
+msgid "更改大小写"
+msgstr "대/소문자 바꾸기"
+
+msgid "删除线"
+msgstr "취소선"
+
+msgid "下标 (Ctrl+=)"
+msgstr "아래 첨자 (Ctrl+=)"
+
+msgid "上标 (Ctrl+Shift+=)"
+msgstr "위 첨자 (Ctrl+Shift+=)"
+
+msgid "文字效果"
+msgstr "텍스트 효과"
+
+msgid "编号列表"
+msgstr "번호 매기기"
+
+msgid "多级列表"
+msgstr "다단계 목록"
+
+msgid "一 / (一) / 1."
+msgstr "1. / 가. / a."
+
+msgid "标题样式多级"
+msgstr "제목 스타일 다단계"
+
+msgid "减少缩进"
+msgstr "내어쓰기"
+
+msgid "增加缩进"
+msgstr "들여쓰기"
+
+msgid "显示/隐藏段落标记"
+msgstr "단락 부호 표시/숨기기"
+
+msgid "左对齐 (Ctrl+L)"
+msgstr "왼쪽 맞춤 (Ctrl+L)"
+
+msgid "居中 (Ctrl+E)"
+msgstr "가운데 맞춤 (Ctrl+E)"
+
+msgid "右对齐 (Ctrl+R)"
+msgstr "오른쪽 맞춤 (Ctrl+R)"
+
+msgid "两端对齐 (Ctrl+J)"
+msgstr "양쪽 맞춤 (Ctrl+J)"
+
+msgid "分散对齐"
+msgstr "균등 분할"
+
+msgid "行与段落间距"
+msgstr "줄 및 단락 간격"
+
+msgid "段落底纹"
+msgstr "단락 음영"
+
+msgid "查找 (Ctrl+F)"
+msgstr "찾기 (Ctrl+F)"
+
+msgid "替换 (Ctrl+H)"
+msgstr "바꾸기 (Ctrl+H)"
+
+msgid "选择"
+msgstr "선택"
+
+msgid "页面"
+msgstr "페이지"
+
+msgid "封面"
+msgstr "표지"
+
+msgid "插入封面页"
+msgstr "표지를 삽입합니다"
+
+msgid "空白页"
+msgstr "빈 페이지"
+
+msgid "插入空白页"
+msgstr "빈 페이지를 삽입합니다"
+
+msgid "分页符"
+msgstr "페이지 나누기"
+
+msgid "插入分页符 (Ctrl+Enter)"
+msgstr "페이지 나누기 삽입 (Ctrl+Enter)"
+
+msgid "插入截图"
+msgstr "스크린샷 삽입"
+
+msgid "超链接"
+msgstr "하이퍼링크"
+
+msgid "书签"
+msgstr "책갈피"
+
+msgid "插入书签"
+msgstr "책갈피 삽입"
+
+msgid "交叉引用"
+msgstr "상호 참조"
+
+msgid "插入交叉引用"
+msgstr "상호 참조 삽입"
+
+msgid "插入页眉"
+msgstr "머리글 삽입"
+
+msgid "插入页脚"
+msgstr "바닥글 삽입"
+
+msgid "插入页码"
+msgstr "페이지 번호 삽입"
+
+msgid "艺术字"
+msgstr "워드아트"
+
+msgid "插入艺术字"
+msgstr "워드아트 삽입"
+
+msgid "插入日期和时间"
+msgstr "날짜 및 시간 삽입"
+
+msgid "插入公式"
+msgstr "수식 삽입"
+
+msgid "插入域编号"
+msgstr "필드 번호 삽입"
+
+msgid "页边距"
+msgstr "여백"
+
+msgid "设置页边距"
+msgstr "페이지 여백을 설정합니다"
+
+msgid "设置纸张方向"
+msgstr "용지 방향을 설정합니다"
+
+msgid "设置纸张大小"
+msgstr "용지 크기를 설정합니다"
+
+msgid "分栏"
+msgstr "단"
+
+msgid "点击循环切换 1/2/3 栏"
+msgstr "클릭하여 1/2/3단으로 순환합니다"
+
+msgid "分隔符"
+msgstr "나누기"
+
+msgid "在光标处插入分栏符（需先设置多栏）"
+msgstr "커서 위치에 단 나누기를 삽입합니다(먼저 여러 단을 설정하세요)"
+
+msgid "行号"
+msgstr "줄 번호"
+
+msgid "添加行号（需页面对话框设置）"
+msgstr "줄 번호를 추가합니다(페이지 대화 상자에서 설정)"
+
+msgid "断字"
+msgstr "하이픈 넣기"
+
+msgid "自动断字设置"
+msgstr "자동 하이픈 넣기 설정"
+
+msgid "缩进左:"
+msgstr "왼쪽 들여쓰기:"
+
+msgid "0 厘米"
+msgstr "0 cm"
+
+msgid "缩进右:"
+msgstr "오른쪽 들여쓰기:"
+
+msgid "间距前:"
+msgstr "앞 간격:"
+
+msgid "0 行"
+msgstr "0줄"
+
+msgid "间距后:"
+msgstr "뒤 간격:"
+
+msgid "设置对象位置"
+msgstr "개체 위치 설정"
+
+msgid "将对象上移一层"
+msgstr "개체를 앞으로 가져옵니다"
+
+msgid "对齐对象"
+msgstr "개체 맞춤"
+
+msgid "组合对象"
+msgstr "개체 그룹화"
+
+msgid "旋转对象"
+msgstr "개체 회전"
+
+msgid "创建"
+msgstr "만들기"
+
+msgid "中文信封"
+msgstr "중국어 봉투"
+
+msgid "创建中文信封"
+msgstr "중국어 봉투를 만듭니다"
+
+msgid "信封"
+msgstr "봉투"
+
+msgid "创建信封"
+msgstr "봉투 만들기"
+
+msgid "标签"
+msgstr "레이블"
+
+msgid "创建标签"
+msgstr "레이블 만들기"
+
+msgid "开始邮件合并"
+msgstr "편지 병합 시작"
+
+msgid "邮件合并"
+msgstr "편지 병합"
+
+msgid "开始邮件合并向导"
+msgstr "편지 병합 마법사를 시작합니다"
+
+msgid "选择收件人"
+msgstr "받는 사람 선택"
+
+msgid "选择收件人列表"
+msgstr "받는 사람 목록을 선택합니다"
+
+msgid "编辑收件人"
+msgstr "받는 사람 편집"
+
+msgid "编辑收件人列表"
+msgstr "받는 사람 목록을 편집합니다"
+
+msgid "编写和插入域"
+msgstr "필드 쓰기 및 삽입"
+
+msgid "插入合并域"
+msgstr "병합 필드 삽입"
+
+msgid "规则"
+msgstr "규칙"
+
+msgid "插入规则"
+msgstr "규칙 삽입"
+
+msgid "更新标签"
+msgstr "레이블 업데이트"
+
+msgid "预览结果"
+msgstr "결과 미리 보기"
+
+msgid "预览合并结果"
+msgstr "병합 결과를 미리 봅니다"
+
+msgid "查找收件人"
+msgstr "받는 사람 찾기"
+
+msgid "检查错误"
+msgstr "오류 검사"
+
+msgid "检查合并错误"
+msgstr "병합 오류를 검사합니다"
+
+msgid "完成"
+msgstr "마침"
+
+msgid "完成并合并"
+msgstr "마침 및 병합"
+
+msgid "目录"
+msgstr "목차"
+
+msgid "插入自动目录"
+msgstr "자동 목차를 삽입합니다"
+
+msgid "添加文字"
+msgstr "텍스트 추가"
+
+msgid "将所选内容添加为目录条目"
+msgstr "선택 항목을 목차 항목으로 추가합니다"
+
+msgid "更新目录"
+msgstr "목차 업데이트"
+
+msgid "刷新目录内容"
+msgstr "목차 내용을 새로 고칩니다"
+
+msgid "脚注与尾注"
+msgstr "각주 및 미주"
+
+msgid "插入脚注"
+msgstr "각주 삽입"
+
+msgid "在当前位置插入脚注"
+msgstr "현재 위치에 각주를 삽입합니다"
+
+msgid "插入尾注"
+msgstr "미주 삽입"
+
+msgid "在光标处插入尾注引用"
+msgstr "커서 위치에 미주 참조를 삽입합니다"
+
+msgid "上一条脚注"
+msgstr "이전 각주"
+
+msgid "跳转到上一条脚注"
+msgstr "이전 각주로 이동합니다"
+
+msgid "下一条脚注"
+msgstr "다음 각주"
+
+msgid "跳转到下一条脚注"
+msgstr "다음 각주로 이동합니다"
+
+msgid "注释管理"
+msgstr "주석 관리"
+
+msgid "删除脚注"
+msgstr "각주 삭제"
+
+msgid "删除光标所在段落的脚注"
+msgstr "현재 단락의 각주를 삭제합니다"
+
+msgid "删除尾注"
+msgstr "미주 삭제"
+
+msgid "删除光标所在段落的尾注"
+msgstr "현재 단락의 미주를 삭제합니다"
+
+msgid "题注"
+msgstr "캡션"
+
+msgid "插入题注"
+msgstr "캡션 삽입"
+
+msgid "为图表插入题注"
+msgstr "그림 또는 표에 캡션을 삽입합니다"
+
+msgid "图表目录"
+msgstr "그림 목차"
+
+msgid "插入图表目录"
+msgstr "그림 목차 삽입"
+
+msgid "更新表格"
+msgstr "표 업데이트"
+
+msgid "更新图表目录"
+msgstr "그림 목차를 업데이트합니다"
+
+msgid "拼写和语法"
+msgstr "맞춤법 및 문법"
+
+msgid "拼写和语法检查 (F7)"
+msgstr "맞춤법 및 문법 검사 (F7)"
+
+msgid "字数统计"
+msgstr "단어 수"
+
+msgid "查看字数统计"
+msgstr "단어 수를 확인합니다"
+
+msgid "删除当前批注"
+msgstr "현재 메모를 삭제합니다"
+
+msgid "上一条"
+msgstr "이전"
+
+msgid "上一条批注"
+msgstr "이전 메모"
+
+msgid "下一条"
+msgstr "다음"
+
+msgid "下一条批注"
+msgstr "다음 메모"
+
+msgid "显示/隐藏批注"
+msgstr "메모 표시/숨기기"
+
+msgid "修订"
+msgstr "변경 내용 추적"
+
+msgid "启用/禁用修订跟踪"
+msgstr "변경 내용 추적을 켜거나 끕니다"
+
+msgid "接受"
+msgstr "수락"
+
+msgid "接受所有修订"
+msgstr "모든 변경 내용 수락"
+
+msgid "拒绝"
+msgstr "거부"
+
+msgid "拒绝所有修订"
+msgstr "모든 변경 내용 거부"
+
+msgid "上一条修订"
+msgstr "이전 변경 내용"
+
+msgid "下一条修订"
+msgstr "다음 변경 내용"
+
+msgid "比较文档版本"
+msgstr "문서 버전 비교"
+
+msgid "渐变填充"
+msgstr "그라데이션 채우기"
+
+msgid "页面视图"
+msgstr "인쇄 모양"
+
+msgid "切换到页面视图"
+msgstr "인쇄 모양 보기로 전환합니다"
+
+msgid "切换到阅读视图"
+msgstr "읽기 모드로 전환합니다"
+
+msgid "切换到大纲视图"
+msgstr "개요 보기로 전환합니다"
+
+msgid "草稿"
+msgstr "초안"
+
+msgid "切换到草稿视图"
+msgstr "초안 보기로 전환합니다"
+
+msgid "导航窗格"
+msgstr "탐색 창"
+
+msgid "100%"
+msgstr "100%"
+
+msgid "页宽"
+msgstr "페이지 너비"
+
+msgid "适应页面宽度"
+msgstr "페이지 너비에 맞춥니다"
+
+msgid "窗口"
+msgstr "창"
+
+msgid "新建窗口"
+msgstr "새 창"
+
+msgid "在新窗口中打开文档"
+msgstr "새 창에서 문서를 엽니다"
+
+msgid "拆分"
+msgstr "분할"
+
+msgid "拆分窗口"
+msgstr "창을 분할합니다"
+
+msgid "切换窗口"
+msgstr "창 전환"
+
+msgid "切换到其他打开的文档"
+msgstr "열려 있는 다른 문서로 전환합니다"
+
+msgid "常用"
+msgstr "일반"
+
+msgid "AI 配置"
+msgstr "AI 구성"
+
+msgid "界面语言"
+msgstr "인터페이스 언어"
+
+msgid "切换后立即生效；目前仅提供英文译文。"
+msgstr "즉시 적용됩니다."
+
+msgid "主题色"
+msgstr "테마 색"
+
+msgid "主题色暂未生效。"
+msgstr "테마 색은 아직 적용되지 않습니다."
+
+msgid "本地模型 · 开发中"
+msgstr "로컬 모델 · 개발 중"
+
+msgid "Hugging Face 缓存目录"
+msgstr "Hugging Face 캐시 디렉터리"
+
+msgid "默认 ~/.cache/huggingface"
+msgstr "기본값: ~/.cache/huggingface"
+
+msgid "用于存放 Gemma 等小模型,本地运行不上传文档。当前仅保存路径,下载与推理后续接入。"
+msgstr "Gemma 같은 소형 모델을 저장하며, 문서를 업로드하지 않고 로컬에서 실행합니다. 현재는 경로만 저장되며, 다운로드와 추론은 이후에 연결됩니다."
+
+msgid "云端 API"
+msgstr "클라우드 API"
+
+msgid "+ 新建"
+msgstr "+ 새로 만들기"
+
+msgid "还没有配置。在右侧填写后点「保存并使用」。"
+msgstr "아직 설정된 항목이 없습니다. 오른쪽 양식을 작성한 후 '저장 후 사용'을 클릭하세요."
+
+msgid "例如:工作用 Claude"
+msgstr "예: 업무용 Claude"
+
+msgid "服务商"
+msgstr "서비스 제공업체"
+
+msgid "其他"
+msgstr "기타"
+
+msgid "接口地址(已按服务商预填,可修改)"
+msgstr "엔드포인트(제공업체에 맞게 미리 입력됨, 수정 가능)"
+
+msgid "粘贴 API Key"
+msgstr "API 키 붙여넣기"
+
+msgid "模型名称(自行填写,以服务商文档为准)"
+msgstr "모델 이름(직접 입력, 제공업체 문서 기준)"
+
+msgid "填写模型名"
+msgstr "모델 이름 입력"
+
+msgid "保存并使用"
+msgstr "저장 후 사용"
+
+msgid "请选择"
+msgstr "선택"
+
+msgid "复制幻灯片"
+msgstr "슬라이드 복제"
+
+msgid "删除幻灯片"
+msgstr "슬라이드 삭제"
+
+msgid "排序类型"
+msgstr "정렬 종류"
+
+msgid "文字（拼音/字母）"
+msgstr "텍스트(병음/알파벳순)"
+
+msgid "排序方向"
+msgstr "정렬 방향"
+
+msgid "创建迷你图"
+msgstr "스파크라인 만들기"
+
+msgid "数据范围"
+msgstr "데이터 범위"
+
+msgid "位置范围"
+msgstr "위치 범위"
+
+msgid "盈亏"
+msgstr "승패"
+
+msgid "SQL 查询(可 JOIN 多个数据集)"
+msgstr "SQL 쿼리(여러 데이터 집합 JOIN 가능)"
+
+msgid "数据集(点击追加表名)"
+msgstr "데이터 집합(클릭하여 테이블 이름 추가)"
+
+msgid "运行预览不改动文档;保存才会生成新数据集"
+msgstr "미리 보기는 문서를 변경하지 않으며, 저장하면 새 데이터 집합이 생성됩니다"
+
+msgid "就绪"
+msgstr "준비됨"
+
+msgid "可用字段 (点击插入)"
+msgstr "사용 가능한 필드(클릭하여 삽입)"
+
+msgid "SQL 语句  (表名: {})"
+msgstr "SQL 문  (테이블: {})"
+
+msgid "执行查询  (Ctrl+Enter)"
+msgstr "쿼리 실행  (Ctrl+Enter)"
+
+msgid "历史记录"
+msgstr "기록"
+
+msgid "执行过的查询会显示在这里"
+msgstr "실행한 쿼리가 여기에 표시됩니다"
+
+msgid "输出位置"
+msgstr "출력 위치"
+
+msgid "第 {} 页，共 {} 页"
+msgstr "{}/{} 페이지"
+
+msgid "范围:"
+msgstr "범위:"
+
+msgid "选定汇总项:"
+msgstr "부분합 계산 항목:"
+
+msgid "清除所有分类汇总"
+msgstr "모든 부분합 지우기"
+
+msgid "(勾选后点确定,只清除,不新建)"
+msgstr "(선택한 후 확인을 클릭하면 지우기만 하고 새로 만들지 않음)"
+
+msgid "汇总方式:"
+msgstr "사용할 함수:"
+
+msgid "分类字段:"
+msgstr "그룹화할 항목:"
+
+msgid "分列"
+msgstr "텍스트 나누기"
+
+msgid "分隔符号"
+msgstr "구분 기호"
+
+msgid "逗号"
+msgstr "쉼표"
+
+msgid "制表符"
+msgstr "탭"
+
+msgid "分号"
+msgstr "세미콜론"
+
+msgid "空格"
+msgstr "공백"
+
+msgid "冒号"
+msgstr "콜론"
+
+msgid "连续分隔符视为一个"
+msgstr "연속된 구분 기호를 하나로 처리"
+
+msgid "置于顶层"
+msgstr "맨 앞으로 가져오기"
+
+msgid "置于底层"
+msgstr "맨 뒤로 보내기"
+

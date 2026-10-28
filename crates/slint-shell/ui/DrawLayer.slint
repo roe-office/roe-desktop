@@ -1,0 +1,77 @@
+// 画布绘制覆盖层：active 时铺满画布，按下-拖动-松手给出起止点（画布 pt，1pt=1px）。
+// 右键或 Esc 取消。拖动中只画预览，不碰后端。
+export component DrawLayer inherits Rectangle {
+    in property <bool> active: false;
+    in property <string> kind: "";
+    in property <bool> is-line: false;
+    callback committed(float, float, float, float);
+    callback cancelled();
+
+    property <bool> down: false;
+    property <float> sx: 0;
+    property <float> sy: 0;
+    property <float> cx: 0;
+    property <float> cy: 0;
+
+    changed active => {
+        if (root.active) { fs.focus(); } else { root.down = false; }
+    }
+
+    fs := FocusScope {
+        enabled: root.active;
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        key-pressed(e) => {
+            if (e.text == Key.Escape) { root.cancelled(); return accept; }
+            return reject;
+        }
+    }
+
+    // 预览：线画线段，其余画外框
+    if root.active && root.down && root.is-line : Path {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        viewbox-x: 0;
+        viewbox-y: 0;
+        viewbox-width: self.width / 1px;
+        viewbox-height: self.height / 1px;
+        stroke: #2b579a;
+        stroke-width: 1.5px;
+        commands: "M " + root.sx + " " + root.sy + " L " + root.cx + " " + root.cy;
+    }
+    if root.active && root.down && !root.is-line : Rectangle {
+        x: Math.min(root.sx, root.cx) * 1px;
+        y: Math.min(root.sy, root.cy) * 1px;
+        width: Math.abs(root.cx - root.sx) * 1px;
+        height: Math.abs(root.cy - root.sy) * 1px;
+        border-width: 1px;
+        border-color: #2b579a;
+        background: #2b579a22;
+    }
+
+    if root.active : TouchArea {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        mouse-cursor: crosshair;
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down) {
+                if (e.button == PointerEventButton.right) {
+                    root.down = false;
+                    root.cancelled();
+                } else if (e.button == PointerEventButton.left) {
+                    root.down = true;
+                    root.sx = self.mouse-x / 1px;
+                    root.sy = self.mouse-y / 1px;
+                    root.cx = root.sx;
+                    root.cy = root.sy;
+                }
+            } else if (e.kind == PointerEventKind.up && root.down && e.button == PointerEventButton.left) {
+                root.down = false;
+                root.committed(root.sx, root.sy, self.mouse-x / 1px, self.mouse-y / 1px);
+            }
+        }
+        moved => {
+            if (root.down) {
+                root.cx = self.mouse-x / 1px;
+                root.cy = self.mouse-y / 1px;
+            }
+        }
+    }
+}

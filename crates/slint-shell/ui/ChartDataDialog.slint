@@ -1,0 +1,122 @@
+// ChartDataDialog.slint — 图表「编辑数据」小窗口（v318n，Writer/Impress 共用）
+import { DialogShell } from "DialogShell.slint";
+
+component SmallBtn inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: true;
+    in property <length> w: 56px;
+    callback clicked();
+    width: root.w;
+    height: 24px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: #c0c0c0;
+    background: (ta.has-hover && root.active) ? #f0f0f0 : #ffffff;
+    Text {
+        text: root.label;
+        font-size: 12px;
+        color: root.active ? #222222 : #aaaaaa;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    ta := TouchArea { clicked => { if (root.active) { root.clicked(); } } }
+}
+
+export component ChartDataDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <color> accent: #2b579a;
+    in property <color> accent-hover: #1e3f73;
+    in property <color> tint: #eef3fb;
+    in-out property <int> rows: 4;
+    in-out property <int> cols: 3;
+    in-out property <bool> single: false;
+    in-out property <int> generation: 0;
+    in-out property <[string]> cells;
+    callback confirmed();
+    callback cancelled();
+    callback resize-grid(int, int);
+    callback transpose();
+    background: transparent;
+
+    DialogShell {
+        accent: root.accent;
+        accent-hover: root.accent-hover;
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("编辑图表数据");
+        card-width: 620px;
+        card-height: 440px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        SmallBtn { x: 16px;  y: 48px; label: @tr("加行"); active: root.rows < 50; clicked => { root.resize-grid(1, 0); } }
+        SmallBtn { x: 78px;  y: 48px; label: @tr("加列"); active: !root.single && root.cols < 12; clicked => { root.resize-grid(0, 1); } }
+        SmallBtn { x: 140px; y: 48px; label: @tr("删行"); active: root.rows > 1; clicked => { root.resize-grid(-1, 0); } }
+        SmallBtn { x: 202px; y: 48px; label: @tr("删列"); active: !root.single && root.cols > 1; clicked => { root.resize-grid(0, -1); } }
+        SmallBtn { x: 264px; y: 48px; w: 84px; label: @tr("行列互换"); active: !root.single; clicked => { root.transpose(); } }
+
+        fl := Flickable {
+            x: 16px;
+            y: 80px;
+            width: 588px;
+            height: 290px;
+            viewport-width: (root.cols + 1) * 86px;
+            viewport-height: (root.rows + 1) * 26px;
+            for g in [root.generation]: Rectangle {
+                width: (root.cols + 1) * 86px;
+                height: (root.rows + 1) * 26px;
+                for r in root.rows + 1: Rectangle {
+                    y: r * 26px;
+                    height: 26px;
+                    width: (root.cols + 1) * 86px;
+                    for c in root.cols + 1: Rectangle {
+                        x: c * 86px;
+                        width: 86px;
+                        height: 26px;
+                        border-width: 1px;
+                        border-color: #d9d9d9;
+                        background: (r == 0 && c == 0) ? #f3f3f3 : ((r == 0 || c == 0) ? root.tint : #ffffff);
+                        if !(r == 0 && c == 0) : TextInput {
+                            x: 8px;
+                            width: parent.width - 16px;
+                            height: 18px;
+                            y: (parent.height - 18px) / 2;
+                            font-size: 12px;
+                            font-weight: (r == 0 || c == 0) ? 600 : 400;
+                            color: #222222;
+                            single-line: true;
+                            selection-background-color: #b7e4b0;
+                            selection-foreground-color: #222222;
+                            text: root.cells[r * 13 + c];
+                            edited => { root.cells[r * 13 + c] = self.text; }
+                        }
+                    }
+                }
+            }
+        }
+        // 纵向滚动条（内容超出时显示）
+        if fl.viewport-height > fl.height : Rectangle {
+            x: 16px + 588px - 6px;
+            y: 80px + (fl.height - self.height) * (fl.viewport-y / (fl.height - fl.viewport-height)) * 1.0;
+            width: 5px;
+            height: max(24px, fl.height * fl.height / fl.viewport-height);
+            border-radius: 2.5px;
+            background: #00000033;
+        }
+        // 横向滚动条
+        if fl.viewport-width > fl.width : Rectangle {
+            x: 16px + (fl.width - self.width) * (fl.viewport-x / (fl.width - fl.viewport-width));
+            y: 80px + 290px - 6px;
+            width: max(24px, fl.width * fl.width / fl.viewport-width);
+            height: 5px;
+            border-radius: 2.5px;
+            background: #00000033;
+        }
+        Text {
+            x: 16px;
+            y: 376px;
+            text: @tr("首行为系列名，首列为类别名；非数字按 0 处理");
+            font-size: 11px;
+            color: #888888;
+        }
+    }
+}

@@ -1,0 +1,152 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component WriterRibbonMail inherits Rectangle {
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 创建 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("创建");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/mail_doc.svg");
+                    label: @tr("中文信封");
+                    tooltip: @tr("创建中文信封");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document.svg");
+                    label: @tr("信封");
+                    tooltip: @tr("创建信封");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/bookmark.svg");
+                    label: @tr("标签");
+                    tooltip: @tr("创建标签");
+                }
+            }
+        }
+
+
+        // ── 开始邮件合并 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("开始邮件合并");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/mail_merge.svg");
+                    label: @tr("邮件合并");
+                    tooltip: @tr("开始邮件合并向导");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/recipients.svg");
+                    label: @tr("选择收件人");
+                    tooltip: @tr("选择收件人列表");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document_search.svg");
+                    label: @tr("编辑收件人");
+                    tooltip: @tr("编辑收件人列表");
+                }
+            }
+        }
+
+
+        // ── 编写和插入域 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("编写和插入域");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document_add.svg");
+                    label: @tr("插入合并域");
+                    tooltip: @tr("插入合并域");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/chevron_down.svg");
+                        label: @tr("规则");
+                        tooltip: @tr("插入规则");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("更新标签");
+                        tooltip: @tr("更新标签");
+                    }
+                }
+            }
+        }
+
+
+        // ── 预览结果 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("预览结果");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/view_print.svg");
+                    label: @tr("预览结果");
+                    tooltip: @tr("预览合并结果");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/document_search.svg");
+                        label: @tr("查找收件人");
+                        tooltip: @tr("查找收件人");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/checkmark.svg");
+                        label: @tr("检查错误");
+                        tooltip: @tr("检查合并错误");
+                    }
+                }
+            }
+        }
+
+
+        // ── 完成 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("完成");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/print_merge.svg");
+                    label: @tr("完成并合并");
+                    tooltip: @tr("完成并合并");
+                }
+            }
+        }
+    }
+}

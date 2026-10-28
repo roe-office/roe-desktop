@@ -1,0 +1,105 @@
+// 形状下拉菜单：分组标题 + 7 列图标网格，可滚动，底部显示悬停形状的名字。
+// 组件铺满窗口，px/py 为菜单左上角（窗口 px）。底层全屏透明遮罩，点菜单外关闭。
+export struct ShapeEntry {
+    prst: string,
+    name: string,
+    path: string,
+    is-line: bool,
+}
+
+export struct ShapeGroup {
+    title: string,
+    items: [ShapeEntry],
+}
+
+component ShapeCell inherits Rectangle {
+    in property <ShapeEntry> entry;
+    callback picked();
+    callback hovered(string);
+    width: 32px;
+    height: 32px;
+    background: ta.has-hover ? #dbe8fb : transparent;
+    clip: true;
+    Path {
+        x: 5px; y: 5px; width: 22px; height: 22px;
+        viewbox-x: 0; viewbox-y: 0; viewbox-width: 24; viewbox-height: 24;
+        fill: root.entry.is-line ? transparent : #cfe0f5;
+        stroke: #3c5a82;
+        stroke-width: 1px;
+        commands: root.entry.path;
+    }
+    ta := TouchArea {
+        clicked => { root.picked(); }
+        changed has-hover => { if (self.has-hover) { root.hovered(root.entry.name); } }
+    }
+}
+
+export component ShapeMenu inherits Rectangle {
+    in property <length> px;
+    in property <length> py;
+    in property <[ShapeGroup]> groups;
+    callback pick(string, bool);
+    callback dismiss();
+    property <string> hover-name: "";
+
+    TouchArea {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down) { root.dismiss(); }
+        }
+    }
+    Rectangle {
+        x: Math.max(0px, Math.min(root.px, root.width - 248px));
+        y: Math.max(0px, Math.min(root.py, root.height - 420px));
+        width: 248px;
+        height: 420px;
+        background: #fdfdfd;
+        border-width: 1px;
+        border-color: #b8b8b8;
+        TouchArea { }
+        Flickable {
+            x: 4px; y: 4px;
+            width: parent.width - 8px;
+            height: parent.height - 34px;
+            viewport-height: content.preferred-height;
+            content := VerticalLayout {
+                spacing: 2px;
+                for g in root.groups : VerticalLayout {
+                    Text {
+                        height: 22px;
+                        text: g.title;
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: #404040;
+                        vertical-alignment: center;
+                    }
+                    Rectangle {
+                        height: Math.ceil(g.items.length / 7) * 32px;
+                        for it[i] in g.items : ShapeCell {
+                            x: Math.mod(i, 7) * 32px;
+                            y: Math.floor(i / 7) * 32px;
+                            entry: it;
+                            hovered(n) => { root.hover-name = n; }
+                            picked => { root.pick(it.prst, it.is-line); }
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            y: parent.height - 28px;
+            height: 28px;
+            width: parent.width;
+            background: #f0f0f0;
+            Text {
+                x: 8px;
+                width: parent.width - 16px;
+                height: parent.height;
+                text: root.hover-name;
+                font-size: 12px;
+                color: #202020;
+                vertical-alignment: center;
+            }
+        }
+    }
+}

@@ -1,0 +1,156 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+// 新增 RibbonCheckBox 组件：抽取自本文件"显示"分组重复3次的复选框模式
+//   （checked状态本身可交互，但toggled callback为空壳，不接UNO命令）
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+import { RibbonCheckBox } from "RibbonCheckBox.slint";
+
+export component WriterRibbonView inherits Rectangle {
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 视图 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("视图");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/view_print.svg");
+                    label: @tr("页面视图");
+                    tooltip: @tr("切换到页面视图");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/view_web.svg");
+                    label: @tr("阅读视图");
+                    tooltip: @tr("切换到阅读视图");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/list_bar_tree_offset.svg");
+                        label: @tr("大纲");
+                        tooltip: @tr("切换到大纲视图");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/document.svg");
+                        label: @tr("草稿");
+                        tooltip: @tr("切换到草稿视图");
+                    }
+                }
+            }
+        }
+
+
+        // ── 显示 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("显示");
+
+            VerticalLayout {
+                spacing: 4px;
+
+                RibbonCheckBox {
+                    text: @tr("标尺");
+                    checked: true;
+                }
+                RibbonCheckBox {
+                    text: @tr("网格线");
+                    checked: false;
+                }
+                RibbonCheckBox {
+                    text: @tr("导航窗格");
+                    checked: false;
+                }
+            }
+        }
+
+
+        // ── 缩放 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("缩放");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/zoom_fit.svg");
+                    label: @tr("100%");
+                    tooltip: @tr("恢复100%大小");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/zoom_in.svg");
+                        label: @tr("放大");
+                        tooltip: @tr("放大视图");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/zoom_out.svg");
+                        label: @tr("缩小");
+                        tooltip: @tr("缩小视图");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/zoom_fit.svg");
+                        label: @tr("页宽");
+                        tooltip: @tr("适应页面宽度");
+                    }
+                }
+            }
+        }
+
+
+        // ── 窗口 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("窗口");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/new_window.svg");
+                    label: @tr("新建窗口");
+                    tooltip: @tr("在新窗口中打开文档");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/split_view.svg");
+                        label: @tr("拆分");
+                        tooltip: @tr("拆分窗口");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/window_new.svg");
+                        label: @tr("切换窗口");
+                        tooltip: @tr("切换到其他打开的文档");
+                    }
+                }
+            }
+        }
+    }
+}

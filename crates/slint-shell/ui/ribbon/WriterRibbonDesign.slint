@@ -1,0 +1,94 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（clicked不接任何业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+// 本文件起新增字符串统一用 @tr() 包裹，为后续国际化预留（Home/Insert暂不回填，统一排期）
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component WriterRibbonDesign inherits Rectangle {
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 文档格式 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("文档格式");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/style_guide.svg");
+                    label: @tr("主题");
+                    tooltip: @tr("更改文档主题");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/theme_color.svg");
+                    label: @tr("颜色");
+                    tooltip: @tr("更改主题颜色");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document_theme.svg");
+                    label: @tr("字体");
+                    tooltip: @tr("更改主题字体");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/line_spacing.svg");
+                        label: @tr("段落间距");
+                        tooltip: @tr("更改段落间距");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/text_effects.svg");
+                        label: @tr("效果");
+                        tooltip: @tr("更改主题效果");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/checkmark.svg");
+                        label: @tr("设为默认值");
+                        tooltip: @tr("设为默认值");
+                    }
+                }
+            }
+        }
+
+
+        // ── 页面背景 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("页面背景");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/image_shadow.svg");
+                    label: @tr("水印");
+                    tooltip: @tr("插入水印");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/page_color.svg");
+                    label: @tr("页面颜色");
+                    tooltip: @tr("设置页面背景色");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/border_all.svg");
+                    label: @tr("页面边框");
+                    tooltip: @tr("设置页面边框");
+                }
+            }
+        }
+    }
+}

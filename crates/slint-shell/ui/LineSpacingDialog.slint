@@ -1,0 +1,67 @@
+// LineSpacingDialog.slint — Writer「行距选项」对话框（v273）
+import { DialogShell } from "DialogShell.slint";
+
+component NumBox inherits Rectangle {
+    in-out property <string> text <=> inp.text;
+    width: 90px;
+    height: 26px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: inp.has-focus ? #2b579a : #c0c0c0;
+    background: #ffffff;
+    inp := TextInput {
+        x: 6px;
+        y: (parent.height - self.height) / 2;
+        width: parent.width - 12px;
+        font-size: 12px;
+        color: #222222;
+        single-line: true;
+    }
+}
+
+export component LineSpacingDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in-out property <int> mode: 0;
+    in-out property <string> value-text: "1.3";
+    in-out property <string> before-text: "";
+    in-out property <string> after-text: "";
+    callback confirmed();
+    callback cancelled();
+    background: transparent;
+
+    DialogShell {
+        accent: #2b579a;
+        accent-hover: #1e3f73;
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("行距选项");
+        card-width: 340px;
+        card-height: 280px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        Text { x: 16px; y: 52px; text: @tr("行距类型"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        for name[i] in [@tr("多倍行距"), @tr("固定值"), @tr("最小值")]: Rectangle {
+            x: 16px + i * 104px;
+            y: 74px;
+            width: 98px;
+            height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: root.mode == i ? #2b579a : #c0c0c0;
+            background: root.mode == i ? #e8f0fc : #ffffff;
+            Text { text: name; font-size: 12px; color: #222222; horizontal-alignment: center; vertical-alignment: center; }
+            TouchArea { clicked => { root.mode = i; } }
+        }
+
+        Text { x: 16px; y: 120px; text: root.mode == 0 ? @tr("倍数（0.5–10）") : @tr("磅值（pt）"); font-size: 12px; color: #333333; }
+        NumBox { x: 140px; y: 116px; text <=> root.value-text; }
+
+        Text { x: 16px; y: 156px; text: @tr("段前（pt）"); font-size: 12px; color: #333333; }
+        NumBox { x: 140px; y: 152px; text <=> root.before-text; }
+
+        Text { x: 16px; y: 192px; text: @tr("段后（pt）"); font-size: 12px; color: #333333; }
+        NumBox { x: 140px; y: 188px; text <=> root.after-text; }
+
+        Text { x: 16px; y: 222px; text: @tr("段前、段后留空表示不修改"); font-size: 11px; color: #888888; }
+    }
+}

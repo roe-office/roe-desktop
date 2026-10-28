@@ -1,0 +1,52 @@
+// Layout menu: vertical list of layout names, current one highlighted.
+// Fills the window; px/py is the top-left of the menu. Transparent full-window layer closes it.
+component LItem inherits Rectangle {
+    in property <string> label;
+    in property <bool> current: false;
+    callback clicked();
+    height: 28px;
+    background: ta.has-hover ? #dbe8fb : (root.current ? #eaf1fc : transparent);
+    Text {
+        x: 12px;
+        y: (parent.height - self.height) / 2;
+        text: root.label;
+        color: #202020;
+        font-size: 13px;
+        font-weight: root.current ? 700 : 400;
+    }
+    ta := TouchArea { clicked => { root.clicked(); } }
+}
+
+export component LayoutMenu inherits Rectangle {
+    in property <length> px;
+    in property <length> py;
+    in property <[string]> names;
+    in property <int> current: -1;
+    callback pick(int);
+    callback dismiss();
+
+    TouchArea {
+        x: 0px; y: 0px; width: root.width; height: root.height;
+        pointer-event(e) => {
+            if (e.kind == PointerEventKind.down) { root.dismiss(); }
+        }
+    }
+    Rectangle {
+        x: Math.max(0px, Math.min(root.px, root.width - 190px));
+        y: Math.max(0px, Math.min(root.py, root.height - self.height));
+        width: 190px;
+        height: root.names.length * 28px + 2px;
+        background: #fdfdfd;
+        border-width: 1px;
+        border-color: #b8b8b8;
+        TouchArea { }
+        VerticalLayout {
+            padding: 1px;
+            for n[i] in root.names: LItem {
+                label: n;
+                current: i == root.current;
+                clicked => { root.pick(i); }
+            }
+        }
+    }
+}

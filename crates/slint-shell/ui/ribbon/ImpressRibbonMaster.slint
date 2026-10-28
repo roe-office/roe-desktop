@@ -1,0 +1,68 @@
+import { SwatchGrid, FmtBtn } from "WriterRibbonShapeFormat.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+
+export component ImpressRibbonMaster inherits Rectangle {
+    height: 88px;
+    background: white;
+    callback close();
+    callback insert-image();
+    callback bg-image();
+    callback apply(string);
+    callback duplicate-layout();
+    callback delete-layout();
+    callback rename-layout();
+    callback insert-placeholder();
+    in property <bool> can-delete: false;
+
+    HorizontalLayout {
+        x: 4px;
+        y: 0px;
+        height: parent.height;
+        spacing: 0px;
+        alignment: start;
+
+        RibbonGroup {
+            label: @tr("背景颜色");
+            VerticalLayout {
+                alignment: center;
+                SwatchGrid { prefix: "bg"; picked(s) => { root.apply(s); } }
+            }
+        }
+
+        RibbonGroup {
+            label: @tr("背景与图片");
+            VerticalLayout {
+                spacing: 1px; alignment: center;
+                RibbonButton { label: @tr("插入图片"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/page_color.svg"); clicked => { root.insert-image(); } }
+                RibbonButton { label: @tr("背景图片"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/page_color.svg"); clicked => { root.bg-image(); } }
+                RibbonButton { label: @tr("清除背景"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/undo.svg"); clicked => { root.apply("bg:none"); } }
+            }
+        }
+
+        RibbonGroup {
+            label: @tr("编辑母版");
+            VerticalLayout {
+                spacing: 1px; alignment: center;
+                RibbonButton { label: @tr("复制版式"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/style_guide.svg"); clicked => { root.duplicate-layout(); } }
+                RibbonButton { label: @tr("删除版式"); show-label: true; width: 96px; height: 20px; has-icon: true; opacity: root.can-delete ? 1.0 : 0.35; icon-source: @image-url("../icons/fluent/undo.svg"); clicked => { if (root.can-delete) { root.delete-layout(); } } }
+                RibbonButton { clicked => { root.insert-placeholder(); } label: @tr("插入占位符"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/style_guide.svg"); }
+            }
+        }
+        RibbonGroup {
+            label: @tr("版式");
+            VerticalLayout {
+                spacing: 1px; alignment: center;
+                RibbonButton { label: @tr("重命名版式"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/rename.svg"); clicked => { root.rename-layout(); } }
+            }
+        }
+        RibbonGroup {
+            label: @tr("关闭");
+            HorizontalLayout {
+                y: 2px; alignment: start;
+                RibbonBigButton { label: @tr("关闭母版视图"); icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg"); clicked => { root.close(); } }
+            }
+        }
+    }
+}

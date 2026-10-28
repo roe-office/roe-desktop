@@ -1,0 +1,343 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（clicked不接任何业务逻辑）
+// ROE接口尚未定型，命令派发方式（callback设计）留到接口明确后再统一处理
+// 复杂子部件（字体名/字号下拉框、颜色选择器、样式画廊展开面板）本轮用占位顶位置，
+// 不做完整交互，等后续专门处理这几块时再补
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+import { RibbonDropdownMenu, RibbonMenuItem } from "RibbonDropdownMenu.slint";
+import { RibbonColorMenu } from "RibbonColorMenu.slint";
+
+export component WriterRibbonHome inherits Rectangle {
+    callback action(string);
+    in property <string> font-name: "等线 (中文正文)";
+    in property <string> font-size-text: "11";
+    in property <bool> painter-active: false;
+    in property <bool> marks-active: false;
+    callback request-font-menu(length, length);
+    callback request-size-menu(length, length);
+    callback request-color-menu(string, length, length);
+    callback request-list-menu(string, length, length);
+    callback request-wstyle-menu(length, length);
+    callback request-menu(string, length, length);
+    // 轮询选区，回显字体名/字号
+    Timer { interval: 300ms; running: true; triggered => { root.action("writer.sync"); } }
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 剪贴板 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("剪贴板");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                // 粘贴大按钮
+                RibbonBigButton {
+                    width: 44px;
+                    icon-source: @image-url("../icons/fluent/paste.svg");
+                    label: @tr("粘贴");
+                    tooltip: @tr("粘贴 (Ctrl+V)");
+                    clicked => { root.action("writer.paste"); }
+                }
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        width: 72px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/cut.svg");
+                        label: @tr("剪切");
+                        tooltip: @tr("剪切 (Ctrl+X)");
+                        clicked => { root.action("writer.cut"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        width: 72px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/copy.svg");
+                        label: @tr("复制");
+                        tooltip: @tr("复制 (Ctrl+C)");
+                        clicked => { root.action("writer.copy"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        width: 72px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/format_painter.svg");
+                        label: @tr("格式刷");
+                        tooltip: @tr("格式刷（单击一次，双击连续）");
+                        active: root.painter-active;
+                        clicked => { root.action("writer.format_painter"); }
+                    }
+                }
+            }
+        }
+
+        // ── 字体 ────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("字体");
+
+            VerticalLayout {
+                spacing: 4px;
+
+                // 行1：字体名+字号+增大/缩小+大小写+清除格式
+                HorizontalLayout {
+                    spacing: 3px;
+
+                    // 字体名下拉框：本轮占位，仅展示当前值，不做下拉交互
+                    wFontNameTrigger := Rectangle {
+                        width: 116px;
+                        height: 24px;
+                        border-radius: 3px;
+                        background: wFontNameTouch.has-hover ? #f0f0f0 : white;
+                        border-color: #c8c8c8;
+                        border-width: 1px;
+                        Text {
+                            text: root.font-name;
+                            font-size: 11px;
+                            color: #333333;
+                            x: 6px;
+                            y: (parent.height - self.height) / 2;
+                            width: parent.width - 28px;
+                            overflow: elide;
+                        }
+                        Text {
+                            x: parent.width - 18px;
+                            y: (parent.height - self.height) / 2;
+                            text: "▾";
+                            font-size: 10px;
+                            color: #666666;
+                        }
+                        wFontNameTouch := TouchArea {
+                            clicked => { root.request-font-menu(wFontNameTrigger.absolute-position.x, wFontNameTrigger.absolute-position.y + wFontNameTrigger.height + 2px); }
+                        }
+                    }
+
+                    // 字号下拉框：本轮占位
+                    wFontSizeTrigger := Rectangle {
+                        width: 44px;
+                        height: 24px;
+                        border-radius: 3px;
+                        background: wFontSizeTouch.has-hover ? #f0f0f0 : white;
+                        border-color: #c8c8c8;
+                        border-width: 1px;
+                        Text {
+                            text: root.font-size-text;
+                            font-size: 11px;
+                            color: #333333;
+                            x: 6px;
+                            y: (parent.height - self.height) / 2;
+                            width: parent.width - 28px;
+                            overflow: elide;
+                        }
+                        Text {
+                            x: parent.width - 18px;
+                            y: (parent.height - self.height) / 2;
+                            text: "▾";
+                            font-size: 10px;
+                            color: #666666;
+                        }
+                        wFontSizeTouch := TouchArea {
+                            clicked => { root.request-size-menu(wFontSizeTrigger.absolute-position.x, wFontSizeTrigger.absolute-position.y + wFontSizeTrigger.height + 2px); }
+                        }
+                    }
+
+                    RibbonButton { width: 24px; height: 24px; has-icon: true; icon-source: @image-url("../icons/fluent/font_increase.svg"); tooltip: @tr("增大字号 (Ctrl+>)"); clicked => { root.action("writer.font_grow"); } }
+                    RibbonButton { width: 24px; height: 24px; has-icon: true; icon-source: @image-url("../icons/fluent/font_decrease.svg"); tooltip: @tr("减小字号 (Ctrl+<)"); clicked => { root.action("writer.font_shrink"); } }
+                    RibbonDropdownMenu {
+                        width: 28px; height: 24px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/change_case.svg");
+                        tooltip: @tr("更改大小写");
+                        external: true;
+                        request-open => { root.request-menu("case", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                        menu-width: 150px;
+                        items: [
+                            { label: @tr("句首字母大写") },
+                            { label: @tr("全部小写") },
+                            { label: @tr("全部大写") },
+                            { label: @tr("每个单词首字母大写") },
+                            { label: @tr("切换大小写") },
+                        ];
+                        item-selected(i) => { root.action("writer.change_case:" + i); }
+                    }
+                    RibbonButton { width: 24px; height: 24px; has-icon: true; icon-source: @image-url("../icons/fluent/clear_formatting.svg"); tooltip: @tr("清除格式"); clicked => { root.action("writer.clear_format"); } }
+                }
+
+                // 行2：B I U S 下标 上标 文字效果 高亮 颜色
+                HorizontalLayout {
+                    spacing: 1px;
+
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/bold.svg"); tooltip: @tr("加粗 (Ctrl+B)"); clicked => { root.action("writer.bold"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/italic.svg"); tooltip: @tr("斜体 (Ctrl+I)"); clicked => { root.action("writer.italic"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/underline.svg"); tooltip: @tr("下划线 (Ctrl+U)"); clicked => { root.action("writer.underline"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/strikethrough.svg"); tooltip: @tr("删除线"); clicked => { root.action("writer.strike"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/subscript.svg"); tooltip: @tr("下标 (Ctrl+=)"); clicked => { root.action("writer.sub"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/superscript.svg"); tooltip: @tr("上标 (Ctrl+Shift+=)"); clicked => { root.action("writer.super"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/text_effects.svg"); tooltip: @tr("文字效果"); }
+
+                    // 高亮颜色组合按钮：占位，色条写死颜色，不接ColorPickerPopup
+                    RibbonColorMenu {
+                        icon-source: @image-url("../icons/fluent/highlight.svg");
+                        tooltip: @tr("文本高亮颜色");
+                        bar-color: #ffff00;
+                        request-open => { root.request-color-menu("bg", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+
+                    // 字体颜色组合按钮：占位
+                    RibbonColorMenu {
+                        icon-source: @image-url("../icons/fluent/text_color.svg");
+                        tooltip: @tr("字体颜色");
+                        bar-color: #ff0000;
+                        request-open => { root.request-color-menu("fg", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                }
+            }
+        }
+
+        // ── 段落 ────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("段落");
+
+            VerticalLayout {
+                spacing: 4px;
+
+                // 行1
+                HorizontalLayout {
+                    spacing: 1px;
+
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/list_bullet.svg"); tooltip: @tr("项目符号"); clicked => { root.request-list-menu("bullet", self.absolute-position.x, self.absolute-position.y + self.height + 2px); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/list_number.svg"); tooltip: @tr("编号列表"); clicked => { root.request-list-menu("number", self.absolute-position.x, self.absolute-position.y + self.height + 2px); } }
+                    RibbonDropdownMenu {
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/list_bar_tree_offset.svg");
+                        tooltip: @tr("多级列表");
+                        menu-width: 200px;
+                        items: [
+                            { label: @tr("无") },
+                            { label: "1. / 1.1. / 1.1.1." },
+                            { label: @tr("一 / (一) / 1.") },
+                            { label: @tr("标题样式多级") },
+                        ];
+                    }
+
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/indent_decrease.svg"); tooltip: @tr("减少缩进"); clicked => { root.action("writer.indent_dec"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/indent_increase.svg"); tooltip: @tr("增加缩进"); clicked => { root.action("writer.indent_inc"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/text_sort.svg"); tooltip: @tr("排序"); clicked => { root.action("writer.sort_dialog"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/border_all.svg"); tooltip: @tr("边框"); }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_paragraph.svg"); tooltip: @tr("显示/隐藏段落标记"); active: root.marks-active; clicked => { root.action("writer.show_marks"); } }
+                }
+
+                // 行2
+                HorizontalLayout {
+                    spacing: 1px;
+
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/align_left.svg"); tooltip: @tr("左对齐 (Ctrl+L)"); active: true; clicked => { root.action("writer.align_left"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/align_center.svg"); tooltip: @tr("居中 (Ctrl+E)"); clicked => { root.action("writer.align_center"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/align_right.svg"); tooltip: @tr("右对齐 (Ctrl+R)"); clicked => { root.action("writer.align_right"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/align_justify.svg"); tooltip: @tr("两端对齐 (Ctrl+J)"); clicked => { root.action("writer.align_justify"); } }
+                    RibbonButton { width: 28px; height: 28px; has-icon: true; icon-source: @image-url("../icons/fluent/align_center_horizontal.svg"); tooltip: @tr("分散对齐"); }
+                    RibbonDropdownMenu {
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/line_spacing.svg");
+                        tooltip: @tr("行与段落间距");
+                        external: true;
+                        request-open => { root.request-menu("spacing", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                        menu-width: 130px;
+                        items: [
+                            { label: @tr("1.0 单倍行距") },
+                            { label: @tr("1.5 倍行距") },
+                            { label: @tr("2.0 双倍行距") },
+                            { label: @tr("段前加间距") },
+                            { label: @tr("段后加间距") },
+                            { label: @tr("行距选项…") },
+                        ];
+                        item-selected(i) => {
+                            if (i == 0) { root.action("writer.line_spacing:1.0"); }
+                            if (i == 1) { root.action("writer.line_spacing:1.5"); }
+                            if (i == 2) { root.action("writer.line_spacing:2.0"); }
+                            if (i == 3) { root.action("writer.space_before:12"); }
+                            if (i == 4) { root.action("writer.space_after:12"); }
+                            if (i == 5) { root.action("writer.line_spacing_dialog"); }
+                        }
+                    }
+                    RibbonColorMenu {
+                        icon-source: @image-url("../icons/fluent/color_background.svg");
+                        tooltip: @tr("段落底纹");
+                        bar-color: #ffe699;
+                        request-open => { root.request-color-menu("shade", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                }
+            }
+        }
+
+        // ── 样式 ────────────────────────────────────────────
+        // 样式画廊本轮用静态横排占位顶位置，展开面板/滚动交互后续单独做
+        RibbonGroup {
+            label: @tr("样式");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                first-tile := Rectangle {
+                    width: 64px; height: 56px;
+                    border-radius: 3px;
+                    background: st0.has-hover ? #e8f0fc : #f7f7f7;
+                    border-color: #d0d0d0;
+                    border-width: 1px;
+                    Text { text: @tr("正文"); font-size: 11px; color: #222222; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; }
+                    st0 := TouchArea { clicked => { root.action("writer.para_style:0"); } }
+                }
+                Rectangle {
+                    width: 64px; height: 56px;
+                    border-radius: 3px;
+                    background: st1.has-hover ? #e8f0fc : #f7f7f7;
+                    border-color: #d0d0d0;
+                    border-width: 1px;
+                    Text { text: @tr("标题 1"); font-size: 13px; font-weight: 700; color: #222222; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; }
+                    st1 := TouchArea { clicked => { root.action("writer.para_style:1"); } }
+                }
+                Rectangle {
+                    width: 64px; height: 56px;
+                    border-radius: 3px;
+                    background: st2.has-hover ? #e8f0fc : #f7f7f7;
+                    border-color: #d0d0d0;
+                    border-width: 1px;
+                    Text { text: @tr("标题 2"); font-size: 13px; font-weight: 700; color: #222222; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; }
+                    st2 := TouchArea { clicked => { root.action("writer.para_style:2"); } }
+                }
+
+                Rectangle {
+                    width: 16px; height: 56px;
+                    border-radius: 3px;
+                    background: arrowTouch.has-hover ? #e8f0fc : transparent;
+                    Text { text: "⌄"; font-size: 10px; color: #555555; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; }
+                    arrowTouch := TouchArea { clicked => { root.request-wstyle-menu(first-tile.absolute-position.x, first-tile.absolute-position.y + first-tile.height + 2px); } }
+                }
+            }
+        }
+
+        // ── 编辑 ────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("编辑");
+
+            VerticalLayout {
+                spacing: 1px;
+
+                RibbonButton { show-label: true; width: 72px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document_search.svg"); label: @tr("查找"); tooltip: @tr("查找 (Ctrl+F)"); clicked => { root.action("writer.find"); } }
+                RibbonButton { show-label: true; width: 72px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg"); label: @tr("替换"); tooltip: @tr("替换 (Ctrl+H)"); clicked => { root.action("writer.replace"); } }
+                RibbonButton { show-label: true; width: 72px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/cursor.svg"); label: @tr("选择"); tooltip: @tr("选择"); }
+            }
+        }
+    }
+}

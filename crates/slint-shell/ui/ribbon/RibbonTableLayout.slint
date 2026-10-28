@@ -1,0 +1,55 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+// 注：上下文标签页的"自动出现/切换"逻辑属于第4.5节tabBar骨架范畴，本次未实现，
+//     仅做成独立可view的组件，不会在真实UI里自动触发显示
+// 注：QML中"垂直\n居中"等是手动换行，本组件Text为word-wrap自动换行，无需手动插入\n
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component RibbonTableLayout inherits Rectangle {
+    height: 88px;
+
+    HorizontalLayout {
+        x: 8px;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 对齐方式 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("对齐方式");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/text_wrap.svg");
+                    label: @tr("居中");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/text_wrap.svg");
+                    label: @tr("垂直居中");
+                }
+            }
+        }
+
+
+        // ── 单元格大小 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("单元格大小");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_table.svg");
+                    label: @tr("平均分布各行");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_table.svg");
+                    label: @tr("平均分布各列");
+                }
+            }
+        }
+    }
+}

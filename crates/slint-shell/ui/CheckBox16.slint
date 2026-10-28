@@ -1,0 +1,21 @@
+// CheckBox16.slint — 16×16 自绘勾选框(绿底 #217346 + "✓")。
+// 纯视图组件:状态由使用方持有,这里只按 on 显示。
+// 使用方:ColumnPickDialog(删除重复值等)、TextSplitDialog(分列)。
+
+export component CheckBox16 inherits Rectangle {
+    in property <bool> on: false;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: root.on ? #217346 : #a0a0a0;
+    background: root.on ? #217346 : #ffffff;
+    Text {
+        visible: root.on;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        text: "✓";
+        font-size: 12px;
+        color: #ffffff;
+    }
+}

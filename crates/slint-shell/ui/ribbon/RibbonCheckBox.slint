@@ -1,0 +1,50 @@
+// 新增通用组件，抽取自 RibbonView.qml 中重复3次的复选框模式（标尺/网格线/导航窗格）
+// 对照QML：14x14方框，选中时内部填充2px margin圆角矩形，选中色#2b579a
+// 与其他Ribbon组件一致：checked状态本身可交互（纯UI），但不接UNO命令，
+// 只暴露 toggled(bool) 空callback，留给调用方在ROE接口定型后接业务逻辑
+
+export component RibbonCheckBox inherits Rectangle {
+    in property <string> text: "";
+    in-out property <bool> checked: false;
+
+    callback toggled(bool);
+
+    height: 16px;
+    width: label.width + 14px + 6px;
+
+    indicator := Rectangle {
+        x: 0px;
+        y: (parent.height - self.height) / 2;
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        background: white;
+        border-width: 1px;
+        border-color: root.checked ? #2b579a : #999999;
+
+        Rectangle {
+            x: 3px;
+            y: 3px;
+            width: 8px;
+            height: 8px;
+            border-radius: 1px;
+            background: #2b579a;
+            visible: root.checked;
+        }
+    }
+
+    label := Text {
+        text: root.text;
+        font-size: 11px;
+        color: #333333;
+        x: 14px + 6px;
+        y: (parent.height - self.height) / 2;
+    }
+
+    touch := TouchArea {
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+}

@@ -1,0 +1,81 @@
+// CalcHeaders.slint
+export component CalcHeaders inherits Rectangle {
+    in property <int> active-col: 0;
+    in property <int> active-row: 0;
+    in property <length> col-width: 96px;
+    in property <length> row-height: 14.25px;
+    in property <int> visible-cols: 256;
+    in property <int> visible-rows: 60;
+    in property <[string]> col-names: [];
+    in property <length> scroll-x: 0px;
+    in property <length> scroll-y: 0px;
+    in property <int> visible-start-row: 0;   // Rust set：tile起始单元格行（0-based）
+    in property <length> tile-offset-y: 0px;  // Rust set：tile顶部在viewport内的y偏移
+    in property <[length]> row-heights: []; // Rust set：可见行高度数组（屏幕px）
+
+    property <length> header-height: 24px;
+    property <length> row-header-width: 40px;
+
+    background: transparent;
+
+    // ── 左上角交叉格 ──
+    Rectangle {
+        x: 0px; y: 0px;
+        width: row-header-width; height: header-height;
+        background: #f5f5f5; z: 13;
+        Rectangle { x: parent.width - 1px; y: 0px; width: 1px; height: parent.height; background: #d0d0d0; }
+        Rectangle { x: 0px; y: parent.height - 1px; width: parent.width; height: 1px; background: #d0d0d0; }
+    }
+
+    // ── 列标题栏 ──
+    Rectangle {
+        x: row-header-width; y: 0px;
+        width: parent.width - row-header-width; height: header-height;
+        background: #f5f5f5; z: 12; clip: true;
+        HorizontalLayout {
+            spacing: 0px; alignment: start;
+            x: -root.scroll-x;
+            for col-idx in root.visible-cols: Rectangle {
+                width: root.col-width; height: root.header-height;
+                background: col-idx == root.active-col ? #217346 : #f5f5f5;
+                Text {
+                    text: col-idx < col-names.length ? col-names[col-idx] : "?";
+                    font-size: 8px;
+                    color: col-idx == root.active-col ? #ffffff : #444444;
+                    font-weight: col-idx == root.active-col ? 700 : 400;
+                    horizontal-alignment: center; vertical-alignment: center;
+                    width: parent.width; height: parent.height;
+                }
+                Rectangle { x: parent.width - 1px; y: 0px; width: 1px; height: parent.height; background: #d0d0d0; }
+                Rectangle { x: 0px; y: parent.height - 1px; width: parent.width; height: 1px; background: #d0d0d0; }
+            }
+        }
+    }
+
+    // ── 行标题栏 ──
+    Rectangle {
+        x: 0px; y: header-height;
+        width: row-header-width; height: parent.height - header-height;
+        background: #f5f5f5; z: 12; clip: true;
+        VerticalLayout {
+            spacing: 0px; alignment: start;
+            y: root.tile-offset-y;
+            for row-idx in root.visible-rows: Rectangle {
+                width: root.row-header-width;
+                height: row-idx < root.row-heights.length ? root.row-heights[row-idx] : root.row-height;
+                property <int> display-row: row-idx + root.visible-start-row;
+                background: display-row == root.active-row ? #217346 : #f5f5f5;
+                Text {
+                    text: display-row + 1;
+                    font-size: 8px;
+                    color: display-row == root.active-row ? #ffffff : #444444;
+                    font-weight: display-row == root.active-row ? 700 : 400;
+                    horizontal-alignment: center; vertical-alignment: center;
+                    width: parent.width; height: parent.height;
+                }
+                Rectangle { x: parent.width - 1px; y: 0px; width: 1px; height: parent.height; background: #d0d0d0; }
+                Rectangle { x: 0px; y: parent.height - 1px; width: parent.width; height: 1px; background: #d0d0d0; }
+            }
+        }
+    }
+}

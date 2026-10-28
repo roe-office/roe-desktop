@@ -1,0 +1,100 @@
+// StatusBar.slint — 底部状态栏（Writer/Calc/Impress 共用）
+
+export component StatusBar inherits Rectangle {
+    in property <string> doc-type: "writer";
+    in property <int> page-current: 1;
+    in property <int> page-total: 1;
+    in property <string> word-count-text: "";
+    in-out property <float> zoom-level: 1.0;
+
+    callback zoom-changed(float);
+
+    height: 24px;
+    background: #f0f0f0;
+
+    // 顶部分隔线
+    Rectangle {
+        y: 0px;
+        width: parent.width;
+        height: 1px;
+        background: #d0d0d0;
+    }
+
+    // 左侧：页码
+    Text {
+        x: 12px;
+        text: @tr("第 {} 页，共 {} 页", root.page-current, root.page-total);
+        color: #666666;
+        font-size: 11px;
+        vertical-alignment: center;
+        height: parent.height;
+    }
+
+    // 中间：字数（仅Writer且有内容时显示）
+    if root.doc-type == "writer" && root.word-count-text != "" : Text {
+        x: (parent.width - self.width) / 2;
+        text: root.word-count-text;
+        color: #666666;
+        font-size: 11px;
+        vertical-alignment: center;
+        height: parent.height;
+    }
+
+    // 右侧：缩放控件
+    HorizontalLayout {
+        x: parent.width - 160px;
+        width: 148px;
+        height: parent.height;
+        spacing: 6px;
+        alignment: end;
+        padding-right: 12px;
+
+        // "−" 按钮
+        zoom-out-area := TouchArea {
+            width: 18px;
+            height: parent.height;
+            clicked => { root.zoom-changed(root.zoom-level - 0.1); }
+            Text {
+                text: "−";
+                color: zoom-out-area.has-hover ? #333333 : #666666;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                width: parent.width;
+                height: parent.height;
+            }
+        }
+
+        // 百分比（点击重置为100%）
+        zoom-reset-area := TouchArea {
+            width: 40px;
+            height: parent.height;
+            clicked => { root.zoom-changed(root.doc-type == "impress" ? -1.0 : 1.0); }
+            Text {
+                text: Math.round(root.zoom-level * 100) + "%";
+                color: zoom-reset-area.has-hover ? #333333 : #444444;
+                font-size: 11px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                width: parent.width;
+                height: parent.height;
+            }
+        }
+
+        // "+" 按钮
+        zoom-in-area := TouchArea {
+            width: 18px;
+            height: parent.height;
+            clicked => { root.zoom-changed(root.zoom-level + 0.1); }
+            Text {
+                text: "+";
+                color: zoom-in-area.has-hover ? #333333 : #666666;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                width: parent.width;
+                height: parent.height;
+            }
+        }
+    }
+}

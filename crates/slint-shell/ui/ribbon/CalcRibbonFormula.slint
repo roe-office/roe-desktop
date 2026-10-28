@@ -1,0 +1,302 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（clicked不接任何业务逻辑）
+//
+// 原版6个函数分类按钮（财务/逻辑/文本/日期和时间/查找与引用/数学和三角/其他函数）
+// 各自带一个 FuncPopup 下拉列表，列出具体函数名+说明，点击后通过 postKeyEvent
+// 模拟F2进入编辑态+逐字符注入公式文本。本轮全部占位为单个按钮（保留label文字，
+// 不展开下拉），具体函数清单留存于此注释，供后续真正实现下拉时参考：
+//
+//   财务: PMT/PV/FV/NPV/IRR/RATE/NPER/SLN/IPMT/PPMT
+//   逻辑: IF/IFS/AND/OR/NOT/XOR/IFERROR/IFNA/TRUE/FALSE
+//   文本: TEXT/CONCATENATE/LEFT/RIGHT/MID/LEN/FIND/SUBSTITUTE/TRIM/UPPER/LOWER/VALUE
+//   日期和时间: TODAY/NOW/DATE/TIME/YEAR/MONTH/DAY/HOUR/MINUTE/SECOND/WEEKDAY/DATEDIF/EDATE/EOMONTH
+//   查找与引用: VLOOKUP/HLOOKUP/XLOOKUP/INDEX/MATCH/OFFSET/INDIRECT/ADDRESS/CHOOSE/ROW/COLUMN/ROWS/COLUMNS
+//   数学和三角: SUM/SUMIF/SUMIFS/SUMPRODUCT/ROUND/ROUNDUP/ROUNDDOWN/INT/MOD/ABS/SQRT/POWER/LOG/EXP/PI/SIN/COS/TAN
+//   其他函数: COUNT/COUNTA/COUNTIF/COUNTIFS/AVERAGE/AVERAGEIF/MAX/MIN/MEDIAN/STDEV/VAR/RANK/LARGE/SMALL/ISNUMBER/ISTEXT/ISBLANK/ISERROR
+//
+// "计算选项"按钮原版也带一个三选项popup（自动/手动/除数据表外自动），同样占位。
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component CalcRibbonFormula inherits Rectangle {
+    height: 88px;
+
+    // 已接线按钮统一触发此回调,参数为 "calc.命令名",由 Rust 侧 ribbon 模块分发
+    callback action(string);
+    // 函数库分类按钮:参数 = 分类键、按钮左下角绝对坐标
+    callback request-fn-menu(string, length, length);
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 函数库 ───────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("函数库");
+
+            HorizontalLayout {
+                spacing: 6px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/math_formula.svg");
+                    label: @tr("插入函数");
+                    tooltip: @tr("插入函数向导 (Shift+F3)");
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/autosum.svg");
+                        label: @tr("自动求和");
+                        tooltip: @tr("SUM — 对选定区域求和");
+                        clicked => { root.action("calc.autosum"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/dollar.svg");
+                        label: @tr("财务 ▾");
+                        tooltip: @tr("财务函数");
+                        clicked => { root.request-fn-menu("financial", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/logic.svg");
+                        label: @tr("逻辑 ▾");
+                        tooltip: @tr("逻辑函数");
+                        clicked => { root.request-fn-menu("logical", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/symbol.svg");
+                        label: @tr("文本 ▾");
+                        tooltip: @tr("文本函数");
+                        clicked => { root.request-fn-menu("text", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/calendar.svg");
+                        label: @tr("日期和时间 ▾");
+                        tooltip: @tr("日期和时间函数");
+                        clicked => { root.request-fn-menu("datetime", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/document_search.svg");
+                        label: @tr("查找与引用 ▾");
+                        tooltip: @tr("查找与引用函数");
+                        clicked => { root.request-fn-menu("lookup", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/math_symbols.svg");
+                        label: @tr("数学和三角 ▾");
+                        tooltip: @tr("数学和三角函数");
+                        clicked => { root.request-fn-menu("math", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/grid_dots.svg");
+                        label: @tr("其他函数 ▾");
+                        tooltip: @tr("统计/工程/信息等其他函数");
+                        clicked => { root.request-fn-menu("other", self.absolute-position.x, self.absolute-position.y + self.height + 2px); }
+                    }
+                }
+            }
+        }
+
+        // ── 名称管理器 ───────────────────────────────────────
+        RibbonGroup {
+            label: @tr("名称管理器");
+
+            HorizontalLayout {
+                spacing: 6px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/rename.svg");
+                    label: @tr("名称管理器");
+                    tooltip: @tr("管理命名区域 (Ctrl+F3)");
+                    clicked => { root.action("calc.name_manager"); }
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/rename.svg");
+                        label: @tr("定义名称");
+                        tooltip: @tr("为单元格区域定义名称");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/autosum.svg");
+                        label: @tr("在公式中使用");
+                        tooltip: @tr("在公式中插入已定义的名称");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/table_cells_merge.svg");
+                        label: @tr("由所选区域创建");
+                        tooltip: @tr("根据选定区域自动创建名称");
+                    }
+                }
+            }
+        }
+
+        // ── 公式审核 ─────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("公式审核");
+
+            HorizontalLayout {
+                spacing: 6px;
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 112px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/arrow_trending_lines_filled.svg");
+                        label: @tr("追踪引用单元格");
+                        tooltip: @tr("显示影响当前单元格的单元格");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 112px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/arrow_trending_lines_filled.svg");
+                        label: @tr("追踪从属单元格");
+                        tooltip: @tr("显示依赖当前单元格的单元格");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 112px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/dismiss.svg");
+                        label: @tr("删除箭头");
+                        tooltip: @tr("删除所有追踪箭头");
+                    }
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/math_formula.svg");
+                        label: @tr("显示公式");
+                        tooltip: @tr("切换显示公式/值 (Ctrl+`)");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/spell_check.svg");
+                        label: @tr("错误检查");
+                        tooltip: @tr("检查公式错误");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/window_new.svg");
+                        label: @tr("监视窗口");
+                        tooltip: @tr("监视单元格值变化");
+                    }
+                }
+            }
+        }
+
+        // ── 计算 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("计算");
+
+            HorizontalLayout {
+                spacing: 6px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                    label: @tr("计算选项");
+                    tooltip: @tr("设置自动/手动计算模式（占位，未接列表）");
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("立即计算");
+                        tooltip: @tr("立即重新计算所有公式 (F9)");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/document.svg");
+                        label: @tr("计算工作表");
+                        tooltip: @tr("计算当前工作表 (Shift+F9)");
+                    }
+                }
+            }
+        }
+    }
+}

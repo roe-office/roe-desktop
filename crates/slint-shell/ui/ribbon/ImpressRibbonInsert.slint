@@ -1,0 +1,130 @@
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component ImpressRibbonInsert inherits Rectangle {
+    height: 88px;
+    callback request-shape-menu(length, length);
+    callback request-insert-image();
+    callback request-insert-chart();
+    callback request-new-slide();
+    callback request-textbox();
+    callback request-textbox-v();
+    callback request-table-menu(length, length);
+    background: white;
+
+    HorizontalLayout {
+        x: 4px;
+        y: 0px;
+        height: parent.height;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 新建 ──
+        RibbonGroup {
+            label: @tr("新建");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/document_add.svg");
+                label: @tr("新建幻灯片");
+                clicked => { root.request-new-slide(); }
+            }
+        }
+
+
+        // ── 文本 ──
+        RibbonGroup {
+            label: @tr("文本");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/textbox.svg");
+                    label: @tr("文本框");
+                    clicked => { root.request-textbox(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/text_direction_rotate_90.svg");
+                    label: @tr("竖排文本框");
+                    clicked => { root.request-textbox-v(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_table.svg");
+                    label: @tr("表格");
+                    clicked => { root.request-table-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/calendar.svg");
+                    label: @tr("日期时间");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/page_number.svg");
+                    label: @tr("幻灯片编号");
+                }
+            }
+        }
+
+
+        // ── 插图 ──
+        RibbonGroup {
+            label: @tr("插图");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("图片");
+                    clicked => { root.request-insert-image(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/screenshot.svg");
+                    label: @tr("截图");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/shapes.svg");
+                    label: @tr("形状");
+                    clicked => { root.request-shape-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                    label: @tr("图表");
+                    clicked => { root.request-insert-chart(); }
+                }
+            }
+        }
+
+
+        // ── 批注 ──
+        RibbonGroup {
+            label: @tr("批注");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/comment.svg");
+                label: @tr("批注");
+            }
+        }
+
+
+        // ── 页眉和页脚 ──
+        RibbonGroup {
+            label: @tr("页眉和页脚");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/header_footer.svg");
+                label: @tr("页眉页脚");
+            }
+        }
+
+
+        // ── 符号 ──
+        RibbonGroup {
+            label: @tr("符号");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/equation.svg");
+                    label: @tr("公式");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/symbol.svg");
+                    label: @tr("符号");
+                }
+            }
+        }
+    }
+}

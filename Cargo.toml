@@ -1,0 +1,58 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/doc-core",
+    "crates/agent-bridge",
+    "crates/slint-shell",
+    "crates/tile-cache",
+]
+
+# 只优化图片解码与渲染相关的包，polars、formualizer 等重库保持 debug，编译快
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+
+[profile.dev.package.roe-impress]
+opt-level = 3
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.tiny-skia]
+opt-level = 3
+[profile.dev.package.tiny-skia-path]
+opt-level = 3
+[profile.dev.package.png]
+opt-level = 3
+[profile.dev.package.zune-jpeg]
+opt-level = 3
+[profile.dev.package.fdeflate]
+opt-level = 3
+[profile.dev.package.flate2]
+opt-level = 3
+[profile.dev.package.miniz_oxide]
+opt-level = 3
+[profile.dev.package.swash]
+opt-level = 3
+[profile.dev.package.parley]
+opt-level = 3
+[profile.dev.package.parley_engine]
+opt-level = 3
+[profile.dev.package.parley_data]
+opt-level = 3
+[profile.dev.package.parlance]
+opt-level = 3
+[profile.dev.package.fontique]
+opt-level = 3
+[profile.dev.package.harfrust]
+opt-level = 3
+[profile.dev.package.skrifa]
+opt-level = 3
+[profile.dev.package.read-fonts]
+opt-level = 3
+[profile.dev.package.icu_segmenter]
+opt-level = 3
+[profile.dev.package.icu_normalizer]
+opt-level = 3
+[profile.dev.package.icu_properties]
+opt-level = 3
+[profile.dev.package.hashbrown]
+opt-level = 3

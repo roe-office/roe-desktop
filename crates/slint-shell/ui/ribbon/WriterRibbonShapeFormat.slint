@@ -1,0 +1,133 @@
+// v305: Writer 「形状格式」临时 tab（选中形状时出现）：填充、边框颜色、边框粗细
+import { RibbonGroup } from "RibbonGroup.slint";
+
+export component SwatchGrid inherits Rectangle {
+    in property <string> prefix: "fill";
+    callback picked(string);
+    property <[{hex: string, c: color}]> pal: [
+        { hex: "#4F81BD", c: #4F81BD }, { hex: "#C0504D", c: #C0504D }, { hex: "#9BBB59", c: #9BBB59 }, { hex: "#8064A2", c: #8064A2 }, { hex: "#4BACC6", c: #4BACC6 },
+        { hex: "#F79646", c: #F79646 }, { hex: "#FFFF00", c: #FFFF00 }, { hex: "#000000", c: #000000 }, { hex: "#FFFFFF", c: #FFFFFF }, { hex: "#7F7F7F", c: #7F7F7F },
+        { hex: "#385D8A", c: #385D8A }, { hex: "#953735", c: #953735 }, { hex: "#76923C", c: #76923C }, { hex: "#5F497A", c: #5F497A }, { hex: "#31859B", c: #31859B },
+        { hex: "#E36C09", c: #E36C09 }, { hex: "#FFC000", c: #FFC000 }, { hex: "#404040", c: #404040 }, { hex: "#D9D9D9", c: #D9D9D9 }, { hex: "#00B050", c: #00B050 },
+    ];
+    width: 202px;
+    height: 38px;
+    VerticalLayout {
+        spacing: 2px;
+        for row in [0, 1]: HorizontalLayout {
+            spacing: 2px;
+            height: 18px;
+            for col in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]: Rectangle {
+                width: 18px;
+                height: 18px;
+                background: root.pal[row * 10 + col].c;
+                border-color: swTouch.has-hover ? #2b579a : #b0b0b0;
+                border-width: swTouch.has-hover ? 2px : 1px;
+                swTouch := TouchArea {
+                    clicked => { root.picked(root.prefix + ":" + root.pal[row * 10 + col].hex); }
+                }
+            }
+        }
+    }
+}
+
+export component FmtBtn inherits Rectangle {
+    in property <string> label;
+    callback clicked;
+    width: lbl.preferred-width + 14px;
+    height: 18px;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: #c8c8c8;
+    background: btnTouch.has-hover ? #e8f0fc : #f7f7f7;
+    lbl := Text {
+        text: root.label;
+        font-size: 12px;
+        color: #222222;
+        x: 7px;
+        y: (parent.height - self.height) / 2;
+    }
+    btnTouch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+export component WriterRibbonShapeFormat inherits Rectangle {
+    callback apply(string);
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+        RibbonGroup {
+            label: @tr("填充");
+            VerticalLayout {
+                spacing: 4px;
+                alignment: center;
+                SwatchGrid { prefix: "fill"; picked(s) => { root.apply(s); } }
+                FmtBtn { label: @tr("无填充"); clicked => { root.apply("fill:none"); } }
+            }
+        }
+
+        RibbonGroup {
+            label: @tr("渐变填充");
+            VerticalLayout {
+                spacing: 4px;
+                alignment: center;
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    FmtBtn { label: @tr("蓝白横"); clicked => { root.apply("fill:grad:#4F81BD,#FFFFFF,0"); } }
+                    FmtBtn { label: @tr("蓝白竖"); clicked => { root.apply("fill:grad:#4F81BD,#FFFFFF,90"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    FmtBtn { label: @tr("橙白横"); clicked => { root.apply("fill:grad:#F79646,#FFFFFF,0"); } }
+                    FmtBtn { label: @tr("橙白竖"); clicked => { root.apply("fill:grad:#F79646,#FFFFFF,90"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    FmtBtn { label: @tr("灰黑横"); clicked => { root.apply("fill:grad:#D9D9D9,#000000,0"); } }
+                    FmtBtn { label: @tr("灰黑竖"); clicked => { root.apply("fill:grad:#D9D9D9,#000000,90"); } }
+                }
+            }
+        }
+
+        RibbonGroup {
+            label: @tr("边框颜色");
+            VerticalLayout {
+                spacing: 4px;
+                alignment: center;
+                SwatchGrid { prefix: "line"; picked(s) => { root.apply(s); } }
+                FmtBtn { label: @tr("无边框"); clicked => { root.apply("line:none"); } }
+            }
+        }
+
+        RibbonGroup {
+            label: @tr("边框粗细");
+            VerticalLayout {
+                spacing: 4px;
+                alignment: center;
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    FmtBtn { label: "0.5 pt"; clicked => { root.apply("width:0.5"); } }
+                    FmtBtn { label: "1 pt"; clicked => { root.apply("width:1"); } }
+                    FmtBtn { label: "1.5 pt"; clicked => { root.apply("width:1.5"); } }
+                    FmtBtn { label: "2.25 pt"; clicked => { root.apply("width:2.25"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px;
+                    alignment: start;
+                    FmtBtn { label: "3 pt"; clicked => { root.apply("width:3"); } }
+                    FmtBtn { label: "4.5 pt"; clicked => { root.apply("width:4.5"); } }
+                    FmtBtn { label: "6 pt"; clicked => { root.apply("width:6"); } }
+                }
+            }
+        }
+    }
+}

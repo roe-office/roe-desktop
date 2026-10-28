@@ -1,0 +1,71 @@
+export component SheetTabBar inherits Rectangle {
+    in property <[string]> sheet-names: ["Sheet1"];
+    in-out property <string> active-sheet: "Sheet1";
+
+    callback sheet-switched(int);
+    callback add-sheet-requested();
+
+    height: 28px;
+    background: #f0f0f0;
+
+    Rectangle {
+        y: 0px;
+        width: parent.width;
+        height: 1px;
+        background: #d0d0d0;
+    }
+
+    HorizontalLayout {
+        x: 4px;
+        y: 3px;
+        height: parent.height - 3px;
+        spacing: 2px;
+        alignment: start;
+
+        for name[idx] in root.sheet-names : sheet-btn := TouchArea {
+            width: sheet-label.width + 20px;
+            height: root.height - 3px;
+
+            clicked => {
+                                root.sheet-switched(idx);
+            }
+
+            Rectangle {
+                background: name == root.active-sheet
+                    ? white
+                    : (sheet-btn.has-hover ? #e8e8e8 : transparent);
+                border-width: name == root.active-sheet ? 1px : 0px;
+                border-color: #d0d0d0;
+                border-radius: 3px;
+
+                sheet-label := Text {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    text: name;
+                    font-size: 12px;
+                    font-weight: name == root.active-sheet ? 700 : 400;
+                    color: name == root.active-sheet ? #217346 : #555555;
+                }
+            }
+        }
+
+        // "+" 新建Sheet按钮，作为HorizontalLayout最后一项，自动跟随tab列表末尾
+        add-sheet-btn := TouchArea {
+            width: 20px;
+            height: 20px;
+            clicked => { root.add-sheet-requested(); }
+
+            Rectangle {
+                background: add-sheet-btn.has-hover ? #e0e0e0 : transparent;
+                border-radius: 3px;
+                Text {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    text: "+";
+                    font-size: 14px;
+                    color: #555555;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,74 @@
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component ImpressRibbonAnimation inherits Rectangle {
+    height: 88px;
+    background: white;
+
+    HorizontalLayout {
+        x: 4px;
+        y: 0px;
+        height: parent.height;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 预览 ──
+        RibbonGroup {
+            label: @tr("预览");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/view_print.svg");
+                label: @tr("预览");
+            }
+        }
+
+
+        // ── 动画效果（占位样式库） ──
+        RibbonGroup {
+            label: @tr("动画效果");
+            HorizontalLayout {
+                y: 4px; spacing: 2px; alignment: start;
+                for anim-name in [@tr("无"), @tr("淡入"), @tr("飞入"), @tr("擦除"), @tr("缩放")] : Rectangle {
+                    width: 50px; height: 56px; border-radius: 3px;
+                    background: #f7f7f7;
+                    border-width: 1px;
+                    border-color: #d0d0d0;
+                    VerticalLayout { alignment: center; spacing: 4px;
+                        HorizontalLayout {
+                            alignment: center;
+                            Image {
+                                source: @image-url("../icons/fluent/circle.svg");
+                                width: 24px; height: 24px;
+                                image-fit: contain;
+                            }
+                        }
+                        Text { text: anim-name; font-size: 10px; color: #555555; horizontal-alignment: center; }
+                    }
+                }
+            }
+        }
+
+
+        // ── 效果选项 ──
+        RibbonGroup {
+            label: @tr("效果");
+            VerticalLayout {
+                spacing: 1px; alignment: center;
+                RibbonButton { label: @tr("效果选项"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/flash.svg"); }
+                RibbonButton { label: @tr("动画窗格"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/panel_left.svg"); }
+                RibbonButton { label: @tr("动画刷");   show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/format_painter.svg"); }
+            }
+        }
+
+
+        // ── 自动播放 ──
+        RibbonGroup {
+            label: @tr("自动播放");
+            VerticalLayout {
+                spacing: 1px; alignment: center;
+                RibbonButton { label: @tr("开始时机"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/cursor_click.svg"); }
+                RibbonButton { label: @tr("持续时间"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/timer.svg"); }
+            }
+        }
+    }
+}

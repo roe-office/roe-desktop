@@ -1,0 +1,104 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+// 注：上下文标签页的"自动出现/切换"逻辑属于第4.5节tabBar骨架范畴，本次未实现
+// 注：QML中"在上方\n插入"等是手动换行，本组件Text为word-wrap自动换行，无需手动插入\n
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component RibbonTableDesign inherits Rectangle {
+    height: 88px;
+
+    HorizontalLayout {
+        x: 8px;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 表格样式 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("表格样式");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_table.svg");
+                    label: @tr("边框");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/color_background.svg");
+                    label: @tr("底纹");
+                }
+            }
+        }
+
+
+        // ── 行和列 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("行和列");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_insert_row.svg");
+                    label: @tr("在上方插入");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_insert_row.svg");
+                    label: @tr("在下方插入");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_insert_column.svg");
+                    label: @tr("在左侧插入");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_insert_column.svg");
+                    label: @tr("在右侧插入");
+                }
+            }
+        }
+
+
+        // ── 合并 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("合并");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_cells_merge.svg");
+                    label: @tr("合并单元格");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_cells_split.svg");
+                    label: @tr("拆分单元格");
+                }
+            }
+        }
+
+
+        // ── 删除 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("删除");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_delete_row.svg");
+                    label: @tr("删除行");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_delete_column.svg");
+                    label: @tr("删除列");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_dismiss.svg");
+                    label: @tr("删除表格");
+                }
+            }
+        }
+    }
+}

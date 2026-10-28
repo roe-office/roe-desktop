@@ -1,0 +1,82 @@
+// PivotZone.slint — 透视表单个区域（行/列/值/筛选）
+export component PivotZone inherits Rectangle {
+    in property <string> label: @tr("行");
+    in property <color> accent-color: #217346;
+    in property <[string]> fields: [];
+    callback remove-requested(string);
+    callback field-drag-out-started(string, length, length);
+    callback field-drag-out-moved(length, length);
+    callback field-drag-out-ended(length, length);
+
+    border-radius: 4px;
+    background: #ffffff;
+    border-color: #e0e0e0;
+    border-width: 1px;
+
+    Rectangle {
+        x: 0px; y: 0px;
+        width: parent.width;
+        height: 20px;
+        background: root.accent-color.transparentize(0.85);
+        border-radius: 4px;
+        Rectangle { x: 0px; y: 10px; width: parent.width; height: 10px; background: root.accent-color.transparentize(0.85); }
+        Rectangle { x: 0px; y: 19px; width: parent.width; height: 1px; background: root.accent-color.transparentize(0.6); }
+        Text { x: 8px; y: (parent.height - self.height) / 2; text: root.label; font-size: 10px; font-weight: 600; color: root.accent-color; }
+    }
+
+    VerticalLayout {
+        x: 3px; y: 23px;
+        width: parent.width - 6px;
+        height: parent.height - 26px;
+        spacing: 2px;
+        alignment: start;
+
+        for field-name[field-idx] in root.fields: Rectangle {
+            width: parent.width; height: 22px;
+            border-radius: 3px; background: #f7f7f7;
+            border-color: #dddddd; border-width: 1px;
+
+            // 拖出感知层：放在×按钮之前声明，z轴在×按钮下方，不遮挡×按钮点击
+            out-drag-sense := TouchArea {
+                x: 0px; y: 0px; width: parent.width - 20px; height: parent.height;
+                // 把root.x/root.y（本PivotZone在PivotSidebar内的偏移，即PivotSidebar.slint里写死的x/y）
+                // 加上局部坐标，换算成相对PivotSidebar根节点的绝对坐标一起上报。
+                // +23px 是字段行在PivotZone内部的起始y偏移（PivotZone.slint第25行 VerticalLayout y:23px）
+                // 每行高22px + spacing 2px = 24px步进，field-idx是该字段在VerticalLayout里的序号
+                property <length> row-y-offset: 23px + field-idx * 24px;
+                pointer-event(e) => {
+                    if e.kind == PointerEventKind.down && e.button == PointerEventButton.left {
+                        root.field-drag-out-started(field-name, root.x + self.mouse-x, root.y + self.row-y-offset + self.mouse-y);
+                    }
+                    if e.kind == PointerEventKind.up {
+                        root.field-drag-out-ended(root.x + self.mouse-x, root.y + self.row-y-offset + self.mouse-y);
+                    }
+                }
+                moved => {
+                    if self.pressed {
+                        // 注：此处上报的是"相对PivotZone父容器（四宫格外层Rectangle）"的坐标，
+                        // 还差"四宫格容器相对PivotSidebar根节点"的偏移，这一步统一交给PivotSidebar做加总
+                        // （因为PivotZone自身不知道也不该知道自己被放在整个侧栏的什么位置，职责隔离）
+                        root.field-drag-out-moved(root.x + self.mouse-x, root.y + self.row-y-offset + self.mouse-y);
+                    }
+                }
+            }
+
+            Text { x: 6px; y: (parent.height - self.height) / 2; width: parent.width - 28px; text: field-name; font-size: 10px; color: #333333; overflow: elide; }
+            Rectangle {
+                x: parent.width - 19px; y: (parent.height - self.height) / 2;
+                width: 16px; height: 16px; border-radius: 3px;
+                background: remove-touch.has-hover ? #ffdddd : transparent;
+                Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: "×"; font-size: 11px; color: #999999; }
+                remove-touch := TouchArea { clicked => { root.remove-requested(field-name); } }
+            }
+        }
+
+        Text {
+            visible: root.fields.length == 0;
+            width: parent.width; height: 30px;
+            text: @tr("拖放字段至此"); font-size: 10px; color: #bbbbbb;
+            horizontal-alignment: center; vertical-alignment: center;
+        }
+    }
+}

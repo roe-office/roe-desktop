@@ -1,0 +1,92 @@
+// Impress 文本框编辑：输入法接收框 + 光标线。只画在前台覆盖层。
+export component ImpressImeInput inherits TextInput {
+    in property <int> edit-id: -1;
+    in property <int> clear-seq: 0;
+    property <bool> is-clearing: false;
+
+    callback composed(string);
+    callback enter-pressed();
+    callback exit-pressed();
+    callback composed-key-nav(string, bool, bool);
+    callback composed-save();
+    callback composed-clip(string);
+    callback composed-undo-redo(bool);
+
+    public function clear-buffer() {
+        self.is-clearing = true;
+        self.text = "";
+        self.is-clearing = false;
+    }
+
+    changed edit-id => {
+        self.clear-buffer();
+        if (self.edit-id >= 0) { self.focus(); }
+    }
+    changed clear-seq => { self.clear-buffer(); }
+
+    edited => {
+        if (self.is-clearing) { return; }
+        self.composed(self.text);
+    }
+    accepted => {
+        self.enter-pressed();
+        self.clear-buffer();
+    }
+    key-pressed(event) => {
+        if (event.text == Key.Escape) {
+            root.exit-pressed();
+            return accept;
+        }
+        if (event.text == Key.LeftArrow || event.text == Key.RightArrow
+            || event.text == Key.UpArrow || event.text == Key.DownArrow
+            || event.text == Key.Backspace || event.text == Key.Delete) {
+            root.composed-key-nav(event.text, event.modifiers.shift, event.modifiers.control);
+            return accept;
+        }
+        if (event.modifiers.control && !event.modifiers.shift && (event.text == "a" || event.text == "A")) { root.composed-clip("all"); return accept; }
+        if (event.modifiers.control && !event.modifiers.shift && (event.text == "c" || event.text == "C")) { root.composed-clip("copy"); return accept; }
+        if (event.modifiers.control && !event.modifiers.shift && (event.text == "x" || event.text == "X")) { root.composed-clip("cut"); return accept; }
+        if (event.modifiers.control && !event.modifiers.shift && (event.text == "v" || event.text == "V")) { root.composed-clip("paste"); return accept; }
+        if (event.modifiers.control && (event.text == "s" || event.text == "S")) {
+            root.composed-save();
+            return accept;
+        }
+        if (event.text == "z" || event.text == "Z") {
+            if (event.modifiers.control && event.modifiers.shift) {
+                root.composed-undo-redo(true);
+                return accept;
+            }
+            if (event.modifiers.control) {
+                root.composed-undo-redo(false);
+                return accept;
+            }
+        }
+        return reject;
+    }
+}
+
+export component ImpressCaret inherits Rectangle {
+    in property <bool> active: false;
+    in property <float> cur-x;
+    in property <float> cur-y;
+    in property <float> cur-h;
+    in property <float> cur-w;
+    property <bool> on: true;
+
+    changed cur-x => { root.on = true; }
+    changed cur-y => { root.on = true; }
+
+    Timer {
+        interval: 530ms;
+        running: root.active;
+        triggered => { root.on = !root.on; }
+    }
+
+    if root.active && root.on : Rectangle {
+        x: root.cur-x * 1px;
+        y: root.cur-y * 1px;
+        width: max(1px, root.cur-w * 1px);
+        height: max(1px, root.cur-h * 1px);
+        background: #000000;
+    }
+}

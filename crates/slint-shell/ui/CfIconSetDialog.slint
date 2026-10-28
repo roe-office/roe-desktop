@@ -1,0 +1,46 @@
+// CfIconSetDialog.slint — 条件格式"图标集"对话框(仅视图,状态在 Rust)
+// 格子下标顺序见 cf_icon_styles.rs(由 scripts/gen_icon_glyphs.py 生成)。
+
+import { CheckBox16 } from "CheckBox16.slint";
+import { DialogShell } from "DialogShell.slint";
+import { CfIconSetPicker, CfIconSetMetrics } from "IconSetGlyphs.slint";
+
+export component CfIconSetDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <int> selected-index: -1;
+    in property <bool> reverse: false;
+
+    callback picked(int);
+    callback toggle-reverse();
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("图标集");
+        card-width: 420px;
+        card-height: CfIconSetMetrics.picker-height + 144px;
+        confirm-enabled: root.selected-index >= 0;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        CfIconSetPicker {
+            x: 20px; y: 52px;
+            selected-index: root.selected-index;
+            picked(i) => { root.picked(i); }
+        }
+
+        TouchArea {
+            x: 16px; y: 52px + CfIconSetMetrics.picker-height + 8px;
+            width: parent.width - 32px; height: 24px;
+            clicked => { root.toggle-reverse(); }
+            HorizontalLayout {
+                padding-left: 4px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.reverse; y: (parent.height - self.height) / 2; }
+                Text { text: @tr("反转图标顺序"); font-size: 12px; color: #333333; vertical-alignment: center; }
+            }
+        }
+    }
+}

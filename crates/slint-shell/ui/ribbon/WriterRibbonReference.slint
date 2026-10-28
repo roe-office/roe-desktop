@@ -1,0 +1,145 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component WriterRibbonReference inherits Rectangle {
+    callback action(string);
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 目录 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("目录");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/toc.svg");
+                    label: @tr("目录");
+                    tooltip: @tr("插入自动目录");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/heading1.svg");
+                        label: @tr("添加文字");
+                        tooltip: @tr("将所选内容添加为目录条目");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("更新目录");
+                        tooltip: @tr("刷新目录内容");
+                    }
+                }
+            }
+        }
+
+
+        // ── 脚注与尾注 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("脚注与尾注");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/footnote.svg");
+                    label: @tr("插入脚注");
+                    tooltip: @tr("在当前位置插入脚注");
+                    clicked => { root.action("writer.footnote_dialog"); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/endnote.svg");
+                    label: @tr("插入尾注");
+                    tooltip: @tr("在光标处插入尾注引用");
+                    clicked => { root.action("writer.endnote_dialog"); }
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/chevron_up.svg");
+                        label: @tr("上一条脚注");
+                        tooltip: @tr("跳转到上一条脚注");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/chevron_down.svg");
+                        label: @tr("下一条脚注");
+                        tooltip: @tr("跳转到下一条脚注");
+                    }
+                }
+            }
+        }
+
+
+        // ── 注释管理 ──
+        RibbonGroup {
+            label: @tr("注释管理");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/footnote.svg");
+                    label: @tr("删除脚注");
+                    tooltip: @tr("删除光标所在段落的脚注");
+                    clicked => { root.action("writer.delete_footnote"); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/endnote.svg");
+                    label: @tr("删除尾注");
+                    tooltip: @tr("删除光标所在段落的尾注");
+                    clicked => { root.action("writer.delete_endnote"); }
+                }
+            }
+        }
+        // ── 题注 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("题注");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/figure_list.svg");
+                    label: @tr("插入题注");
+                    tooltip: @tr("为图表插入题注");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/toc.svg");
+                    label: @tr("图表目录");
+                    tooltip: @tr("插入图表目录");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("更新表格");
+                        tooltip: @tr("更新图表目录");
+                    }
+                }
+            }
+        }
+    }
+}

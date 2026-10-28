@@ -1,0 +1,253 @@
+// 当前阶段：纯UI骨架，所有按钮/菜单为空壳（不接任何UNO命令/业务逻辑）
+// ROE接口尚未定型，命令派发方式留到接口明确后再统一处理
+// "纸张方向"/"纸张大小"：触发器用 RibbonBigButton 外观，Popup菜单写法参照 RibbonDropdownMenu
+//   （未直接复用该组件，因为其触发器固定是28x28小图标按钮，与此处48x62大按钮外观不符）
+// "段落"分组4个输入框：QML原版本身也只是静态文字占位展示，非真实可编辑控件，本次同样做成占位
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component WriterRibbonLayout inherits Rectangle {
+    callback action(string);
+    in-out property <int> cols: 1;
+    height: 88px;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 页面设置 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("页面设置");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/margins.svg");
+                    label: @tr("页边距");
+                    tooltip: @tr("设置页边距");
+                    clicked => { root.action("writer.page_setup_dialog"); }
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/orientation.svg");
+                    label: @tr("纸张方向");
+                    tooltip: @tr("设置纸张方向");
+                    clicked => { root.action("writer.page_setup_dialog"); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/page_size.svg");
+                    label: @tr("纸张大小");
+                    tooltip: @tr("设置纸张大小");
+                    clicked => { root.action("writer.page_setup_dialog"); }
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/columns.svg");
+                    label: @tr("分栏");
+                    tooltip: @tr("点击循环切换 1/2/3 栏");
+                    clicked => {
+                        root.cols = root.cols >= 3 ? 1 : root.cols + 1;
+                        root.action(root.cols == 1 ? "writer.columns:1" : (root.cols == 2 ? "writer.columns:2" : "writer.columns:3"));
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/page_break.svg");
+                        label: @tr("分隔符");
+                        tooltip: @tr("在光标处插入分栏符（需先设置多栏）");
+                        clicked => { root.action("writer.column_break"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/list_number.svg");
+                        label: @tr("行号");
+                        tooltip: @tr("添加行号（需页面对话框设置）");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/text_direction_rotate_90.svg");
+                        label: @tr("断字");
+                        tooltip: @tr("自动断字设置");
+                    }
+                }
+            }
+        }
+
+
+        // ── 段落 ──────────────────────────────────────────
+        // 注：4个输入框为静态占位展示，QML原版同样非真实可编辑控件
+        RibbonGroup {
+            label: @tr("段落");
+
+            VerticalLayout {
+                spacing: 6px;
+
+                HorizontalLayout {
+                    spacing: 6px;
+                    paragraph-row-1-a := HorizontalLayout {
+                        spacing: 4px;
+                        Text {
+                            text: @tr("缩进左:");
+                            font-size: 11px;
+                            color: #444444;
+                            vertical-alignment: center;
+                        }
+                        Rectangle {
+                            width: 52px;
+                            height: 22px;
+                            border-radius: 3px;
+                            background: white;
+                            border-color: #c8c8c8;
+                            border-width: 1px;
+                            Text {
+                                text: @tr("0 厘米");
+                                font-size: 10px;
+                                color: #333333;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                            }
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Text {
+                            text: @tr("缩进右:");
+                            font-size: 11px;
+                            color: #444444;
+                            vertical-alignment: center;
+                        }
+                        Rectangle {
+                            width: 52px;
+                            height: 22px;
+                            border-radius: 3px;
+                            background: white;
+                            border-color: #c8c8c8;
+                            border-width: 1px;
+                            Text {
+                                text: @tr("0 厘米");
+                                font-size: 10px;
+                                color: #333333;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                            }
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 6px;
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Text {
+                            text: @tr("间距前:");
+                            font-size: 11px;
+                            color: #444444;
+                            vertical-alignment: center;
+                        }
+                        Rectangle {
+                            width: 52px;
+                            height: 22px;
+                            border-radius: 3px;
+                            background: white;
+                            border-color: #c8c8c8;
+                            border-width: 1px;
+                            Text {
+                                text: @tr("0 行");
+                                font-size: 10px;
+                                color: #333333;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                            }
+                        }
+                    }
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Text {
+                            text: @tr("间距后:");
+                            font-size: 11px;
+                            color: #444444;
+                            vertical-alignment: center;
+                        }
+                        Rectangle {
+                            width: 52px;
+                            height: 22px;
+                            border-radius: 3px;
+                            background: white;
+                            border-color: #c8c8c8;
+                            border-width: 1px;
+                            Text {
+                                text: @tr("0 行");
+                                font-size: 10px;
+                                color: #333333;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // ── 排列 ──────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("排列");
+
+            HorizontalLayout {
+                spacing: 1px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/frame.svg");
+                    label: @tr("位置");
+                    tooltip: @tr("设置对象位置");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/text_wrap.svg");
+                    label: @tr("文字环绕");
+                    tooltip: @tr("设置文字环绕方式");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/position_to_front.svg");
+                    label: @tr("上移一层");
+                    tooltip: @tr("将对象上移一层");
+                }
+
+                VerticalLayout {
+                    spacing: 2px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/align_center_horizontal.svg");
+                        label: @tr("对齐");
+                        tooltip: @tr("对齐对象");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/group.svg");
+                        label: @tr("组合");
+                        tooltip: @tr("组合对象");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("旋转");
+                        tooltip: @tr("旋转对象");
+                    }
+                }
+            }
+        }
+    }
+}

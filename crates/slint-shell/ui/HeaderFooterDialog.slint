@@ -1,0 +1,123 @@
+// HeaderFooterDialog.slint — Writer「页眉和页脚」对话框（v280：页眉/页脚/页码三个 tab）
+import { DialogShell } from "DialogShell.slint";
+
+component TextBox inherits Rectangle {
+    in-out property <string> text <=> inp.text;
+    height: 26px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: inp.has-focus ? #2b579a : #c0c0c0;
+    background: #ffffff;
+    inp := TextInput {
+        x: 6px;
+        y: (parent.height - self.height) / 2;
+        width: parent.width - 12px;
+        font-size: 12px;
+        color: #222222;
+        single-line: true;
+    }
+}
+
+component Choice inherits Rectangle {
+    in property <[string]> items;
+    in-out property <int> sel: 0;
+    in property <length> bw: 104px;
+    height: 26px;
+    for name[i] in root.items: Rectangle {
+        x: i * (root.bw + 6px);
+        y: 0px;
+        width: root.bw;
+        height: 26px;
+        border-radius: 4px;
+        border-width: 1px;
+        border-color: root.sel == i ? #2b579a : #c0c0c0;
+        background: root.sel == i ? #e8f0fc : #ffffff;
+        Text { text: name; font-size: 12px; color: #222222; horizontal-alignment: center; vertical-alignment: center; }
+        TouchArea { clicked => { root.sel = i; } }
+    }
+}
+
+export component HeaderFooterDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in-out property <int> tab: 0;
+    in-out property <string> header-text: "";
+    in-out property <string> footer-text: "";
+    in-out property <int> header-align: 1;
+    in-out property <int> footer-align: 1;
+    in-out property <int> num-pos: 0;
+    in-out property <int> num-mode: 0;
+    in-out property <int> num-align: 1;
+    in-out property <bool> title-page: false;
+    in-out property <bool> even-odd: false;
+    callback confirmed();
+    callback cancelled();
+    background: transparent;
+
+    DialogShell {
+        accent: #2b579a;
+        accent-hover: #1e3f73;
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("页眉和页脚");
+        card-width: 360px;
+        card-height: 400px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        for name[i] in [@tr("页眉"), @tr("页脚"), @tr("页码")]: Rectangle {
+            x: 16px + i * 110px;
+            y: 44px;
+            width: 104px;
+            height: 32px;
+            background: transparent;
+            Text { text: name; font-size: 13px; font-weight: root.tab == i ? 700 : 400; color: root.tab == i ? #2b579a : #333333; horizontal-alignment: center; vertical-alignment: center; }
+            if root.tab == i: Rectangle { y: parent.height - 3px; width: parent.width; height: 3px; background: #2b579a; }
+            TouchArea { clicked => { root.tab = i; } }
+        }
+        Rectangle { x: 16px; y: 76px; width: 328px; height: 1px; background: #e0e0e0; }
+        if root.tab == 0: Rectangle {
+            x: 0px; y: 0px; width: 360px; height: 280px;
+            Text { x: 16px; y: 92px; text: @tr("页眉文字"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            TextBox { x: 16px; y: 112px; width: 328px; text <=> root.header-text; }
+            Text { x: 16px; y: 154px; text: @tr("页眉对齐"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            Choice { x: 16px; y: 176px; width: 328px; items: [@tr("居左"), @tr("居中"), @tr("居右")]; sel <=> root.header-align; }
+        }
+
+        if root.tab == 1: Rectangle {
+            x: 0px; y: 0px; width: 360px; height: 280px;
+            Text { x: 16px; y: 92px; text: @tr("页脚文字"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            TextBox { x: 16px; y: 112px; width: 328px; text <=> root.footer-text; }
+            Text { x: 16px; y: 154px; text: @tr("页脚对齐"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            Choice { x: 16px; y: 176px; width: 328px; items: [@tr("居左"), @tr("居中"), @tr("居右")]; sel <=> root.footer-align; }
+        }
+
+        if root.tab == 2: Rectangle {
+            x: 0px; y: 0px; width: 360px; height: 280px;
+            Text { x: 16px; y: 92px; text: @tr("页码位置"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            Choice { x: 16px; y: 112px; width: 328px; items: [@tr("不显示"), @tr("页眉"), @tr("页脚")]; sel <=> root.num-pos; }
+            Text { x: 16px; y: 154px; text: @tr("页码格式"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            Choice { x: 16px; y: 176px; width: 328px; items: ["1", @tr("第 1 页"), @tr("1 / 总页数")]; sel <=> root.num-mode; }
+            Text { x: 16px; y: 218px; text: @tr("页码对齐"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+            Choice { x: 16px; y: 240px; width: 328px; items: [@tr("居左"), @tr("居中"), @tr("居右")]; sel <=> root.num-align; }
+        }
+
+        Rectangle {
+            x: 16px; y: 304px; width: 16px; height: 16px;
+            border-width: 1px; border-color: #2b579a;
+            background: root.title-page ? #2b579a : #ffffff;
+            Text { text: root.title-page ? "✓" : ""; color: #ffffff; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+            TouchArea { clicked => { root.title-page = !root.title-page; } }
+        }
+        Text { x: 40px; y: 305px; text: @tr("首页不同（首页不显示页眉页脚）"); font-size: 12px; color: #333333; }
+
+        Rectangle {
+            x: 16px; y: 332px; width: 16px; height: 16px;
+            border-width: 1px; border-color: #2b579a;
+            background: root.even-odd ? #2b579a : #ffffff;
+            Text { text: root.even-odd ? "✓" : ""; color: #ffffff; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+            TouchArea { clicked => { root.even-odd = !root.even-odd; } }
+        }
+        Text { x: 40px; y: 333px; text: @tr("奇偶页不同"); font-size: 12px; color: #333333; }
+
+        Text { x: 16px; y: 362px; text: @tr("对整篇文档生效；会覆盖原有首页/偶数页内容"); font-size: 11px; color: #888888; }
+    }
+}

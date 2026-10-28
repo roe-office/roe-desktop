@@ -1,0 +1,121 @@
+// ChartColorPickerDialog.slint — 图表边框"更多颜色"弹窗
+// v71/v72交接：仅完成组件代码编写，未编译验证，未接入main.rs/app.slint。
+// 范围（用户已拍板，不要升级）：固定8x8=64色块网格，不支持自定义RGB/hex输入。
+// 用法预期：作为独立弹窗/overlay使用，具体宿主方式（Dialog/PopupWindow/条件渲染Rectangle）
+// 留给下次开发决定——鉴于本次会话踩过PopupWindow在HiDPI环境下的坑（见ChartSidebar.slint
+// 下拉框问题），建议优先考虑"条件渲染Rectangle+绝对定位"的原地展开模式，不要默认用PopupWindow。
+
+export struct ChartColorSwatch {
+    hex: string,
+    color-value: color,
+}
+
+export component ChartColorPickerDialog inherits Rectangle {
+    // 64个预设色块，8行8列。具体色值待下次开发时确定（这里先放一组占位的渐变色板，
+    // 覆盖常见色相环+灰阶，实际使用前需要设计师/用户确认最终配色表）
+    in property <[ChartColorSwatch]> swatches: [
+        { hex: "#000000", color-value: #000000 }, { hex: "#1a1a1a", color-value: #1a1a1a },
+        { hex: "#333333", color-value: #333333 }, { hex: "#4d4d4d", color-value: #4d4d4d },
+        { hex: "#666666", color-value: #666666 }, { hex: "#808080", color-value: #808080 },
+        { hex: "#999999", color-value: #999999 }, { hex: "#b3b3b3", color-value: #b3b3b3 },
+
+        { hex: "#cccccc", color-value: #cccccc }, { hex: "#e6e6e6", color-value: #e6e6e6 },
+        { hex: "#f5f5f5", color-value: #f5f5f5 }, { hex: "#ffffff", color-value: #ffffff },
+        { hex: "#7f0000", color-value: #7f0000 }, { hex: "#b30000", color-value: #b30000 },
+        { hex: "#e60000", color-value: #e60000 }, { hex: "#ff3333", color-value: #ff3333 },
+
+        { hex: "#7f3f00", color-value: #7f3f00 }, { hex: "#b35900", color-value: #b35900 },
+        { hex: "#e67300", color-value: #e67300 }, { hex: "#ff9933", color-value: #ff9933 },
+        { hex: "#7f7f00", color-value: #7f7f00 }, { hex: "#b3b300", color-value: #b3b300 },
+        { hex: "#e6e600", color-value: #e6e600 }, { hex: "#ffff33", color-value: #ffff33 },
+
+        { hex: "#3f7f00", color-value: #3f7f00 }, { hex: "#59b300", color-value: #59b300 },
+        { hex: "#73e600", color-value: #73e600 }, { hex: "#99ff33", color-value: #99ff33 },
+        { hex: "#007f00", color-value: #007f00 }, { hex: "#00b300", color-value: #00b300 },
+        { hex: "#00e600", color-value: #00e600 }, { hex: "#33ff33", color-value: #33ff33 },
+
+        { hex: "#007f3f", color-value: #007f3f }, { hex: "#00b359", color-value: #00b359 },
+        { hex: "#00e673", color-value: #00e673 }, { hex: "#33ff99", color-value: #33ff99 },
+        { hex: "#007f7f", color-value: #007f7f }, { hex: "#00b3b3", color-value: #00b3b3 },
+        { hex: "#00e6e6", color-value: #00e6e6 }, { hex: "#33ffff", color-value: #33ffff },
+
+        { hex: "#003f7f", color-value: #003f7f }, { hex: "#0059b3", color-value: #0059b3 },
+        { hex: "#0073e6", color-value: #0073e6 }, { hex: "#3399ff", color-value: #3399ff },
+        { hex: "#00007f", color-value: #00007f }, { hex: "#0000b3", color-value: #0000b3 },
+        { hex: "#0000e6", color-value: #0000e6 }, { hex: "#3333ff", color-value: #3333ff },
+
+        { hex: "#3f007f", color-value: #3f007f }, { hex: "#5900b3", color-value: #5900b3 },
+        { hex: "#7300e6", color-value: #7300e6 }, { hex: "#9933ff", color-value: #9933ff },
+        { hex: "#7f007f", color-value: #7f007f }, { hex: "#b300b3", color-value: #b300b3 },
+        { hex: "#e600e6", color-value: #e600e6 }, { hex: "#ff33ff", color-value: #ff33ff },
+
+        { hex: "#7f003f", color-value: #7f003f }, { hex: "#b30059", color-value: #b30059 },
+        { hex: "#e60073", color-value: #e60073 }, { hex: "#ff3399", color-value: #ff3399 },
+        { hex: "#217346", color-value: #217346 }, { hex: "#d9534f", color-value: #d9534f },
+        { hex: "#f0ad4e", color-value: #f0ad4e }, { hex: "#5bc0de", color-value: #5bc0de },
+    ];
+
+    // 选中某个色块时触发，回传hex字符串（与现有border-color-hex-edited等callback
+    // 的传值风格保持一致：直接传hex string，不用字符串拼接约定）
+    callback swatch-selected(string);
+    // 关闭弹窗（点击背景遮罩或右上角关闭按钮时触发，具体宿主怎么处理关闭状态由调用方决定）
+    callback dialog-closed();
+
+    width: 280px;
+    height: 320px;
+    background: white;
+    border-color: #c8c8c8;
+    border-width: 1px;
+    border-radius: 4px;
+    drop-shadow-blur: 8px;
+    drop-shadow-color: #00000022;
+
+    VerticalLayout {
+        padding: 10px;
+        spacing: 8px;
+
+        HorizontalLayout {
+            alignment: space-between;
+            Text {
+                text: @tr("更多颜色");
+                font-size: 12px;
+                font-weight: 600;
+                color: #222222;
+                vertical-alignment: center;
+            }
+            Rectangle {
+                width: 20px; height: 20px; border-radius: 3px;
+                background: close-touch.has-hover ? #e0e0e0 : transparent;
+                Text {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    text: "✕"; font-size: 11px; color: #666666;
+                }
+                close-touch := TouchArea { clicked => { root.dialog-closed(); } }
+            }
+        }
+
+        Rectangle { height: 1px; background: #e8e8e8; }
+
+        // 8x8色块网格。用固定8列的HorizontalLayout嵌套8个VerticalLayout实现，
+        // 不使用for循环嵌套二维索引（Slint不支持函数体/表达式里的命令式for，
+        // 这里是组件树生成场景，for-in在这个位置是合法的，跟ChartSidebar.slint
+        // 里踩过的"函数体内for循环不支持"是两回事，注意区分）
+        for row_idx in 8: HorizontalLayout {
+            spacing: 3px;
+            for col_idx in 8: Rectangle {
+                width: 28px; height: 28px;
+                border-radius: 3px;
+                border-width: swatch-touch.has-hover ? 2px : 1px;
+                border-color: swatch-touch.has-hover ? #217346 : #d8d8d8;
+                background: root.swatches[row_idx * 8 + col_idx].color-value;
+
+                swatch-touch := TouchArea {
+                    clicked => {
+                        root.swatch-selected(root.swatches[row_idx * 8 + col_idx].hex);
+                    }
+                }
+            }
+        }
+    }
+}

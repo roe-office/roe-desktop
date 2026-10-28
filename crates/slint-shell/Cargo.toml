@@ -1,0 +1,29 @@
+[package]
+name = "slint-shell"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+slint = { version = "1.16.1", default-features = false, features = [
+    "std",
+    "compat-1-2",
+    "backend-winit",
+    "renderer-femtovg",
+    "renderer-software",
+    "accessibility",
+    "image-default-formats",
+] }
+doc-core = { path = "../doc-core" }
+i-slint-backend-winit = "=1.16.1"
+serde_json = "1"
+rfd = "0.15"
+agent-bridge = { path = "../agent-bridge" }
+
+# Agent 接线最小验证（v1接线第一步）：先只验证依赖能否引入、编译能否通过，
+# 不代表最终的异步桥接实现已经开始。
+roe-agent = { path = "../../../roe/roe-agent" }
+tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros"] }
+arboard = { version = "3", features = ["wayland-data-control"] }
+
+[build-dependencies]
+slint-build = "1.16.1"

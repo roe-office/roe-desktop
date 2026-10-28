@@ -1,0 +1,104 @@
+// PageSetupDialog.slint — Writer「页面设置」对话框（v275）
+import { DialogShell } from "DialogShell.slint";
+
+component NumBox inherits Rectangle {
+    in-out property <string> text <=> inp.text;
+    width: 90px;
+    height: 26px;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: inp.has-focus ? #2b579a : #c0c0c0;
+    background: #ffffff;
+    inp := TextInput {
+        x: 6px;
+        y: (parent.height - self.height) / 2;
+        width: parent.width - 12px;
+        font-size: 12px;
+        color: #222222;
+        single-line: true;
+    }
+}
+
+export component PageSetupDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in-out property <int> paper: 0;
+    in-out property <int> orient: 0;
+    in-out property <string> top-text: "2.54";
+    in-out property <string> bottom-text: "2.54";
+    in-out property <string> left-text: "3.18";
+    in-out property <string> right-text: "3.18";
+    callback confirmed();
+    callback cancelled();
+    background: transparent;
+
+    DialogShell {
+        accent: #2b579a;
+        accent-hover: #1e3f73;
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("页面设置");
+        card-width: 360px;
+        card-height: 390px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        Text { x: 16px; y: 52px; text: @tr("纸张大小"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        for name[i] in ["A4", "A3", "A5", "Letter", "Legal", @tr("自定义(保持当前)")]: Rectangle {
+            x: 16px + Math.mod(i, 3) * 108px;
+            y: 74px + Math.floor(i / 3) * 30px;
+            width: 102px;
+            height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: root.paper == i ? #2b579a : #c0c0c0;
+            background: root.paper == i ? #e8f0fc : #ffffff;
+            Text { text: name; font-size: 11px; color: #222222; horizontal-alignment: center; vertical-alignment: center; }
+            TouchArea { clicked => { root.paper = i; } }
+        }
+
+        Text { x: 16px; y: 142px; text: @tr("纸张方向"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        for name[i] in [@tr("纵向"), @tr("横向")]: Rectangle {
+            x: 16px + i * 108px;
+            y: 164px;
+            width: 102px;
+            height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: root.orient == i ? #2b579a : #c0c0c0;
+            background: root.orient == i ? #e8f0fc : #ffffff;
+            Text { text: name; font-size: 12px; color: #222222; horizontal-alignment: center; vertical-alignment: center; }
+            TouchArea { clicked => { root.orient = i; } }
+        }
+
+        Text { x: 16px; y: 202px; text: @tr("页边距预设"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        for name[i] in [@tr("常规"), @tr("窄"), @tr("适中"), @tr("宽")]: Rectangle {
+            x: 16px + i * 82px;
+            y: 224px;
+            width: 76px;
+            height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: #c0c0c0;
+            background: #ffffff;
+            Text { text: name; font-size: 12px; color: #222222; horizontal-alignment: center; vertical-alignment: center; }
+            TouchArea {
+                clicked => {
+                    if (i == 0) { root.top-text = "2.54"; root.bottom-text = "2.54"; root.left-text = "3.18"; root.right-text = "3.18"; }
+                    if (i == 1) { root.top-text = "1.27"; root.bottom-text = "1.27"; root.left-text = "1.27"; root.right-text = "1.27"; }
+                    if (i == 2) { root.top-text = "2.54"; root.bottom-text = "2.54"; root.left-text = "1.91"; root.right-text = "1.91"; }
+                    if (i == 3) { root.top-text = "2.54"; root.bottom-text = "2.54"; root.left-text = "5.08"; root.right-text = "5.08"; }
+                }
+            }
+        }
+
+        Text { x: 16px; y: 270px; text: @tr("上（cm）"); font-size: 12px; color: #333333; }
+        NumBox { x: 80px; y: 266px; text <=> root.top-text; }
+        Text { x: 190px; y: 270px; text: @tr("下（cm）"); font-size: 12px; color: #333333; }
+        NumBox { x: 254px; y: 266px; text <=> root.bottom-text; }
+        Text { x: 16px; y: 306px; text: @tr("左（cm）"); font-size: 12px; color: #333333; }
+        NumBox { x: 80px; y: 302px; text <=> root.left-text; }
+        Text { x: 190px; y: 306px; text: @tr("右（cm）"); font-size: 12px; color: #333333; }
+        NumBox { x: 254px; y: 302px; text <=> root.right-text; }
+
+        Text { x: 16px; y: 340px; text: @tr("设置对整篇文档（所有分节）生效"); font-size: 11px; color: #888888; }
+    }
+}

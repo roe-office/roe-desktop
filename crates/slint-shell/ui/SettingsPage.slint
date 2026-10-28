@@ -1,0 +1,353 @@
+// SettingsPage.slint — 设置页(左侧导航 + 右侧内容)。本版只有界面与本地编辑状态,持久化在 main.rs 接。
+// provider: 0 Claude  1 Gemini  2 GPT  3 DeepSeek  4 其他
+
+export struct AiProfile { name: string, provider: int, endpoint: string, key: string, model: string }
+
+component SField inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <bool> password: false;
+    height: 30px;
+    background: #ffffff;
+    border-color: ti.has-focus ? #7c3aed : #d1d5db;
+    border-width: 1px;
+    border-radius: 5px;
+    clip: true;
+    ti := TextInput {
+        x: 8px;
+        y: (parent.height - 18px) / 2;
+        width: parent.width - 16px;
+        height: 18px;
+        text <=> root.text;
+        font-size: 12px;
+        color: #1f2937;
+        input-type: root.password ? InputType.password : InputType.text;
+    }
+    Text {
+        x: 8px;
+        y: (parent.height - self.height) / 2;
+        visible: root.text == "";
+        text: root.placeholder;
+        color: #9ca3af;
+        font-size: 12px;
+    }
+}
+
+component SChip inherits Rectangle {
+    in property <string> label;
+    in property <bool> active;
+    callback clicked();
+    height: 28px;
+    background: root.active ? #ede9fe : (ta.has-hover ? #f3f4f6 : #ffffff);
+    border-color: root.active ? #7c3aed : #d1d5db;
+    border-width: 1px;
+    border-radius: 5px;
+    Text {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        text: root.label;
+        font-size: 12px;
+        color: root.active ? #6d28d9 : #374151;
+    }
+    ta := TouchArea { clicked => { root.clicked(); } }
+}
+
+component SBtn inherits Rectangle {
+    in property <string> label;
+    in property <color> tone: #6d28d9;
+    callback clicked();
+    min-width: 80px;
+    height: 30px;
+    background: ta.has-hover ? root.tone.with-alpha(0.12) : #ffffff;
+    border-color: root.tone;
+    border-width: 1px;
+    border-radius: 5px;
+    Text {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        text: root.label;
+        font-size: 12px;
+        color: root.tone;
+    }
+    ta := TouchArea { clicked => { root.clicked(); } }
+}
+
+export component SettingsPage inherits Rectangle {
+    in property <[AiProfile]> profiles: [];
+    in property <int> active-profile: -1;
+    in property <string> save-status: "";
+    in-out property <string> hf-cache-dir: "";
+    in-out property <int> language-index: 0;
+    in-out property <int> theme-index: 0;
+    in-out property <int> nav: 0;
+
+    property <[string]> langs: ["简体中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "繁體中文"];
+    property <[color]> theme-colors: [#217346, #2b579a, #c43e1c, #7c3aed, #0f766e];
+    property <bool> lang-open: false;
+    property <int> sel: -1;
+    property <string> edit-name: "";
+    property <int> edit-provider: 0;
+    property <string> edit-endpoint: "https://api.anthropic.com";
+    property <string> edit-key: "";
+    property <string> edit-model: "";
+
+    callback back-clicked();
+    // idx: -1=新建(约定:新建后 Rust 把新项追加到列表末尾),否则覆盖
+    callback save-profile(int, string, string, string, string, int);
+    callback activate-profile(int);
+    callback delete-profile(int);
+    callback language-changed(int);
+
+    background: #ffffff;
+
+    pure function default-endpoint(p: int) -> string {
+        p == 0 ? "https://api.anthropic.com" :
+        p == 1 ? "https://generativelanguage.googleapis.com" :
+        p == 2 ? "https://api.openai.com/v1" :
+        p == 3 ? "https://api.deepseek.com" : ""
+    }
+    function pick(i: int) {
+        root.sel = i;
+        root.edit-name = root.profiles[i].name;
+        root.edit-provider = root.profiles[i].provider;
+        root.edit-endpoint = root.profiles[i].endpoint;
+        root.edit-key = root.profiles[i].key;
+        root.edit-model = root.profiles[i].model;
+    }
+    function new-profile() {
+        root.sel = -1;
+        root.edit-name = "";
+        root.edit-provider = 0;
+        root.edit-endpoint = root.default-endpoint(0);
+        root.edit-key = "";
+        root.edit-model = "";
+    }
+
+    HorizontalLayout {
+        // ── 左侧导航 ──
+        Rectangle {
+            width: 190px;
+            background: #f9fafb;
+
+            back-ta := TouchArea {
+                x: 12px; y: 12px;
+                width: 28px; height: 28px;
+                clicked => { root.back-clicked(); }
+                Rectangle {
+                    background: back-ta.has-hover ? #e5e5ec : transparent;
+                    border-radius: 4px;
+                    Image {
+                        source: @image-url("icons/fluent/arrow_circle_left_20_regular.svg");
+                        width: 20px; height: 20px;
+                    }
+                }
+            }
+            Text { x: 48px; y: 18px; text: @tr("设置"); font-size: 14px; font-weight: 600; color: #111827; }
+
+            for item[i] in [@tr("常用"), @tr("AI 配置")] : Rectangle {
+                x: 8px;
+                y: 56px + i * 36px;
+                width: parent.width - 16px;
+                height: 32px;
+                background: root.nav == i ? #ede9fe : (nav-ta.has-hover ? #f3f4f6 : transparent);
+                border-radius: 6px;
+                Text {
+                    x: 12px;
+                    y: (parent.height - self.height) / 2;
+                    text: item;
+                    font-size: 13px;
+                    color: root.nav == i ? #6d28d9 : #374151;
+                    font-weight: root.nav == i ? 600 : 400;
+                }
+                nav-ta := TouchArea { clicked => { root.nav = i; root.lang-open = false; } }
+            }
+        }
+        Rectangle { width: 1px; background: #e5e7eb; }
+
+        // ── 右侧内容 ──
+        Rectangle {
+            horizontal-stretch: 1;
+
+            // Tab 0:常用
+            if root.nav == 0 : Rectangle {
+                width: parent.width;
+                height: parent.height;
+
+                Text { x: 32px; y: 24px; text: @tr("常用"); font-size: 20px; font-weight: 600; color: #111827; }
+
+                Text { x: 32px; y: 76px; text: @tr("界面语言"); font-size: 12px; color: #6b7280; }
+                Rectangle {
+                    x: 32px; y: 98px; width: 240px; height: 32px;
+                    background: #ffffff;
+                    border-color: #d1d5db; border-width: 1px; border-radius: 5px;
+                    Text {
+                        x: 10px; y: (parent.height - self.height) / 2;
+                        text: root.langs[root.language-index];
+                        font-size: 12px; color: #1f2937;
+                    }
+                    Text {
+                        x: parent.width - 20px; y: (parent.height - self.height) / 2;
+                        text: "▾"; font-size: 12px; color: #6b7280;
+                    }
+                    TouchArea { clicked => { root.lang-open = !root.lang-open; } }
+                }
+                Text { x: 32px; y: 138px; text: @tr("切换后立即生效；目前仅提供英文译文。"); font-size: 11px; color: #9ca3af; }
+
+                Text { x: 32px; y: 180px; text: @tr("主题色"); font-size: 12px; color: #6b7280; }
+                for c[i] in root.theme-colors : Rectangle {
+                    x: 32px + i * 40px; y: 202px;
+                    width: 28px; height: 28px; border-radius: 14px;
+                    background: c;
+                    border-width: root.theme-index == i ? 3px : 0px;
+                    border-color: #111827;
+                    TouchArea { clicked => { root.theme-index = i; } }
+                }
+                Text { x: 32px; y: 240px; text: @tr("主题色暂未生效。"); font-size: 11px; color: #9ca3af; }
+
+                // 语言下拉列表(自绘,放最后盖在上层)
+                if root.lang-open : Rectangle {
+                    x: 32px; y: 132px;
+                    width: 240px;
+                    height: root.langs.length * 30px + 2px;
+                    background: #ffffff;
+                    border-color: #d1d5db; border-width: 1px; border-radius: 5px;
+                    VerticalLayout {
+                        for l[i] in root.langs : Rectangle {
+                            height: 30px;
+                            background: lang-ta.has-hover ? #f5f3ff : (root.language-index == i ? #ede9fe : transparent);
+                            Text {
+                                x: 10px; y: (parent.height - self.height) / 2;
+                                text: l; font-size: 12px; color: #1f2937;
+                            }
+                            lang-ta := TouchArea {
+                                clicked => {
+                                    root.language-index = i;
+                                    root.lang-open = false;
+                                    root.language-changed(i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Tab 1:AI 配置
+            if root.nav == 1 : VerticalLayout {
+                padding: 32px;
+                padding-top: 24px;
+                spacing: 8px;
+
+                Text { text: @tr("AI 配置"); font-size: 20px; font-weight: 600; color: #111827; }
+
+                Text { text: @tr("本地模型 · 开发中"); font-size: 13px; font-weight: 600; color: #374151; }
+                Text { text: @tr("Hugging Face 缓存目录"); font-size: 11px; color: #6b7280; }
+                SField { text <=> root.hf-cache-dir; placeholder: @tr("默认 ~/.cache/huggingface"); }
+                Text {
+                    text: @tr("用于存放 Gemma 等小模型,本地运行不上传文档。当前仅保存路径,下载与推理后续接入。");
+                    font-size: 11px; color: #9ca3af; wrap: word-wrap;
+                }
+
+                Text { text: @tr("云端 API"); font-size: 13px; font-weight: 600; color: #374151; }
+                HorizontalLayout {
+                    vertical-stretch: 1;
+                    spacing: 16px;
+
+                    // 配置列表(上方:新建/删除,操作对象是列表)
+                    VerticalLayout {
+                        width: 190px;
+                        spacing: 8px;
+                        HorizontalLayout {
+                            spacing: 6px;
+                            height: 30px;
+                            SBtn { label: @tr("+ 新建"); tone: #6b7280; width: 92px; clicked => { root.new-profile(); } }
+                            SBtn {
+                                label: @tr("删除"); tone: #dc2626; width: 92px;
+                                clicked => { if (root.sel >= 0) { root.delete-profile(root.sel); root.new-profile(); } }
+                            }
+                        }
+                    Rectangle {
+                        vertical-stretch: 1;
+                        background: #f9fafb;
+                        border-color: #e5e7eb; border-width: 1px; border-radius: 6px;
+                        Text {
+                            visible: root.profiles.length == 0;
+                            x: 10px; y: 10px; width: parent.width - 20px;
+                            text: @tr("还没有配置。在右侧填写后点「保存并使用」。");
+                            font-size: 11px; color: #9ca3af; wrap: word-wrap;
+                        }
+                        VerticalLayout {
+                            padding: 4px;
+                            alignment: start;
+                            for p[i] in root.profiles : Rectangle {
+                                height: 30px;
+                                background: root.sel == i ? #ede9fe : (pl-ta.has-hover ? #f3f4f6 : transparent);
+                                border-radius: 5px;
+                                Text {
+                                    x: 8px; y: (parent.height - self.height) / 2;
+                                    width: parent.width - 16px;
+                                    overflow: elide;
+                                    text: (root.active-profile == i ? "● " : "○ ") + p.name;
+                                    font-size: 12px; color: #1f2937;
+                                }
+                                pl-ta := TouchArea { clicked => { root.pick(i); } }
+                            }
+                        }
+                    }
+                    }
+
+                    // 编辑表单
+                    VerticalLayout {
+                        spacing: 6px;
+                        alignment: start;
+
+                        Text { text: @tr("名称"); font-size: 11px; color: #6b7280; }
+                        SField { text <=> root.edit-name; placeholder: @tr("例如:工作用 Claude"); }
+
+                        Text { text: @tr("服务商"); font-size: 11px; color: #6b7280; }
+                        HorizontalLayout {
+                            spacing: 6px;
+                            for pn[i] in ["Claude", "Gemini", "GPT", "DeepSeek", @tr("其他")] : SChip {
+                                label: pn;
+                                active: root.edit-provider == i;
+                                clicked => {
+                                    if (root.edit-endpoint == "" || root.edit-endpoint == root.default-endpoint(root.edit-provider)) {
+                                        root.edit-endpoint = root.default-endpoint(i);
+                                    }
+                                    root.edit-provider = i;
+                                }
+                            }
+                        }
+
+                        Text { text: @tr("接口地址(已按服务商预填,可修改)"); font-size: 11px; color: #6b7280; }
+                        SField { text <=> root.edit-endpoint; placeholder: "https://…"; }
+
+                        Text { text: "API Key"; font-size: 11px; color: #6b7280; }
+                        SField { text <=> root.edit-key; password: true; placeholder: @tr("粘贴 API Key"); }
+
+                        Text { text: @tr("模型名称(自行填写,以服务商文档为准)"); font-size: 11px; color: #6b7280; }
+                        SField { text <=> root.edit-model; placeholder: @tr("填写模型名"); }
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            alignment: start;
+                            SBtn {
+                                label: @tr("保存并使用"); tone: #6d28d9;
+                                clicked => {
+                                    if (root.edit-name != "") {
+                                        root.save-profile(root.sel, root.edit-name, root.edit-endpoint, root.edit-key, root.edit-model, root.edit-provider);
+                                        if (root.sel == -1) { root.sel = root.profiles.length - 1; }
+                                    }
+                                }
+                            }
+                        }
+                        Text {
+                            visible: root.save-status != "";
+                            text: root.save-status;
+                            font-size: 11px; color: #c0392b; wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

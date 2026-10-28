@@ -1,0 +1,311 @@
+// PivotSidebar.slint — 数据透视表字段面板
+import { PivotZone } from "PivotZone.slint";
+
+export component PivotSidebar inherits Rectangle {
+    in property <[string]> fields: ["销售额", "数量", "地区", "产品", "日期"];
+    in-out property <[string]> row-fields: [];
+    in-out property <[string]> col-fields: [];
+    in-out property <[string]> value-fields: [];
+    in-out property <[string]> filter-fields: [];
+    in property <[bool]> field-checked: [];
+    property <int> dragging-idx: -1;
+    property <string> dragging-field-name: "";
+    property <length> drag-label-x: 0px;
+    property <length> drag-label-y: 0px;
+    property <string> dragging-out-field-name: "";
+
+    callback layout-changed();
+    callback add-field-to-zone(string, string);
+    callback menu-add-field-to-zone(string, string);
+    callback remove-field(string);
+    callback field-drag-started(string, length, length);
+    callback field-drag-moved(length, length);
+    callback field-drag-ended(length, length);
+    callback move-field-to-zone(string, string);
+
+    // 纯判断函数：给定"相对PivotSidebar根节点的绝对坐标"，返回落点所在zone（""表示范围外/无效）
+    // 四宫格容器：顶部y=220px（60px字段列表+160px高度），高240px，左右两列以root.width/2为界
+    function resolve-zone-at(abs-x: length, abs-y: length) -> string {
+        if (abs-y < 220px || abs-y > 220px + 240px) {
+            return "";
+        }
+        let is-top-half: bool = abs-y < 220px + 120px;
+        let is-left-half: bool = abs-x < root.width / 2;
+
+        if (is-top-half && is-left-half) {
+            return "filter";
+        } else if (is-top-half && !is-left-half) {
+            return "row";
+        } else if (!is-top-half && is-left-half) {
+            return "col";
+        } else {
+            return "value";
+        }
+    }
+
+    // 步骤B：字段列表拖入——根据拖拽起始行idx + 松手时行内局部坐标，换算绝对坐标，命中则加入对应zone
+    function try-drop-field(field-name: string, start-idx: int, local-y: length, local-x: length) {
+        // 字段列表区顶部在PivotSidebar内的y = 36px(标题) + 24px(提示) = 60px
+        // 行高26px，滚动偏移用fields-flick.viewport-y（负值，向上滚动为负）
+        let abs-y: length = 60px + start-idx * 26px + fields-flick.viewport-y + local-y;
+        // 行宽与四宫格总宽一致（都是root.width左右padding对齐），行内local-x可直接当绝对x使用
+        let zone: string = root.resolve-zone-at(local-x, abs-y);
+        if (zone != "") {
+            root.add-field-to-zone(field-name, zone);
+        }
+    }
+
+    // 步骤C：已有zone内字段拖出/跨zone移动——PivotZone上报的是"相对四宫格外层容器"的坐标，
+    // 还需加上该容器相对PivotSidebar根节点的偏移（y=220px，即字段列表60px+160px高度）才是真正的绝对坐标
+    function try-drop-field-from-zone(field-name: string, local-x: length, local-y: length) {
+        let abs-x: length = local-x;
+        let abs-y: length = local-y + 220px;
+        let zone: string = root.resolve-zone-at(abs-x, abs-y);
+        root.move-field-to-zone(field-name, zone);
+    }
+
+    background: #fafafa;
+
+    VerticalLayout {
+        spacing: 0px;
+        alignment: start;
+
+        Rectangle {
+            width: parent.width; height: 36px; background: #f0f0f0;
+            Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: #e1e1e1; }
+            Text { x: 12px; y: (parent.height - self.height) / 2; text: @tr("数据透视表字段"); font-size: 12px; font-weight: 600; color: #1a1a1a; }
+        }
+
+        Rectangle {
+            width: parent.width; height: 24px; background: #f5f5f5;
+            Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: #e8e8e8; }
+            Text { x: 10px; y: (parent.height - self.height) / 2; text: @tr("选择要添加到报表的字段:"); font-size: 10px; color: #666666; }
+        }
+
+        Rectangle {
+            width: parent.width; height: 160px; clip: true;
+            fields-flick := Flickable {
+                width: parent.width; height: parent.height;
+                viewport-width: parent.width;
+                // interactive:false —— 禁止Flickable用拖拽手势滚动（鼠标滚轮/触控板滚动不受影响）
+                // 原因：字段行内的TouchArea要做拖拽感知，Flickable默认会在拖动超过阈值时抢占pointer事件
+                // 去做"惯性滚动"，导致up事件永远到不了TouchArea.pointer-event，拖拽的ended回调完全不触发
+                interactive: false;
+                VerticalLayout {
+                    width: parent.width;
+                    spacing: 2px;
+                    padding-left: 5px;
+                    padding-right: 5px;
+                    alignment: start;
+                    for field-name[idx] in root.fields: Rectangle {
+                        width: parent.width; height: 26px;
+                        background: row-hover-sense.has-hover ? #eef2f5 : #f7f8f9;
+                        border-width: 1px;
+                        border-color: #e4e6e8;
+                        border-radius: 3px;
+                        row-hover-sense := TouchArea {
+                            x: 0px; y: 0px; width: parent.width; height: parent.height;
+                        }
+
+                        // 拖拽感知层：覆盖整行，用于按下/移动/松开手势上报坐标（步骤A：仅上报，无视觉反馈）
+                        drag-sense := TouchArea {
+                            x: 0px; y: 0px; width: parent.width; height: parent.height;
+                            pointer-event(e) => {
+                                if e.kind == PointerEventKind.down && e.button == PointerEventButton.left {
+                                    root.dragging-idx = idx;
+                                    root.dragging-field-name = field-name;
+                                    // 按下的瞬间就同步标签位置，避免第一次显示时位置滞后在上次松手处
+                                    root.drag-label-x = self.mouse-x;
+                                    root.drag-label-y = 60px + idx * 26px + fields-flick.viewport-y + self.mouse-y;
+                                    root.field-drag-started(field-name, self.mouse-x, self.mouse-y);
+                                }
+                                if e.kind == PointerEventKind.up {
+                                    if root.dragging-idx >= 0 {
+                                        // 行绝对y（相对PivotSidebar）= 字段列表起始y(60px) + 行高*idx + Flickable滚动偏移 + 本次局部偏移
+                                        // 行宽=PivotSidebar宽度，四宫格总宽也=PivotSidebar宽度，左右对齐方式一致，
+                                        // 所以行内mouse-x可以直接和root.width/2比较来判断左右列，不需要额外坐标转换
+                                        root.try-drop-field(field-name, root.dragging-idx, self.mouse-y, self.mouse-x);
+                                    }
+                                    root.dragging-idx = -1;
+                                    root.dragging-field-name = "";
+                                    root.field-drag-ended(self.mouse-x, self.mouse-y);
+                                }
+                            }
+                            moved => {
+                                if self.pressed {
+                                    // 浮动标签跟随：绝对坐标换算复用try-drop-field同款公式（见该函数注释）
+                                    root.drag-label-x = self.mouse-x;
+                                    root.drag-label-y = 60px + root.dragging-idx * 26px + fields-flick.viewport-y + self.mouse-y;
+                                    root.field-drag-moved(self.mouse-x, self.mouse-y);
+                                }
+                            }
+                        }
+
+                        // 勾选框：默认把字段加入"行"区域；勾选态由Rust侧按下标算好传入，不在Slint里做数组包含判断
+                        Rectangle {
+                            x: 8px; y: (parent.height - 14px) / 2;
+                            width: 14px; height: 14px; border-radius: 3px;
+                            border-width: 1px;
+                            border-color: checkbox-touch.has-hover ? #217346 : #cccccc;
+                            background: (root.field-checked.length > idx && root.field-checked[idx]) ? #217346 : #ffffff;
+                            Text {
+                                x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+                                text: "✓"; font-size: 10px; color: #ffffff;
+                                visible: root.field-checked.length > idx && root.field-checked[idx];
+                            }
+                            checkbox-touch := TouchArea {
+                                clicked => {
+                                    root.add-field-to-zone(field-name, "row");
+                                }
+                            }
+                        }
+
+                        Text { x: 28px; y: (parent.height - self.height) / 2; width: parent.width - 60px; text: field-name; font-size: 11px; color: #222222; overflow: elide; }
+                        Rectangle {
+                            x: parent.width - 32px; y: (parent.height - 20px) / 2;
+                            width: 24px; height: 20px; border-radius: 3px;
+                            background: zone-menu-touch.has-hover ? #e0e0e0 : #f0f0f0;
+                            Text { x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; text: "⌄"; font-size: 12px; color: #555555; }
+                            zone-menu-touch := TouchArea { clicked => { zone-popup.show(); } }
+                            zone-popup := PopupWindow {
+                                x: -66px; y: parent.height + 2px;
+                                width: 90px; height: 132px;
+                                close-on-click: true;
+                                Rectangle {
+                                    background: #ffffff; border-color: #d0d0d0; border-width: 1px; border-radius: 4px;
+                                    VerticalLayout {
+                                        padding: 3px; spacing: 2px;
+                                        Rectangle {
+                                            height: 26px; border-radius: 3px;
+                                            background: filter-item-touch.has-hover ? #f5f5f5 : transparent;
+                                            Text { x: 8px; y: (parent.height - self.height)/2; text: @tr("添加到筛选"); font-size: 10px; color: #333333; }
+                                            filter-item-touch := TouchArea { clicked => { root.menu-add-field-to-zone(field-name, "filter"); } }
+                                        }
+                                        Rectangle {
+                                            height: 26px; border-radius: 3px;
+                                            background: row-item-touch.has-hover ? #f5f5f5 : transparent;
+                                            Text { x: 8px; y: (parent.height - self.height)/2; text: @tr("添加到行"); font-size: 10px; color: #333333; }
+                                            row-item-touch := TouchArea { clicked => { root.menu-add-field-to-zone(field-name, "row"); } }
+                                        }
+                                        Rectangle {
+                                            height: 26px; border-radius: 3px;
+                                            background: col-item-touch.has-hover ? #f5f5f5 : transparent;
+                                            Text { x: 8px; y: (parent.height - self.height)/2; text: @tr("添加到列"); font-size: 10px; color: #333333; }
+                                            col-item-touch := TouchArea { clicked => { root.menu-add-field-to-zone(field-name, "col"); } }
+                                        }
+                                        Rectangle {
+                                            height: 26px; border-radius: 3px;
+                                            background: val-item-touch.has-hover ? #f5f5f5 : transparent;
+                                            Text { x: 8px; y: (parent.height - self.height)/2; text: @tr("添加到值"); font-size: 10px; color: #333333; }
+                                            val-item-touch := TouchArea { clicked => { root.menu-add-field-to-zone(field-name, "value"); } }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Rectangle {
+                visible: fields-flick.viewport-height > fields-flick.height;
+                x: parent.width - 4px; width: 3px;
+                border-radius: 1.5px;
+                background: #cccccc;
+                y: (-fields-flick.viewport-y / max(1px, fields-flick.viewport-height)) * fields-flick.height;
+                height: (fields-flick.height / max(1px, fields-flick.viewport-height)) * fields-flick.height;
+            }
+        }
+
+        Rectangle {
+            width: parent.width; height: 240px; background: transparent;
+            PivotZone {
+                x: 4px; y: 4px; width: (parent.width / 2) - 6px; height: (parent.height / 2) - 6px;
+                label: @tr("筛选"); accent-color: #7030a0; fields: root.filter-fields;
+                remove-requested(name) => { root.remove-field(name); }
+                field-drag-out-started(name, x, y) => {
+                    root.dragging-out-field-name = name;
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-moved(x, y) => {
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-ended(x, y) => {
+                    root.try-drop-field-from-zone(root.dragging-out-field-name, x, y);
+                    root.dragging-out-field-name = "";
+                }
+            }
+            PivotZone {
+                x: (parent.width / 2) + 2px; y: 4px; width: (parent.width / 2) - 6px; height: (parent.height / 2) - 6px;
+                label: @tr("行"); accent-color: #217346; fields: root.row-fields;
+                remove-requested(name) => { root.remove-field(name); }
+                field-drag-out-started(name, x, y) => {
+                    root.dragging-out-field-name = name;
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-moved(x, y) => {
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-ended(x, y) => {
+                    root.try-drop-field-from-zone(root.dragging-out-field-name, x, y);
+                    root.dragging-out-field-name = "";
+                }
+            }
+            PivotZone {
+                x: 4px; y: (parent.height / 2) + 2px; width: (parent.width / 2) - 6px; height: (parent.height / 2) - 6px;
+                label: @tr("列"); accent-color: #2e75b6; fields: root.col-fields;
+                remove-requested(name) => { root.remove-field(name); }
+                field-drag-out-started(name, x, y) => {
+                    root.dragging-out-field-name = name;
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-moved(x, y) => {
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-ended(x, y) => {
+                    root.try-drop-field-from-zone(root.dragging-out-field-name, x, y);
+                    root.dragging-out-field-name = "";
+                }
+            }
+            PivotZone {
+                x: (parent.width / 2) + 2px; y: (parent.height / 2) + 2px; width: (parent.width / 2) - 6px; height: (parent.height / 2) - 6px;
+                label: @tr("值"); accent-color: #c55a11; fields: root.value-fields;
+                remove-requested(name) => { root.remove-field(name); }
+                field-drag-out-started(name, x, y) => {
+                    root.dragging-out-field-name = name;
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-moved(x, y) => {
+                    root.drag-label-x = x;
+                    root.drag-label-y = y + 220px;
+                }
+                field-drag-out-ended(x, y) => {
+                    root.try-drop-field-from-zone(root.dragging-out-field-name, x, y);
+                    root.dragging-out-field-name = "";
+                }
+            }
+        }
+    }
+
+    // 步骤D：拖拽浮动标签，跟随鼠标显示当前拖拽的字段名，纯视觉反馈，不参与命中判断
+    // 空心边框样式：白/半透明底 + 绿色描边 + 绿色文字，比实心色块更柔和
+    if root.dragging-idx >= 0 || root.dragging-out-field-name != "": Rectangle {
+        x: root.drag-label-x - 4px; y: root.drag-label-y - 10px;
+        width: drag-label-text.width + 12px; height: 20px;
+        border-radius: 4px;
+        background: #ffffffcc;
+        border-width: 1.5px;
+        border-color: #217346;
+        drag-label-text := Text {
+            x: 6px; y: (parent.height - self.height) / 2;
+            text: root.dragging-field-name != "" ? root.dragging-field-name : root.dragging-out-field-name;
+            font-size: 10px; font-weight: 600; color: #217346;
+        }
+    }
+}

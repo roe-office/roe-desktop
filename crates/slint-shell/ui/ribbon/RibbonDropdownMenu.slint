@@ -1,0 +1,94 @@
+// 通用下拉菜单组件，抽取自 RibbonHome.qml 中重复4次的模式：
+// 项目符号 / 编号列表 / 多级列表 / 行距 —— 都是"小按钮触发 Popup + 文字列表"
+// 组件只负责显示触发按钮+弹出菜单列表，选中后通过 item-selected(index) 上报给外层，
+// 具体要发什么 UNO 命令由调用方在外层处理（不同菜单命令逻辑差异较大，不内置）。
+
+export struct RibbonMenuItem {
+    label: string,
+}
+
+export component RibbonDropdownMenu inherits Rectangle {
+    in property <image> icon-source;
+    in property <bool> has-icon: false;
+    in property <string> tooltip: "";
+    in property <[RibbonMenuItem]> items: [];
+    in property <length> menu-width: 180px;
+    in property <int> selected-index: -1;
+    property <bool> is-open: false;
+
+    callback item-selected(int);
+    callback request-open();
+    in property <bool> external: false;
+
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    background: trigger.pressed ? #d6d6d6
+        : root.is-open ? #dde8f8
+        : trigger.has-hover ? #ebebeb
+        : transparent;
+
+    Image {
+        visible: root.has-icon;
+        source: root.icon-source;
+        width: 16px;
+        height: 16px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+    }
+
+    trigger := TouchArea {
+        clicked => {
+            if (root.external) {
+                root.request-open();
+            } else {
+                root.is-open = true;
+                popup.show();
+            }
+        }
+    }
+
+    popup := PopupWindow {
+        x: 0px;
+        y: root.height + 2px;
+        close-policy: close-on-click-outside;
+
+        Rectangle {
+            width: root.menu-width;
+            height: list.preferred-height + 8px;
+            background: white;
+            border-color: #c8c8c8;
+            border-width: 1px;
+            border-radius: 3px;
+
+            list := VerticalLayout {
+                x: 0px;
+                y: 4px;
+                width: root.menu-width;
+                padding: 0px;
+                spacing: 2px;
+
+                for entry[idx] in root.items: Rectangle {
+                    height: 26px;
+                    border-radius: 3px;
+                    background: itemTouch.has-hover ? #e8f0fc : transparent;
+
+                    Text {
+                        text: entry.label;
+                        font-size: 12px;
+                        color: #222222;
+                        x: 8px;
+                        y: (parent.height - self.height) / 2;
+                    }
+
+                    itemTouch := TouchArea {
+                        clicked => {
+                            root.is-open = false;
+                            root.item-selected(idx);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

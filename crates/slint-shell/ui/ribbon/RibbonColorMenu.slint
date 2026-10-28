@@ -1,0 +1,62 @@
+// Ribbon 颜色下拉:图标 + 底部色条,点击弹出 10x4 色板。
+// 选中后通过 color-selected(hex) 上报,hex 为空串表示清除(无填充/自动)。
+// popup-y-shift:弹层 y 方向修正量(正值上移),用于修正 Ribbon 内位置导致的偏移/溢出。
+
+export struct RibbonColorSwatch {
+    hex: string,
+    c: color,
+}
+
+export component RibbonColorMenu inherits Rectangle {
+    in property <image> icon-source;
+    in property <string> tooltip: "";
+    in property <string> clear-label: @tr("无填充");
+    in property <length> popup-y-shift: 0px;
+    in-out property <color> bar-color: #ffff00;
+    property <bool> is-open: false;
+
+    in property <[RibbonColorSwatch]> palette: [
+        { hex: "#000000", c: #000000 }, { hex: "#7f7f7f", c: #7f7f7f }, { hex: "#c00000", c: #c00000 }, { hex: "#ff0000", c: #ff0000 }, { hex: "#ffc000", c: #ffc000 },
+        { hex: "#ffff00", c: #ffff00 }, { hex: "#92d050", c: #92d050 }, { hex: "#00b050", c: #00b050 }, { hex: "#00b0f0", c: #00b0f0 }, { hex: "#0070c0", c: #0070c0 },
+        { hex: "#ffffff", c: #ffffff }, { hex: "#d9d9d9", c: #d9d9d9 }, { hex: "#f4cccc", c: #f4cccc }, { hex: "#f8cbad", c: #f8cbad }, { hex: "#fff2cc", c: #fff2cc },
+        { hex: "#ffffcc", c: #ffffcc }, { hex: "#e2efda", c: #e2efda }, { hex: "#c6efce", c: #c6efce }, { hex: "#ddebf7", c: #ddebf7 }, { hex: "#dae3f3", c: #dae3f3 },
+        { hex: "#bfbfbf", c: #bfbfbf }, { hex: "#a6a6a6", c: #a6a6a6 }, { hex: "#e06666", c: #e06666 }, { hex: "#f4b183", c: #f4b183 }, { hex: "#ffd966", c: #ffd966 },
+        { hex: "#ffe699", c: #ffe699 }, { hex: "#a9d18e", c: #a9d18e }, { hex: "#70ad47", c: #70ad47 }, { hex: "#9dc3e6", c: #9dc3e6 }, { hex: "#8faadc", c: #8faadc },
+        { hex: "#404040", c: #404040 }, { hex: "#595959", c: #595959 }, { hex: "#990000", c: #990000 }, { hex: "#c55a11", c: #c55a11 }, { hex: "#bf9000", c: #bf9000 },
+        { hex: "#7f6000", c: #7f6000 }, { hex: "#548235", c: #548235 }, { hex: "#375623", c: #375623 }, { hex: "#2f5597", c: #2f5597 }, { hex: "#002060", c: #002060 },
+    ];
+
+    callback color-selected(string);
+
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    background: trigger.pressed ? #d6d6d6
+        : root.is-open ? #dde8f8
+        : trigger.has-hover ? #ebebeb
+        : transparent;
+
+    Image {
+        source: root.icon-source;
+        width: 16px;
+        height: 16px;
+        x: (parent.width - self.width) / 2;
+        y: 3px;
+    }
+    Rectangle {
+        x: 5px;
+        y: parent.height - 7px;
+        width: parent.width - 10px;
+        height: 3px;
+        background: root.bar-color;
+    }
+
+    callback request-open();
+
+    trigger := TouchArea {
+        clicked => {
+            debug("[color-menu] trigger clicked -> request-open");
+            root.request-open();
+        }
+    }
+}

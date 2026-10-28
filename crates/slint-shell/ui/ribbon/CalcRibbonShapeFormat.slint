@@ -1,0 +1,46 @@
+// Calc「形状格式」功能区(选中图形/文本框时出现):复用 Writer/Impress 的色块与按钮
+import { RibbonGroup } from "RibbonGroup.slint";
+import { SwatchGrid, FmtBtn } from "WriterRibbonShapeFormat.slint";
+
+export component CalcRibbonShapeFormat inherits Rectangle {
+    callback apply(string);
+    height: 88px;
+    HorizontalLayout {
+        x: 4px; spacing: 0px; alignment: start;
+        RibbonGroup {
+            label: @tr("填充");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                SwatchGrid { prefix: "fill"; picked(s) => { root.apply(s); } }
+                FmtBtn { label: @tr("无填充"); clicked => { root.apply("fill:none"); } }
+            }
+        }
+        RibbonGroup {
+            label: @tr("边框颜色");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                SwatchGrid { prefix: "line"; picked(s) => { root.apply(s); } }
+                FmtBtn { label: @tr("无边框"); clicked => { root.apply("line:none"); } }
+            }
+        }
+        RibbonGroup {
+            label: @tr("边框粗细");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: "0.5 pt"; clicked => { root.apply("width:0.5"); } }
+                    FmtBtn { label: "1 pt"; clicked => { root.apply("width:1"); } }
+                    FmtBtn { label: "1.5 pt"; clicked => { root.apply("width:1.5"); } }
+                    FmtBtn { label: "2.25 pt"; clicked => { root.apply("width:2.25"); } }
+                }
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: "3 pt"; clicked => { root.apply("width:3"); } }
+                    FmtBtn { label: "4.5 pt"; clicked => { root.apply("width:4.5"); } }
+                    FmtBtn { label: "6 pt"; clicked => { root.apply("width:6"); } }
+                }
+            }
+        }
+    }
+}

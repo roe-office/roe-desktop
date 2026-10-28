@@ -1,0 +1,49 @@
+// 功能分组容器：内容区（顶部4px+左右4px留白）+ 底部居中label + 右侧1px分隔线
+// QML的 default property alias content 用 Slint 的 @children 表达式实现
+//
+// v16修复：原版本content区用绝对width: parent.width - 8px，
+// 而RibbonGroup自身没有width，导致parent.width未定义（循环依赖），
+// 实际渲染时内容互相挤压重叠。改为用VerticalLayout+HorizontalLayout
+// 让宽度从@children内容自然向上撑开计算，不再依赖parent.width。
+export component RibbonGroup inherits Rectangle {
+    in property <string> label: "";
+
+    height: 88px;
+
+    VerticalLayout {
+        padding-left: 4px;
+        padding-right: 5px; // 多留1px给右侧分隔线
+        padding-top: 4px;
+        padding-bottom: 3px;
+        spacing: 0px;
+
+        // 内容区：高度 = 88 - 4(top) - 3(bottom) - 16(label) = 65px
+        Rectangle {
+            height: 65px;
+            HorizontalLayout {
+                alignment: start;
+                @children
+            }
+        }
+
+        Rectangle {
+            height: 16px;
+            Text {
+                text: root.label;
+                font-size: 11px;
+                color: #666666;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+            }
+        }
+    }
+
+    // 右侧分隔线，上下各留8px
+    Rectangle {
+        x: parent.width - 1px;
+        y: 8px;
+        width: 1px;
+        height: parent.height - 16px;
+        background: #e1e1e1;
+    }
+}

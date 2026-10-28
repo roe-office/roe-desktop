@@ -1,0 +1,95 @@
+// SparklineDialog.slint — 插入迷你图对话框(仅视图,状态在 Rust)
+// 类型下拉顺序固定(Rust 端只认 index): 0 折线(line) 1 柱形(column) 2 盈亏(stacked)
+// 两个输入框文本由 Slint 持有,仅通过 *-edited 单向上报(同 CfHighlightDialog)。
+
+import { DialogShell } from "DialogShell.slint";
+import { SimpleDropdown } from "SimpleDropdown.slint";
+
+export component SparklineDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <int> kind-index: 0;
+    in property <bool> can-confirm: false;
+    in property <string> warn-text: "";
+    in-out property <string> data-text: "";
+    in-out property <string> loc-text: "";
+
+    callback kind-selected(int);
+    callback data-edited(string);
+    callback loc-edited(string);
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("创建迷你图");
+        card-width: 400px;
+        card-height: 340px;
+        confirm-enabled: root.can-confirm;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        TouchArea {
+            x: 0px; y: 40px;
+            width: parent.width; height: parent.height - 88px;
+            clicked => { kind-dd.open = false; }
+        }
+
+        Text { x: 16px; y: 58px; text: @tr("数据范围"); font-size: 12px; color: #333333; }
+        data-box := Rectangle {
+            x: 90px; y: 52px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: data-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            data-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.data-text;
+                edited => { root.data-edited(self.text); }
+            }
+        }
+
+        Text { x: 16px; y: 92px; text: @tr("位置范围"); font-size: 12px; color: #333333; }
+        loc-box := Rectangle {
+            x: 90px; y: 86px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: loc-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            loc-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.loc-text;
+                edited => { root.loc-edited(self.text); }
+            }
+        }
+
+        Text {
+            visible: root.warn-text != "";
+            x: 16px; y: 124px;
+            width: parent.width - 32px;
+            text: root.warn-text;
+            font-size: 12px; color: #c0392b;
+            wrap: word-wrap;
+        }
+
+        // 下拉最后声明 = 最上层
+        Text { x: 16px; y: 160px; text: @tr("类型"); font-size: 12px; color: #333333; }
+        kind-dd := SimpleDropdown {
+            x: 90px; y: 154px; width: 294px;
+            options: [@tr("折线"), @tr("柱形"), @tr("盈亏")];
+            selected-index: root.kind-index;
+            selected(i) => { root.kind-selected(i); }
+        }
+    }
+}

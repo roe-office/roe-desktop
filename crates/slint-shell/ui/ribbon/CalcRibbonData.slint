@@ -1,0 +1,342 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（clicked不接任何业务逻辑）
+//
+// 保留 open-sql-panel / open-df-panel 两个callback接口（对应原版 openSqlPanel/
+// openDfPanel signal），因为这两个面板是明确规划中的功能（SQL查询面板、
+// Polars DF分析面板），接口先留好，等侧边栏组件做出来时直接接上，不用改这层。
+//
+// "来自图片的数据"（OCR，开发中）、"模拟分析"（开发中）两个按钮原版是禁用态，
+// 本轮用外层 opacity: 0.5 模拟灰色不可点观感，未真正阻止TouchArea点击
+// （反正目前所有按钮都是空壳，无真实点击效果）。
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component CalcRibbonData inherits Rectangle {
+    height: 88px;
+
+    callback open-sql-panel();
+    callback open-df-panel();
+    // 「获取数据」下拉菜单:参数为按钮下沿的绝对坐标,浮层在 app.slint
+    callback request-df-menu(length, length);
+    // 「数据分析」下拉菜单:参数为按钮下沿的绝对坐标,浮层在 app.slint
+    callback request-stat-menu(length, length);
+    // 所有已接线按钮统一触发此回调,参数为 "calc.命令名",由 Rust 侧 ribbon 模块分发
+    callback action(string);
+    // Ribbon 筛选大按钮的高亮状态,由 Rust 侧在 filter_cmd 执行完后设置
+    in-out property <bool> filter-active: false;
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 获取并转换数据 ───────────────────────────────────
+        RibbonGroup {
+            label: @tr("获取并转换数据");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                df-btn := RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/database.svg");
+                    label: @tr("获取数据(Polars)");
+                    tooltip: @tr("导入 CSV / Parquet(含 Hive 目录) / Excel 为数据集");
+                    clicked => { root.request-df-menu(df-btn.absolute-position.x, df-btn.absolute-position.y + df-btn.height + 2px); }
+                }
+
+                Rectangle {
+                    opacity: 0.5;
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/screenshot.svg");
+                        label: @tr("来自图片的数据");
+                        tooltip: @tr("从图片OCR提取数据（开发中）");
+                    }
+                }
+
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document_search.svg");
+                    label: @tr("SQL查询");
+                    tooltip: @tr("使用SQL查询当前表格数据（Polars SQLContext）");
+                    clicked => { root.open-sql-panel(); }
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                    label: @tr("DF分析");
+                    tooltip: @tr("Polars数据分析脚本（df_info/pivot/sql/unique_values）");
+                    clicked => { root.open-df-panel(); }
+                }
+            }
+        }
+
+        // ── 查询和连接 ───────────────────────────────────────
+        RibbonGroup {
+            label: @tr("查询和连接");
+
+            HorizontalLayout {
+                spacing: 6px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                    label: @tr("全部刷新");
+                    tooltip: @tr("刷新所有数据连接");
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/database.svg");
+                        label: @tr("查询&连接");
+                        tooltip: @tr("查看查询和连接");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/document.svg");
+                        label: @tr("属性");
+                        tooltip: @tr("数据连接属性");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/insert_link.svg");
+                        label: @tr("编辑链接");
+                        tooltip: @tr("编辑外部链接");
+                    }
+                }
+            }
+        }
+
+        // ── 排序和筛选 ───────────────────────────────────────
+        RibbonGroup {
+            label: @tr("排序和筛选");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/arrow_sort_up.svg");
+                        label: @tr("升序");
+                        tooltip: @tr("升序排序 (A→Z)");
+                        clicked => { root.action("calc.sort_asc"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/arrow_sort_down.svg");
+                        label: @tr("降序");
+                        tooltip: @tr("降序排序 (Z→A)");
+                        clicked => { root.action("calc.sort_desc"); }
+                    }
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/arrow_sort.svg");
+                    label: @tr("排序");
+                    tooltip: @tr("自定义排序");
+                }
+
+                filter-trigger := RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_funnel.svg");
+                    label: @tr("筛选");
+                    tooltip: @tr("自动筛选(开/关)");
+                    active: root.filter-active;
+                    clicked => { root.action("calc.filter_toggle"); }
+                }
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/dismiss.svg");
+                        label: @tr("清除");
+                        tooltip: @tr("清除筛选");
+                        clicked => { root.action("calc.filter_clear"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("重新应用");
+                        tooltip: @tr("重新应用筛选");
+                        clicked => { root.action("calc.filter_reapply"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/filter.svg");
+                        label: @tr("高级");
+                        tooltip: @tr("高级筛选");
+                    }
+                }
+            }
+        }
+
+        // ── 数据工具 ─────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("数据工具");
+
+            HorizontalLayout {
+                spacing: 6px;
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/table_cells_split.svg");
+                        label: @tr("文本拆分为列");
+                        tooltip: @tr("将文本按分隔符拆分为多列");
+                        clicked => { root.action("calc.text_to_columns"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/flash.svg");
+                        label: @tr("快速填充");
+                        tooltip: @tr("Flash Fill — 智能识别填充规律");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 88px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/table_dismiss.svg");
+                        label: @tr("删除重复值");
+                        tooltip: @tr("删除重复行");
+                        clicked => { root.action("calc.delete_dups"); }
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/checkmark.svg");
+                        label: @tr("数据验证");
+                        tooltip: @tr("设置单元格输入规则和下拉列表");
+                        clicked => { root.action("calc.data_validation"); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/table_calculator.svg");
+                        label: @tr("合并计算");
+                        tooltip: @tr("合并多个区域的数据");
+                    }
+                    Rectangle {
+                        opacity: 0.5;
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            width: 80px;
+                            height: 20px;
+                            icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                            label: @tr("模拟分析");
+                            tooltip: @tr("模拟分析工具（开发中）");
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── 数据分析 ─────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("数据分析");
+
+            stat-btn := RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/table_calculator.svg");
+                label: @tr("数据分析");
+                tooltip: @tr("描述性统计 / 相关 / 检验 / 方差分析 / 回归 / 移动平均 / 指数平滑");
+                clicked => { root.request-stat-menu(stat-btn.absolute-position.x, stat-btn.absolute-position.y + stat-btn.height + 2px); }
+            }
+        }
+
+        // ── 分级显示 ─────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("分级显示");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/group.svg");
+                    label: @tr("组合");
+                    tooltip: @tr("将行列组合为分级显示");
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/group_dismiss.svg");
+                    label: @tr("取消组合");
+                    tooltip: @tr("取消行列组合");
+                }
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_bar_horizontal_regular.svg");
+                    label: @tr("分类汇总");
+                    tooltip: @tr("按分类汇总数据");
+                    clicked => { root.action("calc.subtotal"); }
+                }
+
+
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/indent_increase.svg");
+                        label: @tr("显示详细");
+                        tooltip: @tr("展开分组");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 72px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/indent_decrease.svg");
+                        label: @tr("隐藏详细");
+                        tooltip: @tr("折叠分组");
+                    }
+                }
+            }
+        }
+    }
+}

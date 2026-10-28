@@ -1,0 +1,117 @@
+// NameManagerDialog.slint — 名称管理器(MVP:查看/新增/删除全局名称)
+// 状态在 Rust;输入框文字由 Slint 持有,新增时通过 add(name, ref) 上报。
+import { ScrollView } from "std-widgets.slint";
+import { DialogShell } from "DialogShell.slint";
+
+export component NameManagerDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <[string]> names: [];
+    in property <[string]> kinds: [];
+    in property <[string]> refs: [];
+    in property <int> selected: -1;
+    in property <string> error-text: "";
+    in-out property <string> input-name: "";
+    in-out property <string> input-ref: "";
+
+    callback select-row(int);
+    callback add(string, string);
+    callback remove-name(int);
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("名称管理器");
+        card-width: 520px;
+        card-height: 440px;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        // 表头
+        Rectangle {
+            x: 16px; y: 46px; width: 488px; height: 20px;
+            Text { x: 6px; width: 130px; text: @tr("名称"); font-size: 11px; color: #666666; vertical-alignment: center; }
+            Text { x: 140px; width: 50px; text: @tr("类型"); font-size: 11px; color: #666666; vertical-alignment: center; }
+            Text { x: 194px; text: @tr("引用位置"); font-size: 11px; color: #666666; vertical-alignment: center; }
+        }
+        Rectangle { x: 16px; y: 66px; width: 488px; height: 1px; background: #e8e8e8; }
+
+        // 列表
+        ScrollView {
+            x: 16px; y: 68px;
+            width: 488px;
+            height: 170px;
+            VerticalLayout {
+                spacing: 1px;
+                for nm[idx] in root.names: Rectangle {
+                    height: 24px;
+                    background: idx == root.selected ? #dcebe2 : (row-touch.has-hover ? #f4f8f6 : transparent);
+                    border-radius: 3px;
+                    row-touch := TouchArea {
+                        clicked => { root.select-row(idx); }
+                    }
+                    Text { x: 6px; width: 130px; text: nm; font-size: 12px; color: #222222; vertical-alignment: center; overflow: elide; }
+                    Text { x: 140px; width: 50px; text: root.kinds[idx]; font-size: 12px; color: #666666; vertical-alignment: center; }
+                    Text { x: 194px; width: 280px; text: root.refs[idx]; font-size: 12px; color: #444444; vertical-alignment: center; overflow: elide; }
+                }
+            }
+        }
+        Rectangle { x: 16px; y: 240px; width: 488px; height: 1px; background: #e8e8e8; }
+
+        // 名称输入
+        Text { x: 16px; y: 250px; width: 60px; height: 24px; text: @tr("名称:"); font-size: 12px; color: #333333; vertical-alignment: center; }
+        Rectangle {
+            x: 80px; y: 250px; width: 424px; height: 24px;
+            border-radius: 3px;
+            border-color: name-input.has-focus ? #217346 : #c0c0c0;
+            border-width: name-input.has-focus ? 2px : 1px;
+            background: #ffffff;
+            name-input := TextInput {
+                x: 4px; y: 4px; width: parent.width - 8px; height: parent.height - 8px;
+                text <=> root.input-name;
+                font-size: 11px; color: #1a1a1a;
+            }
+        }
+        // 引用输入
+        Text { x: 16px; y: 280px; width: 60px; height: 24px; text: @tr("引用位置:"); font-size: 12px; color: #333333; vertical-alignment: center; }
+        Rectangle {
+            x: 80px; y: 280px; width: 424px; height: 24px;
+            border-radius: 3px;
+            border-color: ref-input.has-focus ? #217346 : #c0c0c0;
+            border-width: ref-input.has-focus ? 2px : 1px;
+            background: #ffffff;
+            ref-input := TextInput {
+                x: 4px; y: 4px; width: parent.width - 8px; height: parent.height - 8px;
+                text <=> root.input-ref;
+                font-size: 11px; color: #1a1a1a;
+            }
+        }
+
+        // 新增 / 删除
+        add-touch := TouchArea {
+            x: 80px; y: 312px; width: 72px; height: 26px;
+            clicked => { root.add(root.input-name, root.input-ref); }
+            Rectangle {
+                border-radius: 4px;
+                background: add-touch.has-hover ? #1a5c38 : #217346;
+                Text { text: @tr("新增"); font-size: 12px; color: #ffffff; horizontal-alignment: center; vertical-alignment: center; }
+            }
+        }
+        del-touch := TouchArea {
+            x: 160px; y: 312px; width: 72px; height: 26px;
+            clicked => { root.remove-name(root.selected); }
+            Rectangle {
+                border-radius: 4px;
+                border-color: #c0c0c0; border-width: 1px;
+                background: del-touch.has-hover ? #f0f0f0 : #ffffff;
+                Text { text: @tr("删除选中"); font-size: 12px; color: #333333; horizontal-alignment: center; vertical-alignment: center; }
+            }
+        }
+
+        // 错误提示 + 固定说明
+        Text { x: 16px; y: 346px; width: 488px; text: root.error-text; font-size: 11px; color: #c0392b; wrap: word-wrap; }
+        Text { x: 16px; y: 368px; width: 488px; text: @tr("提示:局部名称按全局名称处理,同名的局部名称会丢失。"); font-size: 11px; color: #888888; wrap: word-wrap; }
+    }
+}

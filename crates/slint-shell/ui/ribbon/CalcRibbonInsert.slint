@@ -1,0 +1,234 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（clicked不接任何业务逻辑）
+// 图片插入原版带FileDialog，本轮不实现文件选择，按钮占位
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component CalcRibbonInsert inherits Rectangle {
+    height: 88px;
+
+    callback open-pivot-dialog();
+    callback insert-image();
+    callback request-shape-menu(length, length);
+    callback insert-textbox();
+    callback open-sparkline(int);  // 0=折线 1=柱形 2=盈亏 3=清除所选迷你图
+    callback open-chart-dialog(int);  // 0=Bar 1=HBar 2=Line 3=Pie 4=Scatter 5=Radar
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 表格 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("表格");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/pivot.svg");
+                    label: @tr("数据透视表");
+                    tooltip: @tr("插入数据透视表");
+                    clicked => { root.open-pivot-dialog(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/pivot_20_filled.svg");
+                    label: @tr("建议透视表");
+                    tooltip: @tr("插入建议的数据透视表");
+                    clicked => { root.open-pivot-dialog(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_table.svg");
+                    label: @tr("表格");
+                    tooltip: @tr("将区域转换为表格");
+                }
+            }
+        }
+
+        // ── 插图 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("插图");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_image.svg");
+                    label: @tr("图片");
+                    tooltip: @tr("插入图片");
+                    clicked => { root.insert-image(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/shapes.svg");
+                    label: @tr("形状");
+                    tooltip: @tr("插入形状");
+                    clicked => { root.request-shape-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/grid_dots.svg");
+                    label: @tr("图标");
+                    tooltip: @tr("插入图标");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/screenshot.svg");
+                    label: @tr("截图");
+                    tooltip: @tr("插入屏幕截图");
+                }
+            }
+        }
+
+        // ── 图表 ─────────────────────────────────────────────
+        // v71精简：原10个按钮（7个类型图标+地图/透视图/迷你图）收敛为3个大按钮。
+        // 图表按钮采用Split Button模式：点击主体=默认插入折线图，点下拉箭头=选其他5种类型。
+        // 地图图表后台完全无渲染能力支撑，本轮不做UI占位，需求记录在roadmap，待后台评估后再加回。
+        RibbonGroup {
+            label: @tr("图表");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_bar_vertical_regular.svg");
+                    label: @tr("图表");
+                    tooltip: @tr("插入图表（选择类型）");
+                    clicked => { root.open-chart-dialog(0); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/pivot_20_filled.svg");
+                    label: @tr("透视图");
+                    tooltip: @tr("数据透视图");
+                    clicked => { root.open-pivot-dialog(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                    label: @tr("迷你图");
+                    tooltip: @tr("在单元格内插入迷你图(类型可在对话框中选择)");
+                    clicked => { root.open-sparkline(0); }
+                }
+                VerticalLayout {
+                    spacing: 1px;
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                        label: @tr("折线");
+                        tooltip: @tr("插入折线迷你图");
+                        clicked => { root.open-sparkline(0); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                        label: @tr("柱形");
+                        tooltip: @tr("插入柱形迷你图");
+                        clicked => { root.open-sparkline(1); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        has-icon: true;
+                        width: 80px;
+                        height: 20px;
+                        icon-source: @image-url("../icons/fluent/dismiss.svg");
+                        label: @tr("清除迷你图");
+                        tooltip: @tr("清除所选单元格中的迷你图");
+                        clicked => { root.open-sparkline(3); }
+                    }
+                }
+            }
+        }
+
+        // ── 筛选 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("筛选");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/table_cells_merge.svg");
+                    label: @tr("切片器");
+                    tooltip: @tr("插入切片器，用于筛选数据透视表");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/calendar.svg");
+                    label: @tr("日程表");
+                    tooltip: @tr("按日期范围筛选（开发中）");
+                }
+            }
+        }
+
+        // ── 链接 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("链接");
+
+            HorizontalLayout {
+                spacing: 2px;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/insert_link.svg");
+                    label: @tr("链接");
+                    tooltip: @tr("插入超链接 (Ctrl+K)");
+                }
+            }
+        }
+
+        // ── 批注 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("批注");
+
+            HorizontalLayout {
+                spacing: 2px;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/new_comment.svg");
+                    label: @tr("批注");
+                    tooltip: @tr("插入批注 (Ctrl+Alt+C)");
+                }
+            }
+        }
+
+        // ── 文本 ─────────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("文本");
+
+            HorizontalLayout {
+                spacing: 2px;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/textbox.svg");
+                    label: @tr("文本框");
+                    tooltip: @tr("插入文本框");
+                    clicked => { root.insert-textbox(); }
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/text_direction.svg");
+                    label: @tr("文字方向");
+                    tooltip: @tr("更改文字方向");
+                }
+            }
+        }
+
+        // ── 公式和符号 ───────────────────────────────────────
+        RibbonGroup {
+            label: @tr("公式和符号");
+
+            HorizontalLayout {
+                spacing: 2px;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/equation.svg");
+                    label: @tr("公式");
+                    tooltip: @tr("插入数学公式");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/symbol.svg");
+                    label: @tr("符号");
+                    tooltip: @tr("插入特殊符号");
+                }
+            }
+        }
+    }
+}

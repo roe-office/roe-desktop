@@ -1,0 +1,91 @@
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component ImpressRibbonView inherits Rectangle {
+    callback request-master();
+    height: 88px;
+    background: white;
+
+    HorizontalLayout {
+        x: 4px;
+        y: 0px;
+        height: parent.height;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 视图 ──
+        RibbonGroup {
+            label: @tr("视图");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/view_print.svg");
+                    label: @tr("普通");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/list_bar_tree_offset.svg");
+                    label: @tr("大纲");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/grid_dots.svg");
+                    label: @tr("幻灯片浏览");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document.svg");
+                    label: @tr("备注页面");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/view_web.svg");
+                    label: @tr("阅读视图");
+                }
+            }
+        }
+
+
+        // ── 母版视图 ──
+        RibbonGroup {
+            label: @tr("母版视图");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+                RibbonBigButton { label: @tr("幻灯片母版"); icon-source: @image-url("../icons/fluent/style_guide.svg"); clicked => { root.request-master(); } }
+                VerticalLayout {
+                    spacing: 2px; alignment: center;
+                    RibbonButton { label: @tr("讲义母版"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document.svg"); }
+                    RibbonButton { label: @tr("备注母版"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document.svg"); }
+                }
+            }
+        }
+
+
+        // ── 显示 ──
+        RibbonGroup {
+            label: @tr("显示");
+            VerticalLayout {
+                y: 8px; spacing: 4px;
+                RibbonButton { label: @tr("标尺");  show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/ruler.svg"); }
+                RibbonButton { label: @tr("网格线"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/grid_dots.svg"); }
+                RibbonButton { label: @tr("参考线"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/style_guide.svg"); }
+            }
+        }
+
+
+        // ── 缩放 ──
+        RibbonGroup {
+            label: @tr("缩放");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/zoom_fit.svg");
+                    label: @tr("适应窗口");
+                }
+                VerticalLayout {
+                    spacing: 2px; alignment: center;
+                    RibbonButton { label: @tr("放大"); show-label: true; width: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_in.svg"); }
+                    RibbonButton { label: @tr("缩小"); show-label: true; width: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_out.svg"); }
+                    RibbonButton { label: "100%"; show-label: true; width: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_fit.svg"); }
+                }
+            }
+        }
+    }
+}

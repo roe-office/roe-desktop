@@ -1,0 +1,120 @@
+// CfHighlightDialog.slint — 条件格式"突出显示单元格规则"对话框(仅视图,状态在 Rust)
+// 下拉顺序固定(Rust 端只认 index):
+//   op:     0 大于(gt) 1 小于(lt) 2 介于(between) 3 等于(eq) 4 文本包含(text_contains)
+//           9 介于(不含端点,expr)
+//           5 不等于(ne) 6 大于或等于(gte) 7 小于或等于(lte) 8 未介于(not_between)
+//   preset: 0 浅红填充+深红文本 1 黄填充+深黄文本 2 绿填充+深绿文本 3 仅浅红填充 4 仅红色文本
+// 两个输入框文本由 Slint 持有,仅通过 *-edited 单向上报(同 DataValidationDialog)。
+
+import { DialogShell } from "DialogShell.slint";
+import { SimpleDropdown } from "SimpleDropdown.slint";
+
+export component CfHighlightDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <int> op-index: 0;
+    in property <int> preset-index: 0;
+    in property <bool> can-confirm: false;
+    in property <string> warn-text: "";
+    in-out property <string> v1-text: "";
+    in-out property <string> v2-text: "";
+
+    callback op-selected(int);
+    callback preset-selected(int);
+    callback v1-edited(string);
+    callback v2-edited(string);
+    callback confirmed();
+    callback cancelled();
+
+    property <bool> is-between: root.op-index == 2 || root.op-index == 8 || root.op-index == 9;
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("突出显示单元格规则");
+        card-width: 400px;
+        card-height: 370px;
+        confirm-enabled: root.can-confirm;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        TouchArea {
+            x: 0px; y: 40px;
+            width: parent.width; height: parent.height - 88px;
+            clicked => {
+                op-dd.open = false;
+                preset-dd.open = false;
+            }
+        }
+
+        // ---- 输入区(先声明 = 下层) ----
+        Text {
+            x: 16px; y: 126px; font-size: 12px; color: #333333;
+            text: root.is-between ? @tr("最小值") : (root.op-index == 4 ? @tr("包含文本") : @tr("数值"));
+        }
+        v1-box := Rectangle {
+            x: 90px; y: 120px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: v1-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            v1-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.v1-text;
+                edited => { root.v1-edited(self.text); }
+            }
+        }
+        Text {
+            visible: root.is-between;
+            x: 16px; y: 160px; text: @tr("最大值"); font-size: 12px; color: #333333;
+        }
+        v2-box := Rectangle {
+            visible: root.is-between;
+            x: 90px; y: 154px; width: 294px; height: 26px;
+            border-radius: 4px;
+            border-width: 1px;
+            border-color: v2-input.has-focus ? #217346 : #c0c0c0;
+            background: #ffffff;
+            v2-input := TextInput {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                height: 16px;
+                font-size: 12px;
+                color: #222222;
+                text <=> root.v2-text;
+                edited => { root.v2-edited(self.text); }
+            }
+        }
+        Text {
+            visible: root.warn-text != "";
+            x: 16px; y: 190px;
+            width: parent.width - 32px;
+            text: root.warn-text;
+            font-size: 12px; color: #c0392b;
+        }
+
+        // ---- 下拉放最后声明 = 最上层;op 在 preset 之后,展开时盖住 preset ----
+        Text { x: 16px; y: 92px; text: @tr("样式"); font-size: 12px; color: #333333; }
+        preset-dd := SimpleDropdown {
+            x: 90px; y: 86px; width: 294px;
+            options: [@tr("浅红填充 + 深红文本"), @tr("黄填充 + 深黄文本"), @tr("绿填充 + 深绿文本"), @tr("仅浅红填充"), @tr("仅红色文本")];
+            selected-index: root.preset-index;
+            selected(i) => { root.preset-selected(i); }
+            changed open => { if self.open { op-dd.open = false; } }
+        }
+        Text { x: 16px; y: 58px; text: @tr("条件"); font-size: 12px; color: #333333; }
+        op-dd := SimpleDropdown {
+            x: 90px; y: 52px; width: 294px;
+            options: [@tr("大于"), @tr("小于"), @tr("介于"), @tr("等于"), @tr("文本包含"), @tr("不等于"), @tr("大于或等于"), @tr("小于或等于"), @tr("未介于"), @tr("介于(不含端点)")];
+            selected-index: root.op-index;
+            selected(i) => { root.op-selected(i); }
+            changed open => { if self.open { preset-dd.open = false; } }
+        }
+    }
+}

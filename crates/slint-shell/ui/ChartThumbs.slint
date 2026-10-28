@@ -1,0 +1,249 @@
+// ChartThumbs.slint — 插入图表对话框的矢量缩略图（v221，宿主无关，单色线稿）
+// 画布 viewbox 100x80。stroke-color 由宿主传入主题色。不画 3D。
+
+export component ChartThumb inherits Rectangle {
+    in property <string> kind: "bar";
+    in property <color> stroke-color: #404040;
+    property <color> soft: root.stroke-color.with-alpha(0.35);
+    property <color> mid: root.stroke-color.with-alpha(0.65);
+    background: #ffffff;
+
+    // 坐标轴（饼/圆环/雷达无）
+    if root.kind != "pie" && root.kind != "doughnut" && root.kind != "radar" && root.kind != "hbar" && root.kind != "hbar-stacked" && root.kind != "hbar-pct" && root.kind != "funnel" && root.kind != "sunburst" && root.kind != "treemap" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 6 L8 70 L94 70"; stroke: #808080; stroke-width: 1.2px;
+    }
+    if root.kind == "hbar" || root.kind == "hbar-stacked" || root.kind == "hbar-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M10 6 L10 72 L94 72"; stroke: #808080; stroke-width: 1.2px;
+    }
+
+    // 簇状柱
+    if root.kind == "bar" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M14 70 L14 40 L24 40 L24 70 Z M28 70 L28 50 L38 50 L38 70 Z M46 70 L46 22 L56 22 L56 70 Z M60 70 L60 36 L70 36 L70 70 Z M76 70 L76 12 L86 12 L86 70 Z";
+        fill: root.stroke-color;
+    }
+    // 堆积柱
+    if root.kind == "bar-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M14 70 L14 52 L30 52 L30 70 Z M38 70 L38 40 L54 40 L54 70 Z M62 70 L62 30 L78 30 L78 70 Z";
+        fill: root.stroke-color;
+    }
+    if root.kind == "bar-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M14 52 L14 38 L30 38 L30 52 Z M38 40 L38 18 L54 18 L54 40 Z M62 30 L62 8 L78 8 L78 30 Z";
+        fill: root.soft;
+    }
+    // 百分比堆积柱
+    if root.kind == "bar-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M14 70 L14 46 L34 46 L34 70 Z M42 70 L42 36 L62 36 L62 70 Z M70 70 L70 52 L90 52 L90 70 Z";
+        fill: root.stroke-color;
+    }
+    if root.kind == "bar-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M14 46 L14 6 L34 6 L34 46 Z M42 36 L42 6 L62 6 L62 36 Z M70 52 L70 6 L90 6 L90 52 Z";
+        fill: root.soft;
+    }
+
+    // 折线
+    if root.kind == "line" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 56 L32 30 L52 44 L72 18 L90 26"; stroke: root.stroke-color; stroke-width: 2.5px;
+    }
+    if root.kind == "line" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 62 L32 52 L52 60 L72 46 L90 50"; stroke: root.mid; stroke-width: 2.5px;
+    }
+    if root.kind == "line-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 60 L32 48 L52 56 L72 42 L90 46"; stroke: root.stroke-color; stroke-width: 2.5px;
+    }
+    if root.kind == "line-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 36 L32 18 L52 30 L72 12 L90 20"; stroke: root.mid; stroke-width: 2.5px;
+    }
+    if root.kind == "line-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 54 L32 46 L52 50 L72 40 L90 44"; stroke: root.stroke-color; stroke-width: 2.5px;
+    }
+    if root.kind == "line-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 20 L32 14 L52 18 L72 10 L90 12"; stroke: root.mid; stroke-width: 2.5px;
+    }
+
+    // 饼
+    if root.kind == "pie" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M50 40 L50 8 A32 32 0 1 1 18 40 Z"; fill: root.stroke-color;
+    }
+    if root.kind == "pie" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M48 38 L48 6 A32 32 0 0 0 16 38 Z"; fill: root.soft;
+    }
+    // 圆环
+    if root.kind == "doughnut" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M50 8 A32 32 0 1 1 18 40 L32 40 A18 18 0 1 0 50 22 Z"; fill: root.stroke-color;
+    }
+    if root.kind == "doughnut" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M48 6 A32 32 0 0 0 16 38 L30 38 A18 18 0 0 1 48 20 Z"; fill: root.soft;
+    }
+
+    // 条形
+    if root.kind == "hbar" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M10 10 L40 10 L40 20 L10 20 Z M10 26 L60 26 L60 36 L10 36 Z M10 42 L52 42 L52 52 L10 52 Z M10 58 L84 58 L84 68 L10 68 Z";
+        fill: root.stroke-color;
+    }
+    if root.kind == "hbar-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M10 10 L30 10 L30 22 L10 22 Z M10 28 L44 28 L44 40 L10 40 Z M10 46 L54 46 L54 58 L10 58 Z";
+        fill: root.stroke-color;
+    }
+    if root.kind == "hbar-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M30 10 L50 10 L50 22 L30 22 Z M44 28 L70 28 L70 40 L44 40 Z M54 46 L88 46 L88 58 L54 58 Z";
+        fill: root.soft;
+    }
+    if root.kind == "hbar-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M10 10 L40 10 L40 22 L10 22 Z M10 28 L56 28 L56 40 L10 40 Z M10 46 L34 46 L34 58 L10 58 Z";
+        fill: root.stroke-color;
+    }
+    if root.kind == "hbar-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M40 10 L90 10 L90 22 L40 22 Z M56 28 L90 28 L90 40 L56 40 Z M34 46 L90 46 L90 58 L34 58 Z";
+        fill: root.soft;
+    }
+
+    // 面积
+    if root.kind == "area" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 70 L8 40 L30 20 L52 36 L74 12 L94 24 L94 70 Z"; fill: root.soft; stroke: root.stroke-color; stroke-width: 1.5px;
+    }
+    if root.kind == "area" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 70 L8 56 L30 44 L52 58 L74 40 L94 50 L94 70 Z"; fill: root.mid;
+    }
+    if root.kind == "area-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 70 L8 52 L30 44 L52 54 L74 40 L94 46 L94 70 Z"; fill: root.mid;
+    }
+    if root.kind == "area-stacked" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 52 L8 30 L30 16 L52 28 L74 8 L94 18 L94 46 L74 40 L52 54 L30 44 Z"; fill: root.soft;
+    }
+    if root.kind == "area-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 70 L8 40 L52 52 L94 44 L94 70 Z"; fill: root.mid;
+    }
+    if root.kind == "area-pct" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M8 40 L8 6 L94 6 L94 44 L52 52 Z"; fill: root.soft;
+    }
+
+    // 散点
+    if root.kind == "scatter" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M20 52 m-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M36 34 m-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M50 48 m-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M64 24 m-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M80 38 m-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 M44 20 m-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0";
+        fill: root.stroke-color;
+    }
+
+    // 雷达
+    if root.kind == "radar" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M50 6 L84 30 L72 68 L28 68 L16 30 Z M50 22 L68 34 L62 54 L38 54 L32 34 Z";
+        stroke: #808080; stroke-width: 1px;
+    }
+    if root.kind == "radar" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M50 14 L78 32 L62 62 L36 56 L26 36 Z"; fill: root.soft; stroke: root.stroke-color; stroke-width: 2px;
+    }
+
+    // 组合: 柱 + 折线
+    if root.kind == "combo" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M14 70 L14 44 L26 44 L26 70 Z M38 70 L38 30 L50 30 L50 70 Z M62 70 L62 52 L74 52 L74 70 Z";
+        fill: root.soft;
+    }
+    if root.kind == "combo" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 50 L32 22 L56 38 L88 12"; stroke: root.stroke-color; stroke-width: 2.5px;
+    }
+
+    // v222: 瀑布图
+    if root.kind == "waterfall" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 70 L12 28 L22 28 L22 70 Z M44 42 L44 20 L54 20 L54 42 Z M76 70 L76 30 L86 30 L86 70 Z";
+        fill: root.stroke-color;
+    }
+    if root.kind == "waterfall" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M28 28 L28 42 L38 42 L38 28 Z M60 20 L60 30 L70 30 L70 20 Z";
+        fill: root.soft;
+    }
+    // v222: 漏斗图
+    if root.kind == "funnel" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M10 10 L90 10 L90 20 L10 20 Z M18 24 L82 24 L82 34 L18 34 Z M27 38 L73 38 L73 48 L27 48 Z M36 52 L64 52 L64 62 L36 62 Z";
+        fill: root.stroke-color;
+    }
+
+    // v223: 直方图
+    if root.kind == "histogram" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M12 70 L12 54 L24 54 L24 70 Z M24 70 L24 36 L36 36 L36 70 Z M36 70 L36 22 L48 22 L48 70 Z M48 70 L48 30 L60 30 L60 70 Z M60 70 L60 46 L72 46 L72 70 Z M72 70 L72 60 L84 60 L84 70 Z";
+        fill: root.soft; stroke: root.stroke-color; stroke-width: 1.2px;
+    }
+    // v223: 箱形图
+    if root.kind == "boxwhisker" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M20 28 L40 28 L40 50 L20 50 Z M58 36 L78 36 L78 56 L58 56 Z";
+        fill: root.soft; stroke: root.stroke-color; stroke-width: 1.5px;
+    }
+    if root.kind == "boxwhisker" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M30 14 L30 28 M30 50 L30 62 M25 14 L35 14 M25 62 L35 62 M20 38 L40 38 M68 20 L68 36 M68 56 L68 66 M63 20 L73 20 M63 66 L73 66 M58 46 L78 46";
+        stroke: root.stroke-color; stroke-width: 1.5px;
+    }
+    // v223: 树状图
+    if root.kind == "treemap" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M10 8 L58 8 L58 72 L10 72 Z";
+        fill: root.soft;
+    }
+    if root.kind == "treemap" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M60 8 L90 8 L90 38 L60 38 Z";
+        fill: root.mid;
+    }
+    if root.kind == "treemap" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M60 40 L90 40 L90 72 L60 72 Z";
+        fill: root.stroke-color;
+    }
+    // v223: 旭日图
+    if root.kind == "sunburst" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M38 40 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0";
+        fill: root.stroke-color;
+    }
+    if root.kind == "sunburst" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M32 40 a18 18 0 1 0 36 0 a18 18 0 1 0 -36 0";
+        stroke: root.mid; stroke-width: 12px;
+    }
+    if root.kind == "sunburst" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M21 40 a29 29 0 1 0 58 0 a29 29 0 1 0 -58 0";
+        stroke: root.soft; stroke-width: 10px;
+    }
+    if root.kind == "sunburst" : Path {
+        width: parent.width; height: parent.height; viewbox-width: 100; viewbox-height: 80;
+        commands: "M50 40 L50 6 M50 40 L79.4 57 M50 40 L20.6 57";
+        stroke: #ffffff; stroke-width: 1.5px;
+    }
+}

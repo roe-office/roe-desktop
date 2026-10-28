@@ -1,0 +1,157 @@
+// ActivityBar.slint — 最左侧固定宽度应用切换栏
+// 职责：在 主页 / AI Agent / 邮箱(占位) / 网盘(占位) / 用户(占位) / 设置 之间切换
+// 视觉参照：Codex / VSCode 的 activity bar，图标居中，选中态左侧色条 + 浅色背景
+// v82改版：加宽50%（52px->78px）+ 去背景（透明，融入主体白色背景）+ 顶部留白对齐TitleBar高度(36px)
+//          + 图标放大（18px->24px，点击区36px->48px）+ 去掉"新建"按钮 + 纯图标不带文字标签
+
+// 单个图标按钮，选中态左侧色条 + 浅色背景块；未启用态整体降低不透明度且不响应点击
+export component ActivityBarItem inherits Rectangle {
+    in property <image> icon-source;
+    in property <string> item-id;
+    in property <bool> active: false;
+    in property <bool> enabled: true;
+    in property <string> tip: "";
+    callback clicked();
+
+    height: 56px;
+    background: transparent;
+
+    // 选中态左侧色条
+    Rectangle {
+        x: 0px;
+        y: (parent.height - self.height) / 2;
+        width: 3px;
+        height: root.active ? 28px : 0px;
+        background: #5E60A8;
+        border-radius: 2px;
+        animate height { duration: 120ms; easing: ease-out; }
+    }
+
+    item-touch := TouchArea {
+        width: parent.width;
+        height: parent.height;
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: root.active ? #E8E8F4 : (item-touch.has-hover && root.enabled ? #F1F1F8 : transparent);
+
+        Image {
+            source: root.icon-source;
+            width: 24px;
+            height: 24px;
+            colorize: root.active ? #5E60A8 : #6b6b7d;
+            opacity: root.enabled ? 1.0 : 0.35;
+        }
+    }
+
+    // 悬停提示气泡(画在图标右侧;若被右侧内容区盖住,改放图标下方)
+    if root.tip != "" && root.enabled && item-touch.has-hover : Rectangle {
+        x: parent.width - 6px;
+        y: (parent.height - self.height) / 2;
+        width: tip-text.preferred-width + 16px;
+        height: 26px;
+        background: #3F4189;
+        border-radius: 6px;
+        tip-text := Text {
+            x: 8px;
+            y: (parent.height - self.height) / 2;
+            text: root.tip;
+            color: #ffffff;
+            font-size: 11px;
+        }
+    }
+}
+
+export component ActivityBar inherits Rectangle {
+    // 当前激活项："home" | "agent" | "mail" | "drive" | "user" | "settings"
+    in-out property <string> active-item: "home";
+    // 顶部留白高度：ActivityBar现在已位于TitleBar下方的HorizontalLayout内（结构调整后），
+    // 不再需要额外空出标题栏高度，默认值改为0
+    in property <length> top-inset: 0px;
+
+    callback item-clicked(string);
+
+    width: 78px;
+    background: transparent; // v82改版：去掉深色背景，融入主体白色区域
+
+    Rectangle {
+        // 右侧细分隔线，与主体内容区分开
+        x: parent.width - 1px;
+        width: 1px;
+        height: parent.height;
+        background: #e5e7eb;
+    }
+
+    VerticalLayout {
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: parent.height;
+        padding-top: root.top-inset + 12px;
+        padding-bottom: 12px;
+        spacing: 4px;
+
+        // ── 主页 ──
+        ActivityBarItem {
+            icon-source: @image-url("icons/fluent/home.svg");
+            item-id: "home";
+            tip: @tr("主页");
+            active: root.active-item == "home";
+            clicked => { root.active-item = "home"; root.item-clicked("home"); }
+        }
+
+        // ── AI Agent ──
+        ActivityBarItem {
+            icon-source: @image-url("icons/fluent/ai_sparkle.svg");
+            item-id: "agent";
+            tip: "AI Agent";
+            active: root.active-item == "agent";
+            clicked => { root.active-item = "agent"; root.item-clicked("agent"); }
+        }
+
+        // ── 邮箱（占位，未启用） ──
+        ActivityBarItem {
+            icon-source: @image-url("icons/fluent/mail.svg");
+            item-id: "mail";
+            active: false;
+            enabled: false;
+            clicked => { }
+        }
+
+        // ── 网盘（占位，未启用） ──
+        ActivityBarItem {
+            icon-source: @image-url("icons/fluent/cloud.svg");
+            item-id: "drive";
+            active: false;
+            enabled: false;
+            clicked => { }
+        }
+
+        Rectangle { vertical-stretch: 1; background: transparent; } // 占位撑开，后面几项贴底
+
+        // ── 用户（占位，未启用） ──
+        ActivityBarItem {
+            icon-source: @image-url("icons/fluent/person.svg");
+            item-id: "user";
+            active: false;
+            enabled: false;
+            clicked => { }
+        }
+
+        // ── 设置 ──
+        ActivityBarItem {
+            icon-source: @image-url("icons/fluent/settings.svg");
+            item-id: "settings";
+            tip: @tr("设置");
+            active: root.active-item == "settings";
+            clicked => { root.active-item = "settings"; root.item-clicked("settings"); }
+        }
+    }
+}

@@ -1,0 +1,153 @@
+// SubtotalDialog.slint — 分类汇总对话框(对齐 WPS:分类字段/汇总方式/选定汇总项)
+// 外壳用 DialogShell(不改它)。状态全在 Rust,这里只是视图。
+//
+// 关键约束(已踩坑):@children 里的 parent 指向 DialogShell 本身(窗口尺寸),
+// 不是卡片,所以一切横向宽度都用本组件的 cw 常量,不要写 parent.width。
+// 两个下拉展开层画在组件边界外,后声明的兄弟会盖住它:上方的"分类字段"下拉
+// 必须声明在下方"汇总方式"之后。
+
+import { ScrollView } from "std-widgets.slint";
+import { CheckBox16 } from "CheckBox16.slint";
+import { DialogShell } from "DialogShell.slint";
+import { SimpleDropdown } from "SimpleDropdown.slint";
+
+export component SubtotalDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> range-text: "";
+    in property <[string]> group-columns: [];
+    in property <int> group-selected: 0;
+    in property <[string]> func-names: [];
+    in property <int> func-selected: 0;
+    in property <[bool]> agg-checked: [];
+    in property <bool> clear-existing: false;
+    in property <bool> can-confirm: true;
+    in property <string> warn-text: "";
+
+    callback group-selected-changed(int);
+    callback func-selected-changed(int);
+    callback toggle-agg(int);
+    callback toggle-clear();
+    callback confirmed();
+    callback cancelled();
+
+    // 卡片尺寸常量(与传给 DialogShell 的值一致)
+    property <length> cw: 420px;
+    property <length> ch: 400px;
+    property <length> pad: 16px;
+    // 勾选"清除现有分类汇总"后,其余控件置灰不可操作
+    property <bool> form-enabled: !root.clear-existing;
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: @tr("分类汇总");
+        card-width: root.cw;
+        card-height: root.ch;
+        confirm-enabled: root.can-confirm;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        // ── 范围(只读输入框,置灰)y=52 ──
+        Text { x: root.pad; y: 54px; text: @tr("范围:"); font-size: 12px; color: #333333; }
+        Rectangle {
+            x: root.pad + 80px; y: 48px;
+            width: root.cw - root.pad * 2 - 80px; height: 26px;
+            border-radius: 4px; border-width: 1px; border-color: #d8d8d8;
+            background: #f3f3f3;
+            TextInput {
+                x: 8px; y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                text: root.range-text;
+                read-only: true; enabled: false;
+                font-size: 12px; color: #888888;
+            }
+        }
+
+        // ── 选定汇总项(多选)y=158~262 ──
+        Text { x: root.pad; y: 158px; text: @tr("选定汇总项:"); font-size: 12px; color: root.form-enabled ? #333333 : #aaaaaa; }
+        Rectangle {
+            x: root.pad; y: 178px;
+            width: root.cw - root.pad * 2; height: 84px;
+            border-color: #d0d0d0; border-width: 1px; border-radius: 4px;
+            background: root.form-enabled ? transparent : #f7f7f7;
+            ScrollView {
+                width: parent.width; height: parent.height;
+                VerticalLayout {
+                    padding: 2px; spacing: 1px;
+                    for name[idx] in root.group-columns: Rectangle {
+                        height: 24px; border-radius: 3px;
+                        background: (a-touch.has-hover && root.form-enabled) ? #f4f8f6 : transparent;
+                        a-touch := TouchArea {
+                            enabled: root.form-enabled;
+                            clicked => { root.toggle-agg(idx); }
+                        }
+                        HorizontalLayout {
+                            padding-left: 6px; spacing: 8px; alignment: start;
+                            CheckBox16 { on: root.agg-checked[idx]; y: (parent.height - self.height) / 2; }
+                            Text {
+                                text: name; font-size: 12px; vertical-alignment: center;
+                                color: root.form-enabled ? #222222 : #aaaaaa;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 警告文字 y=268
+        Text {
+            x: root.pad; y: 268px;
+            width: root.cw - root.pad * 2;
+            text: root.warn-text;
+            font-size: 11px; color: #c0392b;
+        }
+
+        // ── 清除现有分类汇总(复选框,默认不选)y=290 ──
+        clear-touch := TouchArea {
+            x: root.pad; y: 290px;
+            width: root.cw - root.pad * 2; height: 26px;
+            clicked => { root.toggle-clear(); }
+            HorizontalLayout {
+                padding-left: 2px; spacing: 8px; alignment: start;
+                CheckBox16 { on: root.clear-existing; y: (parent.height - self.height) / 2; }
+                Text {
+                    text: @tr("清除所有分类汇总");
+                    font-size: 12px; color: #222222; vertical-alignment: center;
+                }
+                Text {
+                    text: @tr("(勾选后点确定,只清除,不新建)");
+                    font-size: 11px; font-italic: true; color: #888888; vertical-alignment: center;
+                }
+            }
+        }
+
+        // ── 下拉:靠上的声明在靠后位置 ──
+        // 汇总方式(下方那个)先声明 y=118
+        Text { x: root.pad; y: 124px; text: @tr("汇总方式:"); font-size: 12px; color: root.form-enabled ? #333333 : #aaaaaa; }
+        func-dd := SimpleDropdown {
+            x: root.pad + 80px; y: 118px;
+            width: root.cw - root.pad * 2 - 80px;
+            enabled: root.form-enabled;
+            options: root.func-names;
+            selected-index: root.func-selected;
+            selected(i) => {
+                group-dd.open = false;
+                root.func-selected-changed(i);
+            }
+        }
+        // 分类字段(上方那个)后声明,展开时盖住汇总方式 y=84
+        Text { x: root.pad; y: 90px; text: @tr("分类字段:"); font-size: 12px; color: root.form-enabled ? #333333 : #aaaaaa; }
+        group-dd := SimpleDropdown {
+            x: root.pad + 80px; y: 84px;
+            width: root.cw - root.pad * 2 - 80px;
+            enabled: root.form-enabled;
+            options: root.group-columns;
+            selected-index: root.group-selected;
+            selected(i) => {
+                func-dd.open = false;
+                root.group-selected-changed(i);
+            }
+        }
+    }
+}

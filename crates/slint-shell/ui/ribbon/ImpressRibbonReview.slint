@@ -1,0 +1,72 @@
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+
+export component ImpressRibbonReview inherits Rectangle {
+    height: 88px;
+    background: white;
+
+    HorizontalLayout {
+        x: 4px;
+        y: 0px;
+        height: parent.height;
+        spacing: 0px;
+        alignment: start;
+
+        // ── 校对 ──
+        RibbonGroup {
+            label: @tr("校对");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/spell_check.svg");
+                label: @tr("拼写检查");
+            }
+        }
+
+
+        // ── 语言 ──
+        RibbonGroup {
+            label: @tr("语言");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/globe.svg");
+                label: @tr("翻译");
+            }
+        }
+
+
+        // ── 批注 ──
+        RibbonGroup {
+            label: @tr("批注");
+            HorizontalLayout {
+                y: 2px; spacing: 4px; alignment: start;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/new_comment.svg");
+                    label: @tr("新建批注");
+                }
+
+                VerticalLayout {
+                    spacing: 1px; alignment: center;
+                    RibbonButton { label: @tr("删除");   show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/comment_dismiss.svg"); }
+                    RibbonButton { label: @tr("上一个"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_sort_up.svg"); }
+                    RibbonButton { label: @tr("下一个"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_sort_down.svg"); }
+                }
+
+                VerticalLayout {
+                    spacing: 1px; alignment: center;
+                    RibbonButton { label: @tr("显示批注"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/all_comments.svg"); }
+                    RibbonButton { label: @tr("解决");     show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/checkmark.svg"); }
+                }
+            }
+        }
+
+
+        // ── 比较 ──
+        RibbonGroup {
+            label: @tr("比较");
+            RibbonBigButton {
+                icon-source: @image-url("../icons/fluent/split_view.svg");
+                label: @tr("比较");
+            }
+        }
+    }
+}

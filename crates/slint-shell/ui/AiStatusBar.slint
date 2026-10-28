@@ -1,0 +1,102 @@
+// AiStatusBar.slint — AI 接线状态共用组件(Agent 页使用;AiPanel 后续可迁移)
+
+// 红绿灯药丸:绿=已接线(显示当前配置名,点击展开列表);红=未接线(点击去设置)
+export component AiStatusPill inherits Rectangle {
+    in property <bool> configured: false;
+    in property <[string]> profile-names: [];
+    in property <int> active-profile: -1;
+    callback toggle-list();
+    callback open-settings();
+    property <bool> ready: root.configured && root.active-profile >= 0 && root.active-profile < root.profile-names.length;
+
+    width: inner.preferred-width + 16px;
+
+    inner := HorizontalLayout {
+        x: 8px;
+        y: 0px;
+        height: parent.height;
+        spacing: 6px;
+        alignment: center;
+        Rectangle {
+            width: 8px;
+            Rectangle {
+                y: (parent.height - self.height) / 2;
+                width: 8px;
+                height: 8px;
+                border-radius: 4px;
+                background: root.ready ? #16a34a : #dc2626;
+            }
+        }
+        Text {
+            vertical-alignment: center;
+            text: root.ready ? root.profile-names[root.active-profile] : @tr("未接线 · 请到设置添加 API Key →");
+            color: root.ready ? #374151 : #dc2626;
+            font-size: 12px;
+        }
+        if root.ready : Text {
+            vertical-alignment: center;
+            text: "▾";
+            color: #9ca3af;
+            font-size: 10px;
+        }
+    }
+    TouchArea {
+        clicked => {
+            if (root.ready) { root.toggle-list(); } else { root.open-settings(); }
+        }
+    }
+}
+
+// profile 下拉列表(放在使用方根层级,避免被遮挡)
+export component AiProfileList inherits Rectangle {
+    in property <[string]> profile-names: [];
+    in property <int> active-profile: -1;
+    callback selected(int);
+    callback open-settings();
+
+    width: 190px;
+    height: (root.profile-names.length + 1) * 30px + 10px;
+    background: #ffffff;
+    border-color: #e5e7eb;
+    border-width: 1px;
+    border-radius: 8px;
+    drop-shadow-color: #00000022;
+    drop-shadow-blur: 8px;
+    drop-shadow-offset-y: 2px;
+
+    VerticalLayout {
+        x: 4px;
+        y: 4px;
+        width: parent.width - 8px;
+        spacing: 1px;
+        for n[i] in root.profile-names : Rectangle {
+            height: 30px;
+            border-radius: 6px;
+            background: item-ta.has-hover ? #f3f4f6 : transparent;
+            Text {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                width: parent.width - 16px;
+                overflow: elide;
+                text: (root.active-profile == i ? "● " : "○ ") + n;
+                color: root.active-profile == i ? #3F4189 : #374151;
+                font-size: 12px;
+                font-weight: root.active-profile == i ? 600 : 400;
+            }
+            item-ta := TouchArea { clicked => { root.selected(i); } }
+        }
+        Rectangle {
+            height: 30px;
+            border-radius: 6px;
+            background: set-ta.has-hover ? #f3f4f6 : transparent;
+            Text {
+                x: 8px;
+                y: (parent.height - self.height) / 2;
+                text: @tr("⚙ 去设置…");
+                color: #2563eb;
+                font-size: 12px;
+            }
+            set-ta := TouchArea { clicked => { root.open-settings(); } }
+        }
+    }
+}

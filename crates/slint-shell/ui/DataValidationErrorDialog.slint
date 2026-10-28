@@ -1,0 +1,119 @@
+// DataValidationErrorDialog.slint — 数据验证"错误警报"对话框(仅 UI 骨架,尚未接线)
+// 校验失败时弹出的轻量模态提示:红色禁止图标 + 标题 + 提示文案 + 按钮。
+// 不套 DialogShell(无标题栏/×/灰底按钮栏,且按钮文案需可定制),
+// 遮罩层和卡片视觉风格与 DialogShell 保持一致。
+// 默认单按钮"确定";show-cancel=true 时显示第二个按钮(如 重试/取消),文案由调用方传入。
+// 点遮罩不关闭(避免误触);Esc 处理留到接线时统一决定。
+
+export component DataValidationErrorDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> title: @tr("您输入的值无效");
+    // 为空时显示默认文案
+    in property <string> message: "";
+    in property <string> confirm-text: @tr("确定");
+    in property <string> cancel-text: @tr("取消");
+    in property <bool> show-cancel: false;
+
+    callback confirmed();
+    callback cancelled();
+
+    background: transparent;
+    visible: root.visible-dialog;
+
+    // 遮罩层(吞掉点击,不触发关闭)
+    Rectangle {
+        x: 0px; y: 0px;
+        width: parent.width;
+        height: parent.height;
+        background: #00000040;
+        TouchArea { width: parent.width; height: parent.height; }
+    }
+
+    // 居中卡片
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: 340px;
+        height: 150px;
+        background: #ffffff;
+        border-radius: 8px;
+        drop-shadow-blur: 24px;
+        drop-shadow-color: #00000030;
+
+        // 吞掉卡片内的点击
+        TouchArea { width: parent.width; height: parent.height; }
+
+        // 自绘"禁止"图标:红圆 + 白色横杠
+        Rectangle {
+            x: 20px; y: 22px;
+            width: 40px; height: 40px;
+            border-radius: 20px;
+            background: #d9534f;
+            Rectangle {
+                x: 10px;
+                y: (parent.height - self.height) / 2;
+                width: 20px; height: 4px;
+                border-radius: 2px;
+                background: #ffffff;
+            }
+        }
+
+        // 标题
+        Text {
+            x: 76px; y: 22px;
+            width: parent.width - 96px;
+            text: root.title;
+            font-size: 14px; font-weight: 600; color: #1a1a1a;
+            overflow: elide;
+        }
+        // 提示文案(自动换行)
+        Text {
+            x: 76px; y: 46px;
+            width: parent.width - 96px;
+            height: 50px;
+            text: root.message != "" ? root.message : @tr("此单元格中输入的值不符合数据验证限制。");
+            font-size: 12px; color: #555555;
+            wrap: word-wrap;
+            vertical-alignment: top;
+        }
+
+        // 按钮区(右下角)
+        HorizontalLayout {
+            x: parent.width - 20px - 200px;
+            y: parent.height - 16px - 28px;
+            width: 200px; height: 28px;
+            spacing: 8px;
+            alignment: end;
+
+            cancel-touch := TouchArea {
+                visible: root.show-cancel;
+                width: root.show-cancel ? 80px : 0px;
+                height: 28px;
+                clicked => { root.cancelled(); }
+                Rectangle {
+                    border-radius: 4px;
+                    border-color: #c0c0c0; border-width: 1px;
+                    background: cancel-touch.has-hover ? #f0f0f0 : #ffffff;
+                    Text {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        text: root.cancel-text; font-size: 12px; color: #333333;
+                    }
+                }
+            }
+            confirm-touch := TouchArea {
+                width: 80px; height: 28px;
+                clicked => { root.confirmed(); }
+                Rectangle {
+                    border-radius: 4px;
+                    background: confirm-touch.has-hover ? #1a5c38 : #217346;
+                    Text {
+                        x: (parent.width - self.width) / 2;
+                        y: (parent.height - self.height) / 2;
+                        text: root.confirm-text; font-size: 12px; color: #ffffff;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,106 @@
+// SimpleDropdown.slint — 自绘下拉选择框(无 std-widgets 依赖)
+// 主体:26px 高的选择框,显示当前选项文本(或 placeholder)+ 右侧 ▾。
+// 展开:主体正下方悬浮选项列表,每项 24px,最多显示 8 项,超出可滚动。
+// 状态:selected-index 由使用方持有(这里只按它显示,点选项只回调 selected(idx));
+//       open 为 in-out,使用方可从外部关闭(点弹窗空白处/互斥展开另一个下拉)。
+// 注意:展开列表画在本组件边界之外,使用方需保证它不被后面的兄弟元素遮住
+//       (Slint 中越靠后声明的兄弟越在上层,下拉组件应放在同一父级的最后声明,
+//        或者自身 z 靠前的位置上。同一弹窗里多个下拉,靠上的下拉应声明在靠后位置)。
+
+export component SimpleDropdown inherits Rectangle {
+    in property <[string]> options: [];
+    in property <int> selected-index: -1;
+    in property <string> placeholder: @tr("请选择");
+    in property <bool> enabled: true;
+    in-out property <bool> open: false;
+
+    callback selected(int);
+
+    // 选项行高 / 列表最大可见行数
+    property <length> item-h: 24px;
+    property <int> max-visible: 8;
+
+    height: 26px;
+    background: transparent;
+
+    // ---- 主体 ----
+    box := Rectangle {
+        x: 0px; y: 0px;
+        width: root.width; height: 26px;
+        border-radius: 4px;
+        border-width: 1px;
+        border-color: root.open ? #217346 : (box-touch.has-hover && root.enabled ? #8a8a8a : #c0c0c0);
+        background: root.enabled ? #ffffff : #f3f3f3;
+
+        Text {
+            x: 8px;
+            y: (parent.height - self.height) / 2;
+            width: parent.width - 28px;
+            overflow: elide;
+            text: (root.selected-index >= 0 && root.selected-index < root.options.length)
+                ? root.options[root.selected-index]
+                : root.placeholder;
+            font-size: 12px;
+            color: (root.selected-index >= 0 && root.enabled) ? #222222 : #999999;
+        }
+        Text {
+            x: parent.width - 18px;
+            y: (parent.height - self.height) / 2;
+            text: root.open ? "▴" : "▾";
+            font-size: 10px;
+            color: #666666;
+        }
+        box-touch := TouchArea {
+            width: parent.width; height: parent.height;
+            enabled: root.enabled;
+            clicked => { root.open = !root.open; }
+        }
+    }
+
+    // ---- 展开的选项列表(悬浮在主体下方,超出组件自身边界) ----
+    if root.open && root.enabled : Rectangle {
+        x: 0px;
+        y: 28px;
+        width: root.width;
+        height: min(root.options.length, root.max-visible) * root.item-h + 2px;
+        background: #ffffff;
+        border-radius: 4px;
+        border-width: 1px;
+        border-color: #c0c0c0;
+        drop-shadow-blur: 8px;
+        drop-shadow-color: #00000030;
+
+        Flickable {
+            x: 1px; y: 1px;
+            width: parent.width - 2px;
+            height: parent.height - 2px;
+            viewport-height: root.options.length * root.item-h;
+            interactive: false;
+
+            for opt[i] in root.options : Rectangle {
+                x: 0px;
+                y: i * root.item-h;
+                width: parent.width;
+                height: root.item-h;
+                background: item-touch.has-hover ? #e8f3ec : (i == root.selected-index ? #f3f8f5 : transparent);
+                Text {
+                    x: 8px;
+                    y: (parent.height - self.height) / 2;
+                    width: parent.width - 16px;
+                    overflow: elide;
+                    text: opt;
+                    font-size: 12px;
+                    color: i == root.selected-index ? #217346 : #222222;
+                    font-weight: i == root.selected-index ? 600 : 400;
+                }
+                item-touch := TouchArea {
+                    width: parent.width; height: parent.height;
+                    clicked => {
+                        root.selected(i);
+                        root.open = false;
+                    }
+                }
+            }
+        }
+    }
+}

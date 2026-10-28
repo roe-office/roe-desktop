@@ -1,0 +1,37 @@
+// 文本框编辑态的虚线框：只画在前台覆盖层，不进渲染器，放映/导出不受影响。
+// 坐标为画布 pt（1pt = 1px），与 SelectionBox 同一套。
+export component TextEditFrame inherits Rectangle {
+    in property <bool> active: false;
+    in property <float> obj-x;
+    in property <float> obj-y;
+    in property <float> obj-w;
+    in property <float> obj-h;
+    in property <float> obj-rot;
+
+    property <length> dash: 6px;
+    property <length> gap: 4px;
+    property <length> step: dash + gap;
+    property <int> nx: Math.max(1, Math.round(obj-w * 1px / step));
+    property <int> ny: Math.max(1, Math.round(obj-h * 1px / step));
+    property <color> c: #b4b4b4;
+
+    if root.active && Math.abs(root.obj-rot) < 0.5 : Rectangle {
+        x: root.obj-x * 1px;
+        y: root.obj-y * 1px;
+        width: root.obj-w * 1px;
+        height: root.obj-h * 1px;
+
+        for i in root.nx : Rectangle {
+            x: i * root.step; y: 0px; width: root.dash; height: 1px; background: root.c;
+        }
+        for i in root.nx : Rectangle {
+            x: i * root.step; y: parent.height - 1px; width: root.dash; height: 1px; background: root.c;
+        }
+        for j in root.ny : Rectangle {
+            x: 0px; y: j * root.step; width: 1px; height: root.dash; background: root.c;
+        }
+        for j in root.ny : Rectangle {
+            x: parent.width - 1px; y: j * root.step; width: 1px; height: root.dash; background: root.c;
+        }
+    }
+}

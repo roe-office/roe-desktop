@@ -1,0 +1,174 @@
+// 当前阶段：纯UI骨架，所有按钮为空壳（clicked不接任何业务逻辑）
+//
+// 原版"测试组（临时）"（FODS测试/宏测试调试按钮）本轮不移植，已确认删除。
+// "数据透视表1"原版是文本框样式但实际是只读自动生成名称（非用户输入），
+// 占位为纯Text标签，不做可编辑框视觉。
+// "数据透视表样式"原版4个色块带迷你预览缩略图（header条+斑马纹），
+// 本轮简化为纯色Rectangle小方块，不做缩略图内部结构。
+// 原版内容本身覆盖不全（不是完整Excel数据透视表Ribbon），按现状移植，
+// 不在此次补全。
+
+import { RibbonGroup } from "RibbonGroup.slint";
+import { RibbonButton } from "RibbonButton.slint";
+import { RibbonBigButton } from "RibbonBigButton.slint";
+import { RibbonCheckBox } from "RibbonCheckBox.slint";
+
+export component CalcRibbonPivotTable inherits Rectangle {
+    height: 88px;
+
+    callback insert-slicer-requested();
+
+    HorizontalLayout {
+        x: 4px;
+        spacing: 0px;
+        alignment: start;
+
+
+        // ── 数据透视表名称 ────────────────────────────────────
+        RibbonGroup {
+            label: @tr("数据透视表");
+
+            Rectangle {
+                width: 120px;
+                height: 22px;
+                border-radius: 3px;
+                border-width: 1px;
+                border-color: #c0c0c0;
+                background: #ffffff;
+
+                Text {
+                    text: @tr("数据透视表1");
+                    font-size: 11px;
+                    color: #333333;
+                    x: 6px;
+                    y: (parent.height - self.height) / 2;
+                }
+            }
+        }
+
+        // ── 数据组 ───────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("数据");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                    label: @tr("全部刷新");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                    label: @tr("更改数据源");
+                }
+            }
+        }
+
+        // ── 操作组 ───────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("操作");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document.svg");
+                    label: @tr("移动透视表");
+                }
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/document_search.svg");
+                    label: @tr("显示详情");
+                }
+            }
+        }
+
+        // ── 筛选器组 ─────────────────────────────────────────
+        RibbonGroup {
+            label: @tr("筛选器");
+
+            HorizontalLayout {
+                spacing: 2px;
+
+                RibbonBigButton {
+                    icon-source: @image-url("../icons/fluent/filter.svg");
+                    label: @tr("插入切片器");
+                    clicked => { root.insert-slicer-requested(); }
+                }
+            }
+        }
+
+        // ── 数据透视表样式选项 ────────────────────────────────
+        RibbonGroup {
+            label: @tr("样式选项");
+
+            HorizontalLayout {
+                spacing: 8px;
+
+                VerticalLayout {
+                    spacing: 3px;
+                    RibbonCheckBox {
+                        text: @tr("行标题");
+                        checked: true;
+                    }
+                    RibbonCheckBox {
+                        text: @tr("镶边行");
+                        checked: false;
+                    }
+                }
+                VerticalLayout {
+                    spacing: 3px;
+                    RibbonCheckBox {
+                        text: @tr("列标题");
+                        checked: true;
+                    }
+                    RibbonCheckBox {
+                        text: @tr("镶边列");
+                        checked: false;
+                    }
+                }
+            }
+        }
+
+        // ── 数据透视表样式主题 ────────────────────────────────
+        RibbonGroup {
+            label: @tr("数据透视表样式");
+
+            HorizontalLayout {
+                spacing: 4px;
+
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 2px;
+                    border-width: 1px;
+                    border-color: #d0d0d0;
+                    background: #ffffff;
+                }
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 2px;
+                    border-width: 1px;
+                    border-color: #d0d0d0;
+                    background: #dae3f3;
+                }
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 2px;
+                    border-width: 1px;
+                    border-color: #d0d0d0;
+                    background: #bdd7ee;
+                }
+                Rectangle {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 2px;
+                    border-width: 1px;
+                    border-color: #d0d0d0;
+                    background: #1f3864;
+                }
+            }
+        }
+    }
+}

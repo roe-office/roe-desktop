@@ -1,0 +1,133 @@
+// StatDialog.slint — 数据分析通用对话框(仅视图,状态在 Rust)
+// 字段文本由 Slint 持有(t0..t6 与 app.slint 双向绑定),仅通过 field-edited(idx, text) 上报。
+// 字段下标契约(Rust 端只认 index): 0 输入1  1 输入2  2 输出位置  3 方差1  4 方差2  5 假设差  6 Alpha
+
+import { DialogShell } from "DialogShell.slint";
+
+component StatField inherits Rectangle {
+    in property <string> label: "";
+    in-out property <string> value: "";
+    callback edited(string);
+    height: 26px;
+    background: transparent;
+
+    Text {
+        x: 0px; y: (parent.height - self.height) / 2;
+        width: 100px; overflow: elide;
+        text: root.label; font-size: 12px; color: #333333;
+    }
+    Rectangle {
+        x: 104px; y: 0px;
+        width: parent.width - 104px; height: 26px;
+        border-radius: 4px; border-width: 1px;
+        border-color: inp.has-focus ? #217346 : #c0c0c0;
+        background: #ffffff;
+        inp := TextInput {
+            x: 8px; y: (parent.height - self.height) / 2;
+            width: parent.width - 16px; height: 16px;
+            font-size: 12px; color: #222222;
+            text <=> root.value;
+            edited => { root.edited(self.text); }
+        }
+    }
+}
+
+export component StatDialog inherits Rectangle {
+    in-out property <bool> visible-dialog: false;
+    in property <string> title: "";
+    in property <string> label1: "";
+    in property <string> label2: "";
+    in property <bool> show-in2: false;
+    in property <bool> show3: false;
+    in property <bool> show4: false;
+    in property <bool> show5: false;
+    in property <bool> show6: false;
+    in property <string> lab3: "";
+    in property <string> lab4: "";
+    in property <string> lab5: "";
+    in property <string> lab6: "";
+    in property <bool> can-confirm: false;
+    in property <string> warn-text: "";
+    in-out property <string> t0: "";
+    in-out property <string> t1: "";
+    in-out property <string> t2: "";
+    in-out property <string> t3: "";
+    in-out property <string> t4: "";
+    in-out property <string> t5: "";
+    in-out property <string> t6: "";
+
+    callback field-edited(int, string);
+    callback confirmed();
+    callback cancelled();
+
+    property <length> out-y: root.show-in2 ? 120px : 86px;
+    property <length> y3: root.out-y + 34px;
+    property <length> y4: root.y3 + (root.show3 ? 34px : 0px);
+    property <length> y5: root.y4 + (root.show4 ? 34px : 0px);
+    property <length> y6: root.y5 + (root.show5 ? 34px : 0px);
+    property <length> warn-y: root.y6 + (root.show6 ? 34px : 0px);
+
+    background: transparent;
+
+    DialogShell {
+        visible-dialog <=> root.visible-dialog;
+        title: root.title;
+        card-width: 420px;
+        card-height: 360px;
+        confirm-enabled: root.can-confirm;
+        confirmed => { root.confirmed(); }
+        cancelled => { root.cancelled(); }
+
+        StatField {
+            x: 16px; y: 52px; width: 388px;
+            label: root.label1;
+            value <=> root.t0;
+            edited(t) => { root.field-edited(0, t); }
+        }
+        if root.show-in2 : StatField {
+            x: 16px; y: 86px; width: 388px;
+            label: root.label2;
+            value <=> root.t1;
+            edited(t) => { root.field-edited(1, t); }
+        }
+        StatField {
+            x: 16px; y: root.out-y; width: 388px;
+            label: @tr("输出位置");
+            value <=> root.t2;
+            edited(t) => { root.field-edited(2, t); }
+        }
+        if root.show3 : StatField {
+            x: 16px; y: root.y3; width: 388px;
+            label: root.lab3;
+            value <=> root.t3;
+            edited(t) => { root.field-edited(3, t); }
+        }
+        if root.show4 : StatField {
+            x: 16px; y: root.y4; width: 388px;
+            label: root.lab4;
+            value <=> root.t4;
+            edited(t) => { root.field-edited(4, t); }
+        }
+        if root.show5 : StatField {
+            x: 16px; y: root.y5; width: 388px;
+            label: root.lab5;
+            value <=> root.t5;
+            edited(t) => { root.field-edited(5, t); }
+        }
+        if root.show6 : StatField {
+            x: 16px; y: root.y6; width: 388px;
+            label: root.lab6;
+            value <=> root.t6;
+            edited(t) => { root.field-edited(6, t); }
+        }
+
+        Text {
+            visible: root.warn-text != "";
+            x: 16px; y: root.warn-y;
+            width: 388px;
+            text: root.warn-text;
+            font-size: 12px; color: #c0392b;
+            wrap: word-wrap;
+        }
+    }
+}
