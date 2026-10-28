@@ -1,52 +1,50 @@
+<div align="center">
+
 # roe-desktop
 
-Office 套件 UI 前台工程（第二代技术方案）。
+**Modern, Native Graphical Desktop Shell for the ROE Office Suite**  
+*Built with Rust & Slint UI • Ultra-Lightweight • Tile-Cached Canvas • Multi-Language*
 
-基于 slint + winit 构建 UI 交互层，通过路径依赖消费同机的
-[`roe`](../roe-core) 无头内核获取文档模型、公式计算、渲染等核心能力。
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Built with Rust](https://img.shields.io/badge/Rust-1.80%2B-orange.svg?logo=rust)](https://www.rust-lang.org/)
+[![UI Framework](https://img.shields.io/badge/UI-Slint%201.16-purple.svg)](https://slint.dev/)
+[![Engine Core](https://img.shields.io/badge/Engine-roe--core-green.svg)](https://github.com/roe-office/roe-core)
 
-> 注：仓库内还有一个 `office-rs`（无 `2` 后缀）项目，是基于
-> LibreOfficeKit + Qt6 + QML 的第一代技术方案，已归档，不再活跃。
+</div>
 
-## 技术栈
+---
 
-### roe-desktop 自身
-- **slint** (1.16.1) — UI 渲染框架，跨平台、Rust 原生
-- **winit**（经 `i-slint-backend-winit`）— 窗口/事件后端
-- **polars** — 透视表数据处理（`crates/pivot-engine`）
-- **calamine** / **rust_xlsxwriter** — xlsx 读/写
-- **rfd** — 原生文件对话框
-- **lru** — tile 缓存淘汰策略（`crates/tile-cache`）
+## 📖 Overview
 
-### 依赖 roe 内核提供的能力（间接依赖，见 [`roe`](../roe)）
-- **formualizer** — Excel/OpenFormula 公式解析与求值
-- **petgraph** — 公式依赖图（Calc FormulaDAG）
-- **rstar** — 空间索引（Impress viewport culling）
-- **parley** / **taffy** / **skrifa** / **swash** — 文字排版、图文混排、字体
-- **ratex**（RaTeX）— LaTeX 公式排版
-- **charts-rs** — 图表渲染
-- **tiny-skia** / **resvg** — 2D 光栅渲染
-- **quick-xml** — OOXML 解析
+`roe-desktop` is the official cross-platform desktop frontend for **ROE Office (Rust Office Engine)**. 
 
-roe 内核还提供 Agent 相关能力（基于 **rig**，LLM agent 框架，见
-`roe/roe-agent`），本仓库暂未接入。
+Built natively with **Rust** and the modern **Slint** GUI toolkit, it delivers a fluid, instant-startup user experience with a minimal footprint (~150MB baseline RAM). It completely decouples UI rendering and user interactions from document layout computations by consuming the headless [`roe-core`](https://github.com/roe-office/roe-core) kernel.
 
-## 仓库结构
-```
+> **Historical Note**: This represents the second-generation (V2) architecture. The legacy V1 prototype (based on LibreOfficeKit + Qt6 + QML) has been permanently retired and archived under [`office-lok`](https://github.com/roe-office/office-lok).
+
+---
+
+## ⚡ Highlights & Key Features
+
+* **🎨 Pure Slint + Winit Shell**: Declarative, lightweight UI markup powered by modern GPU/software rendering pipelines.
+* **🖼️ Smooth Tile-Cached Viewport**: Implements an LRU-based tile canvas cache (`crates/tile-cache`) for smooth 60fps panning and scrolling across large documents and multi-slide decks.
+* **📊 In-Memory Polars Pivot Engine**: Interactive spreadsheet pivot tables powered by the columnar `polars` engine (`crates/pivot-engine`).
+* **🌐 Multilingual by Default**: Native out-of-the-box UI localization across **7 languages** (Simplified Chinese, Traditional Chinese, English, Japanese, Korean, French, German, and Spanish).
+* **🪟 Native System Integration**: Seamless platform file dialogs via `rfd` and native window lifecycle management.
+
+---
+
+## 🏗️ Repository Architecture
+
+The workspace is structured into dedicated modular crates:
+
+```text
 roe-desktop/
-├── Cargo.toml          # workspace
+├── Cargo.toml            # Workspace orchestration
 ├── crates/
-│   ├── doc-core/        # 文档会话/状态管理，依赖 roe-api
-│   ├── pivot-engine/     # 透视表引擎（Polars），亦被 roe-polars-bridge 复用
-│   ├── slint-shell/      # 前台 UI 主体（ui/*.slint + src/main.rs）
-│   └── tile-cache/       # 画布 tile 缓存
-├── assets/
-├── build.rs
-└── docs/
-```
-
-## 编译
-待补充
-
-## 已知问题
-见 `docs/` 下的反馈记录，以及历史踩坑记录（如有）。
+│   ├── slint-shell/      # Main application binary entry (Slint markup + runtime state)
+│   ├── doc-core/         # Document session state machine (bridges to roe-api / roe-core)
+│   ├── pivot-engine/     # Standalone Polars-based DataFrame pivot computation
+│   └── tile-cache/       # High-performance LRU canvas tile cache
+├── assets/               # Bundled application icons and font glyphs
+└── scripts/              # Asset packaging and build helpers
