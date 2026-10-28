@@ -60,11 +60,11 @@ Kernel Engine	roe-core	External headless kernel (layout, typography, formula DAG
 🚀 Building & Running from Source
 Prerequisites
 
-    Recent stable Rust toolchain (1.80+ recommended).
+ -   Recent stable Rust toolchain (1.80+ recommended).
 
-    Platform dependencies (Linux: fontconfig, libx11 / wayland-client dev headers).
+ -  Platform dependencies (Linux: fontconfig, libx11 / wayland-client dev headers).
 
-    Ensure the sibling kernel roe-core repository is present if developing via local path dependencies.
+ -   Ensure the sibling kernel roe-core repository is present if developing via local path dependencies.
 
 ## Quick Start
 
