@@ -1,4 +1,4 @@
-# office-rs2
+# roe-desktop
 
 Office 套件 UI 前台工程（第二代技术方案）。
 
@@ -10,7 +10,7 @@ Office 套件 UI 前台工程（第二代技术方案）。
 
 ## 技术栈
 
-### office-rs2 自身
+### roe-desktop 自身
 - **slint** (1.16.1) — UI 渲染框架，跨平台、Rust 原生
 - **winit**（经 `i-slint-backend-winit`）— 窗口/事件后端
 - **polars** — 透视表数据处理（`crates/pivot-engine`）
@@ -33,7 +33,7 @@ roe 内核还提供 Agent 相关能力（基于 **rig**，LLM agent 框架，见
 
 ## 仓库结构
 ```
-office-rs2/
+roe-desktop/
 ├── Cargo.toml          # workspace
 ├── crates/
 │   ├── doc-core/        # 文档会话/状态管理，依赖 roe-api
