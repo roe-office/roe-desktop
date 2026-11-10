@@ -2972,7 +2972,7 @@ msgstr "Configuración de IA"
 msgid "界面语言"
 msgstr "Idioma de la interfaz"
 
-msgid "切换后立即生效；目前仅提供英文译文。"
+msgid "切换后立即生效。"
 msgstr "Se aplica al instante."
 
 msgid "主题色"
@@ -3137,3 +3137,72 @@ msgstr "Traer al frente"
 msgid "置于底层"
 msgstr "Enviar al fondo"
 
+msgid "Carlito (默认)"
+msgstr "Carlito (pred.)"
+
+msgid "等线 (中文正文)"
+msgstr "DengXian (chino)"
+
+msgid "空值"
+msgstr "Nulos"
+
+msgid "中位数"
+msgstr "Mediana"
+
+msgid "统计量"
+msgstr "Estadístico"
+
+msgid "前 5 行"
+msgstr "Primeras 5 filas"
+
+msgid "正在读取并分析… 已用 {} 秒"
+msgstr "Leyendo y analizando… {} s"
+
+msgid "导入概览:{}"
+msgstr "Resumen de importación: {}"
+
+msgid "共 {} 行,{} 列"
+msgstr "{} filas, {} columnas"
+
+msgid "{} 列"
+msgstr "{} columnas"
+
+msgid "仅预览前 5 行"
+msgstr "Vista previa: 5 filas"
+
+msgid "仅第一个工作表"
+msgstr "Solo la primera hoja"
+
+msgid "小计与总计"
+msgstr "Subtotales y totales generales"
+
+msgid "行小计"
+msgstr "Subtotales de filas"
+
+msgid "列小计"
+msgstr "Subtotales de columnas"
+
+msgid "底部总计行"
+msgstr "Total general inferior"
+
+msgid "右侧总计列"
+msgstr "Total general a la derecha"
+
+
+msgid "紧凑形式"
+msgstr "Forma compacta"
+
+msgid "大纲形式"
+msgstr "Forma de esquema"
+
+msgid "表格形式"
+msgstr "Forma tabular"
+
+msgid "小计位置"
+msgstr "Posición de subtotales"
+
+msgid "小计显示在组顶部"
+msgstr "Subtotales en la parte superior del grupo"
+
+msgid "小计显示在组底部"
+msgstr "Subtotales en la parte inferior del grupo"

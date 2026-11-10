@@ -2972,7 +2972,7 @@ msgstr "AI 設定"
 msgid "界面语言"
 msgstr "介面語言"
 
-msgid "切换后立即生效；目前仅提供英文译文。"
+msgid "切换后立即生效。"
 msgstr "即時生效。"
 
 msgid "主题色"
@@ -3137,3 +3137,72 @@ msgstr "移到最上層"
 msgid "置于底层"
 msgstr "移到最下層"
 
+msgid "Carlito (默认)"
+msgstr "Carlito (預設)"
+
+msgid "等线 (中文正文)"
+msgstr "等線 (中文內文)"
+
+msgid "空值"
+msgstr "空值"
+
+msgid "中位数"
+msgstr "中位數"
+
+msgid "统计量"
+msgstr "統計量"
+
+msgid "前 5 行"
+msgstr "前 5 列"
+
+msgid "正在读取并分析… 已用 {} 秒"
+msgstr "正在讀取並分析… 已用 {} 秒"
+
+msgid "导入概览:{}"
+msgstr "匯入概覽:{}"
+
+msgid "共 {} 行,{} 列"
+msgstr "共 {} 列、{} 欄"
+
+msgid "{} 列"
+msgstr "{} 欄"
+
+msgid "仅预览前 5 行"
+msgstr "僅預覽前 5 列"
+
+msgid "仅第一个工作表"
+msgstr "僅讀取第一個工作表"
+
+msgid "小计与总计"
+msgstr "小計與總計"
+
+msgid "行小计"
+msgstr "列小計"
+
+msgid "列小计"
+msgstr "欄小計"
+
+msgid "底部总计行"
+msgstr "底部總計列"
+
+msgid "右侧总计列"
+msgstr "右側總計欄"
+
+
+msgid "紧凑形式"
+msgstr "壓縮格式"
+
+msgid "大纲形式"
+msgstr "大綱格式"
+
+msgid "表格形式"
+msgstr "表格格式"
+
+msgid "小计位置"
+msgstr "小計位置"
+
+msgid "小计显示在组顶部"
+msgstr "小計顯示在組頂部"
+
+msgid "小计显示在组底部"
+msgstr "小計顯示在組底部"

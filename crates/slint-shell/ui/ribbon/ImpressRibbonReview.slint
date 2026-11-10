@@ -46,15 +46,15 @@ export component ImpressRibbonReview inherits Rectangle {
 
                 VerticalLayout {
                     spacing: 1px; alignment: center;
-                    RibbonButton { label: @tr("删除");   show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/comment_dismiss.svg"); }
-                    RibbonButton { label: @tr("上一个"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_sort_up.svg"); }
-                    RibbonButton { label: @tr("下一个"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_sort_down.svg"); }
+                    RibbonButton { label: @tr("删除");   show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/comment_dismiss.svg"); }
+                    RibbonButton { label: @tr("上一个"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_sort_up.svg"); }
+                    RibbonButton { label: @tr("下一个"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/arrow_sort_down.svg"); }
                 }
 
                 VerticalLayout {
                     spacing: 1px; alignment: center;
-                    RibbonButton { label: @tr("显示批注"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/all_comments.svg"); }
-                    RibbonButton { label: @tr("解决");     show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/checkmark.svg"); }
+                    RibbonButton { label: @tr("显示批注"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/all_comments.svg"); }
+                    RibbonButton { label: @tr("解决");     show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/checkmark.svg"); }
                 }
             }
         }

@@ -1,0 +1,421 @@
+// PreviewDialog.slint — agent 文档预览弹窗（只读，仅关闭按钮）
+// 第一版：Writer 连续滚动。Rust 侧负责渲染，本组件只显示图片并回传滚动位置。
+export component PreviewDialog inherits Rectangle {
+    in property <string> title;
+    in property <string> kind: "writer";
+    in property <color> accent: #4a86e8;
+    in property <image> viewport-image;
+    in property <float> doc-width-pt: 612.0;
+    in property <float> canvas-height-pt: 842.0;
+    in property <float> scale: 1.3333333;
+    in property <int> page-current: 1;
+    in property <int> page-total: 1;
+    in property <bool> show-pages: true;
+    in-out property <float> scroll-y-pt: 0.0;
+    // 参数：滚动位置pt、视口宽pt、视口高pt
+    callback render(float, float, float);
+    callback close();
+    callback goto(int);
+    in property <[string]> sheets: [];
+    in property <int> sheet-current: 0;
+    in property <float> calc-total-w: 0.0;
+    in property <float> calc-total-h: 0.0;
+    in property <bool> calc-capped: false;
+    callback render-calc(float, float, int, int);
+    callback sheet-select(int);
+
+    background: #14142066;
+
+    // 吞掉遮罩上的点击，避免穿透到下层 Agent 页面
+    TouchArea { }
+
+    FocusScope {
+        init => { self.focus(); }
+        key-pressed(e) => {
+            if (e.text == Key.Escape) { root.close(); return accept; }
+            if (root.kind == "impress") {
+                if (e.text == Key.LeftArrow || e.text == Key.UpArrow || e.text == Key.PageUp) { root.goto(root.page-current - 1); return accept; }
+                if (e.text == Key.RightArrow || e.text == Key.DownArrow || e.text == Key.PageDown || e.text == " ") { root.goto(root.page-current + 1); return accept; }
+            }
+            return reject;
+        }
+    }
+
+    panel := Rectangle {
+        x: 16px;
+        y: 16px;
+        width: parent.width - 32px;
+        height: parent.height - 32px;
+        background: #ffffff;
+        border-radius: 8px;
+        border-width: 1px;
+        border-color: #c9ccd3;
+        clip: true;
+
+        // ── 标题栏 ──
+        Rectangle {
+            x: 0px; y: 0px;
+            width: parent.width;
+            height: 40px;
+            background: #f3f4f6;
+
+            Rectangle {
+                x: 16px;
+                y: (parent.height - 20px) / 2;
+                width: 5px;
+                height: 20px;
+                border-radius: 2.5px;
+                background: root.accent;
+            }
+            Text {
+                x: 31px;
+                width: parent.width - 200px;
+                height: parent.height;
+                text: root.title;
+                color: #2b2d33;
+                font-size: 14px;
+                font-weight: 600;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+            Text {
+                visible: root.kind != "calc";
+                x: parent.width - 170px;
+                width: 100px;
+                height: parent.height;
+                text: "第 " + root.page-current + " / " + root.page-total + " 页";
+                color: #6b7280;
+                font-size: 12px;
+                horizontal-alignment: right;
+                vertical-alignment: center;
+            }
+            close-btn := Rectangle {
+                x: parent.width - 40px;
+                y: 6px;
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                background: close-ta.has-hover ? #fde2e2 : transparent;
+                Text {
+                    text: "✕";
+                    color: close-ta.has-hover ? #c53030 : #4b5563;
+                    font-size: 14px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                close-ta := TouchArea {
+                    clicked => { root.close(); }
+                }
+            }
+        }
+
+        Rectangle {
+            x: 0px; y: 40px;
+            width: parent.width;
+            height: 1px;
+            background: #d8dae0;
+            z: 5;
+        }
+
+        if root.kind == "impress" : Rectangle {
+            x: 0px; y: 41px;
+            width: parent.width;
+            height: parent.height - 41px - 48px;
+            background: #e8e8e8;
+            clip: true;
+            property <bool> cool: false;
+            Timer {
+                interval: 250ms;
+                running: parent.cool;
+                triggered => { parent.cool = false; }
+            }
+            Image {
+                x: 24px; y: 24px;
+                width: parent.width - 48px;
+                height: parent.height - 48px;
+                source: root.viewport-image;
+                image-fit: contain;
+            }
+            TouchArea {
+                scroll-event(e) => {
+                    if (!parent.cool) {
+                        if (e.delta-y < 0) { root.goto(root.page-current + 1); parent.cool = true; }
+                        else if (e.delta-y > 0) { root.goto(root.page-current - 1); parent.cool = true; }
+                    }
+                    return accept;
+                }
+            }
+        }
+
+        if root.kind == "impress" : Rectangle {
+            x: 0px; y: parent.height - 48px;
+            width: parent.width;
+            height: 48px;
+            background: #f3f4f6;
+            Rectangle { x: 0px; y: 0px; width: parent.width; height: 1px; background: #d8dae0; }
+            Rectangle {
+                x: parent.width / 2 - 118px; y: 8px;
+                width: 80px; height: 32px;
+                border-radius: 6px;
+                background: prev-ta.has-hover && root.page-current > 1 ? #e3e6ec : transparent;
+                Text {
+                    text: "‹ 上一页";
+                    color: root.page-current > 1 ? #2b2d33 : #b0b4bc;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                prev-ta := TouchArea {
+                    enabled: root.page-current > 1;
+                    clicked => { root.goto(root.page-current - 1); }
+                }
+            }
+            Text {
+                x: parent.width / 2 - 36px;
+                width: 72px;
+                height: parent.height;
+                text: root.page-current + " / " + root.page-total;
+                color: #6b7280;
+                font-size: 13px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            Rectangle {
+                x: parent.width / 2 + 38px; y: 8px;
+                width: 80px; height: 32px;
+                border-radius: 6px;
+                background: next-ta.has-hover && root.page-current < root.page-total ? #e3e6ec : transparent;
+                Text {
+                    text: "下一页 ›";
+                    color: root.page-current < root.page-total ? #2b2d33 : #b0b4bc;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                next-ta := TouchArea {
+                    enabled: root.page-current < root.page-total;
+                    clicked => { root.goto(root.page-current + 1); }
+                }
+            }
+        }
+
+        if root.kind == "calc" : Rectangle {
+            x: 0px; y: 41px;
+            width: parent.width;
+            height: parent.height - 41px - 36px;
+            background: #ffffff;
+            clip: true;
+            calc-flick := Flickable {
+                x: 0px; y: 0px;
+                width: parent.width;
+                height: parent.height;
+                viewport-width: max(self.width, root.calc-total-w * 1px + self.width);
+                viewport-height: max(self.height, root.calc-total-h * 1px + self.height);
+                init => { root.render-calc(0.0, 0.0, Math.round(self.width / 1px), Math.round(self.height / 1px)); }
+                changed viewport-x => { root.render-calc(-self.viewport-x / 1px, -self.viewport-y / 1px, Math.round(self.width / 1px), Math.round(self.height / 1px)); }
+                changed viewport-y => { root.render-calc(-self.viewport-x / 1px, -self.viewport-y / 1px, Math.round(self.width / 1px), Math.round(self.height / 1px)); }
+                changed width => { root.render-calc(-self.viewport-x / 1px, -self.viewport-y / 1px, Math.round(self.width / 1px), Math.round(self.height / 1px)); }
+                changed height => { root.render-calc(-self.viewport-x / 1px, -self.viewport-y / 1px, Math.round(self.width / 1px), Math.round(self.height / 1px)); }
+                property <int> sheet-watch: root.sheet-current;
+                changed sheet-watch => {
+                    // 位置本来就在 (0,0) 时不会触发 viewport 变化，需自己渲染一次；否则交给 viewport 变化触发
+                    if (self.viewport-x == 0px && self.viewport-y == 0px) {
+                        root.render-calc(0.0, 0.0, Math.round(self.width / 1px), Math.round(self.height / 1px));
+                    } else {
+                        self.viewport-x = 0px;
+                        self.viewport-y = 0px;
+                    }
+                }
+                Rectangle { width: parent.viewport-width; height: parent.viewport-height; background: transparent; }
+            }
+            Image {
+                x: 0px; y: 0px;
+                width: calc-flick.width;
+                height: calc-flick.height;
+                source: root.viewport-image;
+                image-fit: fill;
+            }
+
+            // 竖向滚动条（8px，右侧）
+            cv-track := Rectangle {
+                x: parent.width - 12px;
+                y: 4px;
+                width: 8px;
+                height: parent.height - 24px;
+                background: transparent;
+                property <length> th: max(32px, self.height * self.height / max(1px, calc-flick.viewport-height));
+                property <length> range: self.height - self.th;
+                property <length> max-scroll: max(1px, calc-flick.viewport-height - calc-flick.height);
+                cv-thumb := Rectangle {
+                    width: parent.width;
+                    height: parent.th;
+                    y: parent.range * (-calc-flick.viewport-y) / parent.max-scroll;
+                    border-radius: 4px;
+                    background: cv-ta.pressed ? #8a8f98 : (cv-ta.has-hover ? #a3a8b0 : #c3c7cd);
+                }
+                cv-ta := TouchArea {
+                    property <length> grab-y: 0px;
+                    pointer-event(e) => {
+                        if (e.kind == PointerEventKind.down) {
+                            self.grab-y = self.mouse-y - cv-thumb.y;
+                        }
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            let ty = max(0px, min(cv-track.range, self.mouse-y - self.grab-y));
+                            calc-flick.viewport-y = -(ty / max(1px, cv-track.range)) * cv-track.max-scroll;
+                        }
+                    }
+                }
+            }
+
+            // 横向滚动条（8px，底部）
+            ch-track := Rectangle {
+                x: 4px;
+                y: parent.height - 12px;
+                width: parent.width - 24px;
+                height: 8px;
+                background: transparent;
+                property <length> tw: max(32px, self.width * self.width / max(1px, calc-flick.viewport-width));
+                property <length> range: self.width - self.tw;
+                property <length> max-scroll: max(1px, calc-flick.viewport-width - calc-flick.width);
+                ch-thumb := Rectangle {
+                    height: parent.height;
+                    width: parent.tw;
+                    x: parent.range * (-calc-flick.viewport-x) / parent.max-scroll;
+                    border-radius: 4px;
+                    background: ch-ta.pressed ? #8a8f98 : (ch-ta.has-hover ? #a3a8b0 : #c3c7cd);
+                }
+                ch-ta := TouchArea {
+                    property <length> grab-x: 0px;
+                    pointer-event(e) => {
+                        if (e.kind == PointerEventKind.down) {
+                            self.grab-x = self.mouse-x - ch-thumb.x;
+                        }
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            let tx = max(0px, min(ch-track.range, self.mouse-x - self.grab-x));
+                            calc-flick.viewport-x = -(tx / max(1px, ch-track.range)) * ch-track.max-scroll;
+                        }
+                    }
+                }
+            }
+        }
+
+        if root.kind == "calc" : Rectangle {
+            x: 0px; y: parent.height - 36px;
+            width: parent.width;
+            height: 36px;
+            background: #f3f4f6;
+            Rectangle { x: 0px; y: 0px; width: parent.width; height: 1px; background: #d8dae0; }
+            HorizontalLayout {
+                padding-left: 8px;
+                spacing: 2px;
+                alignment: start;
+                for name[i] in root.sheets : Rectangle {
+                    width: max(72px, tab-t.preferred-width + 28px);
+                    background: i == root.sheet-current ? #ffffff : (tab-ta.has-hover ? #e8eaef : transparent);
+                    tab-t := Text {
+                        text: name;
+                        color: i == root.sheet-current ? #1f7a45 : #4b5563;
+                        font-size: 13px;
+                        font-weight: i == root.sheet-current ? 600 : 400;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    Rectangle {
+                        y: parent.height - 2px;
+                        height: 2px;
+                        background: i == root.sheet-current ? #2f9e5b : transparent;
+                    }
+                    tab-ta := TouchArea { clicked => { root.sheet-select(i); } }
+                }
+            }
+            if root.calc-capped : Text {
+                x: parent.width - self.preferred-width - 12px;
+                y: 0px;
+                height: parent.height;
+                text: "仅显示前 2000 行 / 100 列";
+                color: #9a6b00;
+                font-size: 12px;
+                vertical-alignment: center;
+            }
+        }
+
+        // ── 正文区（Writer 连续滚动） ──
+        if root.kind == "writer" : Rectangle {
+            x: 0px; y: 40px;
+            width: parent.width;
+            height: parent.height - 40px;
+            background: #e8e8e8;
+            clip: true;
+
+            flick := Flickable {
+                x: 0px; y: 0px;
+                width: parent.width;
+                height: parent.height;
+                viewport-width: self.width;
+                viewport-height: root.canvas-height-pt * root.scale * 1px;
+                init => {
+                    root.render(root.scroll-y-pt, root.doc-width-pt, self.height / 1px / root.scale);
+                }
+                changed viewport-y => {
+                    root.scroll-y-pt = max(0.0, -self.viewport-y / 1px / root.scale);
+                    root.render(root.scroll-y-pt, root.doc-width-pt, self.height / 1px / root.scale);
+                }
+                changed height => {
+                    root.render(root.scroll-y-pt, root.doc-width-pt, self.height / 1px / root.scale);
+                }
+                Rectangle {
+                    width: parent.width;
+                    height: parent.viewport-height;
+                    background: transparent;
+                }
+            }
+
+            // 视口图像：固定在可见区域，不随 Flickable 移动
+            Image {
+                x: max(0px, (parent.width - self.width) / 2);
+                y: 0px;
+                width: root.doc-width-pt * root.scale * 1px;
+                height: flick.height;
+                source: root.viewport-image;
+                image-fit: fill;
+            }
+
+            // 滚动条（8px，右侧）
+            sb-track := Rectangle {
+                x: parent.width - 12px;
+                y: 4px;
+                width: 8px;
+                height: parent.height - 8px;
+                background: transparent;
+                property <length> th: max(32px, self.height * self.height / max(1px, flick.viewport-height));
+                property <length> range: self.height - self.th;
+                property <length> max-scroll: max(1px, flick.viewport-height - flick.height);
+                sb-thumb := Rectangle {
+                    width: parent.width;
+                    height: parent.th;
+                    y: parent.range * (-flick.viewport-y) / parent.max-scroll;
+                    border-radius: 4px;
+                    background: sb-ta.pressed ? #8a8f98 : (sb-ta.has-hover ? #a3a8b0 : #c3c7cd);
+                }
+                sb-ta := TouchArea {
+                    property <length> grab-y: 0px;
+                    pointer-event(e) => {
+                        if (e.kind == PointerEventKind.down) {
+                            self.grab-y = self.mouse-y - sb-thumb.y;
+                        }
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            let ty = max(0px, min(sb-track.range, self.mouse-y - self.grab-y));
+                            flick.viewport-y = -(ty / max(1px, sb-track.range)) * sb-track.max-scroll;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

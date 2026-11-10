@@ -33,7 +33,14 @@ export component CalcRibbonHome inherits Rectangle {
     callback request-style-menu(length, length); // abs-x, abs-y
     callback request-tstyle-menu(length, length); // abs-x, abs-y
 
-    HorizontalLayout {
+    Flickable {
+        width: root.width;
+        height: root.height;
+        viewport-width: max(root.width, row.preferred-width + 8px);
+        viewport-height: root.height;
+    row := HorizontalLayout {
+        width: max(root.width, self.preferred-width + 8px);
+        height: root.height;
         x: 4px;
         spacing: 0px;
         alignment: start;
@@ -47,7 +54,6 @@ export component CalcRibbonHome inherits Rectangle {
                 spacing: 2px;
 
                 RibbonBigButton {
-                    width: 44px;
                     icon-source: @image-url("../icons/fluent/paste.svg");
                     label: @tr("粘贴");
                     tooltip: @tr("粘贴 (Ctrl+V)");
@@ -58,7 +64,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 72px;
+                        min-w: 72px;
                         height: 20px;
                         label: @tr("剪切");
                         icon-source: @image-url("../icons/fluent/cut.svg");
@@ -66,7 +72,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 72px;
+                        min-w: 72px;
                         height: 20px;
                         label: @tr("复制");
                         icon-source: @image-url("../icons/fluent/copy.svg");
@@ -74,7 +80,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 72px;
+                        min-w: 72px;
                         height: 20px;
                         label: @tr("格式刷");
                         tooltip: @tr("格式刷(单击一次,双击连续)");
@@ -105,7 +111,7 @@ export component CalcRibbonHome inherits Rectangle {
                         border-color: #c8c8c8;
                         border-width: 1px;
                         Text {
-                            text: root.font-name;
+                            text: root.font-name == "Carlito (默认)" ? @tr("Carlito (默认)") : root.font-name;
                             font-size: 11px;
                             color: #333333;
                             x: 6px;
@@ -313,7 +319,7 @@ export component CalcRibbonHome inherits Rectangle {
                     border-color: #c8c8c8;
                     border-width: 1px;
                     Text {
-                        text: root.num-format-text;
+                        text: root.num-format-text == "常规" ? @tr("常规") : root.num-format-text;
                         font-size: 11px;
                         color: #333333;
                         x: 6px;
@@ -378,7 +384,7 @@ export component CalcRibbonHome inherits Rectangle {
                 cfBtn := RibbonButton {
                     show-label: true;
                     has-icon: true;
-                    width: 88px;
+                    min-w: 88px;
                     height: 20px;
                     label: @tr("条件格式");
                     icon-source: @image-url("../icons/fluent/highlight.svg");
@@ -387,7 +393,7 @@ export component CalcRibbonHome inherits Rectangle {
                 tstyleBtn := RibbonButton {
                     show-label: true;
                     has-icon: true;
-                    width: 88px;
+                    min-w: 88px;
                     height: 20px;
                     label: @tr("套用格式");
                     icon-source: @image-url("../icons/fluent/style_guide.svg");
@@ -396,7 +402,7 @@ export component CalcRibbonHome inherits Rectangle {
                 styleBtn := RibbonButton {
                     show-label: true;
                     has-icon: true;
-                    width: 88px;
+                    min-w: 88px;
                     height: 20px;
                     label: @tr("单元格样式");
                     icon-source: @image-url("../icons/fluent/text_effects.svg");
@@ -416,7 +422,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 80px;
+                        min-w: 80px;
                         height: 20px;
                         label: @tr("插入行");
                         icon-source: @image-url("../icons/fluent/document_add.svg");
@@ -426,7 +432,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 80px;
+                        min-w: 80px;
                         height: 20px;
                         label: @tr("删除行");
                         icon-source: @image-url("../icons/fluent/dismiss.svg");
@@ -436,7 +442,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 80px;
+                        min-w: 80px;
                         height: 20px;
                         label: @tr("格式");
                         icon-source: @image-url("../icons/fluent/border_all.svg");
@@ -447,7 +453,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 80px;
+                        min-w: 80px;
                         height: 20px;
                         label: @tr("插入列");
                         icon-source: @image-url("../icons/fluent/document_add.svg");
@@ -457,7 +463,7 @@ export component CalcRibbonHome inherits Rectangle {
                     RibbonButton {
                         show-label: true;
                         has-icon: true;
-                        width: 80px;
+                        min-w: 80px;
                         height: 20px;
                         label: @tr("删除列");
                         icon-source: @image-url("../icons/fluent/dismiss.svg");
@@ -477,7 +483,7 @@ export component CalcRibbonHome inherits Rectangle {
                 RibbonButton {
                     show-label: true;
                     has-icon: true;
-                    width: 118px;
+                    min-w: 118px;
                     height: 20px;
                     label: @tr("自动求和");
                     icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
@@ -486,7 +492,7 @@ export component CalcRibbonHome inherits Rectangle {
                 RibbonButton {
                     show-label: true;
                     has-icon: true;
-                    width: 118px;
+                    min-w: 118px;
                     height: 20px;
                     label: @tr("排序和筛选");
                     icon-source: @image-url("../icons/fluent/text_sort.svg");
@@ -494,13 +500,14 @@ export component CalcRibbonHome inherits Rectangle {
                 RibbonButton {
                     show-label: true;
                     has-icon: true;
-                    width: 118px;
+                    min-w: 118px;
                     height: 20px;
                     label: @tr("查找和选择");
                     icon-source: @image-url("../icons/fluent/document_search.svg");
                 }
             }
         }
+    }
     }
 
 }

@@ -13,13 +13,17 @@ pub(crate) fn notify_if_saved(
     result: &ToolResult,
     on_saved: &dyn Fn(String),
 ) -> bool {
-    match roe_agent::saved_path::extract_saved_path(tool_name, result) {
-        Some(path) => {
-            on_saved(path);
-            true
-        }
-        None => false,
+    let mut hit = false;
+    if let Some(path) = roe_agent::saved_path::extract_saved_path(tool_name, result) {
+        on_saved(path);
+        hit = true;
     }
+    // 脚本里 export_image 导出的图片:每张也算一次"产物落盘",触发同样的回调。
+    for path in roe_agent::saved_path::extract_export_folders(tool_name, result) {
+        on_saved(path);
+        hit = true;
+    }
+    hit
 }
 
 /// 把"保存成功"转成回调的 hook。
@@ -85,5 +89,35 @@ mod tests {
         let (hit, got) = collect("save_document", &r);
         assert!(!hit);
         assert!(got.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod export_hook_tests {
+    use super::*;
+    use rig_core::tool::ToolOutput;
+    use std::sync::Mutex;
+
+    #[test]
+    fn export_images_trigger_callback_per_file() {
+        let r = ToolResult::success(ToolOutput::json(serde_json::json!({
+            "script_result": null,
+            "exports": [
+                {"path": "/exports/a_1108_v1/page1.png", "width": 1, "height": 1},
+                {"path": "/exports/a_1108_v1/page2.png", "width": 1, "height": 1}
+            ]
+        })));
+        let got = Mutex::new(Vec::new());
+        let hit = notify_if_saved("execute_script_preview", &r, &|p| got.lock().unwrap().push(p));
+        assert!(hit);
+        assert_eq!(got.into_inner().unwrap(), vec!["/exports/a_1108_v1".to_string()]);
+    }
+
+    #[test]
+    fn plain_script_result_does_not_trigger() {
+        let r = ToolResult::success(ToolOutput::json(serde_json::json!({"script_result": 1})));
+        let got = Mutex::new(Vec::new());
+        assert!(!notify_if_saved("execute_script_preview", &r, &|p| got.lock().unwrap().push(p)));
+        assert!(got.into_inner().unwrap().is_empty());
     }
 }

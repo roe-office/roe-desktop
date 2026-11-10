@@ -1,11 +1,13 @@
 slint::include_modules!();
 
 mod calc_selection;
+mod calc_header_resize;
 mod calc_outline;
 mod geom;
 mod shape_catalog;
 mod chart_registry;
 mod calc_chart;
+mod calc_frozen;
 mod calc_fill;
 mod ribbon;
 use i_slint_backend_winit::WinitWindowAccessor;
@@ -293,6 +295,7 @@ struct AppState {
     writer_cell_vert: Option<(u32, i64, i64, f32)>,
     writer_cell_sel_anchor: Option<(u32, i64, i64)>, // v318a: 单元格内选区锚点
     writer_cell_sel_focus: Option<(u32, i64, i64)>, // v318c: 选区焦点
+    writer_track_changes: bool, // v308: 修订开关（前台记录，点按钮时同步到当前文档）
     // 拖拽选区（本次新增）：是否正在拖拽中（鼠标左键按下且在writer点击区域内移动）。
     writer_dragging: bool,
     writer_drag_origin: Option<(f32, f32)>, // v232: 按下坐标，用于区分点击与拖选
@@ -319,6 +322,8 @@ struct AppState {
     chart_drag_start_mouse: (f32, f32),
     chart_drag_start_rect_pt: (f32, f32, f32, f32),
     chart_drag_mode: String,  // "" / "move" / "resize-nw" / "resize-n" / ... 同slint侧命名
+    // Calc 行列标题分隔线缩放:按下命中后记录,松手落地后清空
+    header_drag: Option<calc_header_resize::HeaderDrag>,
     // Calc 浮动对象(图表/统计图,之后图片/图形/文本框)缓存与选中。选中记 (sheet,id)，切 sheet 时清空。
     float_store: calc_chart::ChartStore,
     float_sel: u64,
@@ -354,13 +359,13 @@ impl AppState {
         AppState {
             session: None, writer_cursor_para: 0, writer_cursor_offset: 0,
             writer_cursor_ideal_x: None, writer_sel_anchor_para: 0, writer_sel_anchor_offset: 0,
-            writer_ime_session_start: None, writer_ime_session_prev_len: 0, writer_cell_cursor: None, writer_cell_vert: None, writer_cell_sel_anchor: None, writer_cell_sel_focus: None,
+            writer_ime_session_start: None, writer_ime_session_prev_len: 0, writer_cell_cursor: None, writer_cell_vert: None, writer_cell_sel_anchor: None, writer_cell_sel_focus: None, writer_track_changes: false,
             writer_dragging: false, writer_drag_origin: None, writer_drag_throttle_enabled: false,
             writer_drag_last_query_para: -1, writer_drag_last_query_offset: -1,
             writer_drag_query_count: 0,
             impress_slides: Vec::new(),
             chart_rects: HashMap::new(), chart_selected_id: 0,
-            chart_drag_start_mouse: (0.0, 0.0), chart_drag_start_rect_pt: (0.0, 0.0, 0.0, 0.0), chart_drag_mode: String::new(),
+            chart_drag_start_mouse: (0.0, 0.0), chart_drag_start_rect_pt: (0.0, 0.0, 0.0, 0.0), chart_drag_mode: String::new(), header_drag: None,
             float_store: calc_chart::ChartStore::new(), float_sel: 0, float_sel_sheet: 0,
             agent_messages: Vec::new(),
             comment_threads: HashMap::new(),
@@ -465,6 +470,51 @@ fn writer_cell_refresh(app: &AppWindow, s: &mut AppState) {
     }
 }
 
+/// v304: 按锚点和光标刷新正文选区高亮（锚点==光标则清空）。
+fn writer_refresh_sel_rects(app: &AppWindow, s: &mut AppState) {
+    let a = (s.writer_sel_anchor_para, s.writer_sel_anchor_offset);
+    let c = (s.writer_cursor_para, s.writer_cursor_offset);
+    let mut items: Vec<SelectionRect> = Vec::new();
+    if a != c && a.0 >= 0 && a.1 >= 0 && c.0 >= 0 && c.1 >= 0 {
+        let rj = s.session.as_mut().and_then(|sess| {
+            sess.query_selection_rects(a.0 as u32, a.1 as u32, c.0 as u32, c.1 as u32)
+        });
+        if let Some(json) = rj {
+            if let Ok(arr) = serde_json::from_str::<Vec<serde_json::Value>>(&json) {
+                use doc_core::CANVAS_OFFSET_PT;
+                for r in arr {
+                    let rx = r.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let ry = r.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32 + CANVAS_OFFSET_PT;
+                    let rw = r.get("w").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    let rh = r.get("h").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+                    items.push(SelectionRect { rx, ry, rw, rh });
+                }
+            }
+        }
+    }
+    app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(items)));
+}
+
+/// v302: 有正文选区时删除选区，光标折叠到起点。返回是否删除了内容。
+fn writer_delete_selection(app: &AppWindow, s: &mut AppState) -> bool {
+    if s.writer_cell_cursor.is_some() { return false; }
+    let a = (s.writer_sel_anchor_para, s.writer_sel_anchor_offset);
+    let c = (s.writer_cursor_para, s.writer_cursor_offset);
+    if a == c || a.0 < 0 || a.1 < 0 || c.0 < 0 || c.1 < 0 { return false; }
+    let (x, y) = if a <= c { (a, c) } else { (c, a) };
+    let res = s.session.as_mut().map(|sess| sess.writer_clip_delete(x.0 as u32, x.1 as u32, y.0 as u32, y.1 as u32));
+    if !matches!(res, Some(Ok(()))) { return false; }
+    s.writer_cursor_para = x.0;
+    s.writer_cursor_offset = x.1;
+    s.writer_sel_anchor_para = x.0;
+    s.writer_sel_anchor_offset = x.1;
+    s.writer_ime_session_start = None;
+    s.writer_ime_session_prev_len = 0;
+    app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(Vec::<SelectionRect>::new())));
+    writer_refresh_canvas(app, s);
+    true
+}
+
 fn writer_refresh_canvas(app: &AppWindow, s: &mut AppState) {
     let size = s.session.as_mut().and_then(|sess| sess.get_writer_document_size());
     if let Some((doc_w, canvas_h, page_count)) = size {
@@ -472,6 +522,22 @@ fn writer_refresh_canvas(app: &AppWindow, s: &mut AppState) {
         app.set_writer_canvas_height_pt(canvas_h);
         app.set_page_total(page_count);
     }
+}
+
+/// 把 get_chart_config 的 JSON 填进「图表设计」页签用的三个属性(三软件共用)。
+fn fill_chart_design_props(app: &AppWindow, json: &str) {
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else { return };
+    app.set_chart_show_legend(v.get("show_legend").and_then(|x| x.as_bool()).unwrap_or(true));
+    app.set_chart_show_grid(v.get("show_grid").and_then(|x| x.as_bool()).unwrap_or(true));
+    app.set_chart_legend_pos(v.get("legend_pos").and_then(|x| x.as_str()).unwrap_or("").into());
+    app.set_chart_is_stat(v.get("stat").and_then(|x| x.as_bool()).unwrap_or(false));
+    app.set_chart_kind_name(v.get("kind").and_then(|x| x.as_str()).unwrap_or("").into());
+    app.set_chart_grouping(v.get("grouping").and_then(|x| x.as_str()).unwrap_or("Standard").into());
+    app.set_chart_show_val(v.get("show_val").and_then(|x| x.as_bool()).unwrap_or(false));
+    let num = |k: &str| v.get(k).and_then(|x| x.as_f64()).map(|f| format!("{}", f)).unwrap_or_default();
+    app.set_chart_gap_width(num("gap_width_pct").into());
+    app.set_chart_overlap(num("overlap_pct").into());
+    app.set_chart_hole_size(num("hole_size_pct").into());
 }
 
 fn sync_chart_sidebar(app: &AppWindow, s: &mut AppState, sheet: u32) {
@@ -484,6 +550,7 @@ fn sync_chart_sidebar(app: &AppWindow, s: &mut AppState, sheet: u32) {
     let is_stat = sel != 0 && s.float_store.is_stat(sheet, sel);
     // chart_selected_id 供 chart-style-* 回调取 id(统计图后端只认 title/legend/grid)
     s.chart_selected_id = sel;
+    app.set_calc_obj_chart(sel != 0);
     app.set_chart_is_stat(is_stat);
     let kind = app.get_sidebar_kind().to_string();
     if sel == 0 {
@@ -499,6 +566,8 @@ fn sync_chart_sidebar(app: &AppWindow, s: &mut AppState, sheet: u32) {
     app.set_chart_title_text(gs("title").into());
     app.set_chart_show_legend(gb("show_legend", true));
     app.set_chart_show_grid(gb("show_grid", true));
+    fill_chart_design_props(app, &json);
+    app.set_chart_legend_pos(v.get("legend_pos").and_then(|x| x.as_str()).unwrap_or("").into());
     if is_stat {
         app.set_sidebar_kind("chart".into());
         return;
@@ -532,6 +601,11 @@ fn select_float_obj(app: &AppWindow, s: &mut AppState, sheet: u32, id: u64) {
         app.set_calc_obj_shape(s.float_store.is_shape(sheet, id));
         app.set_calc_obj_id(id as i32);
         sync_chart_sidebar(app, s, sheet);
+        if app.get_calc_obj_chart() {
+            app.set_active_calc_tab("chart".into());
+        } else if app.get_calc_obj_shape() {
+            app.set_active_calc_tab("shape".into());
+        }
     }
 }
 
@@ -577,11 +651,74 @@ fn refresh_float_objs(app: &AppWindow, s: &mut AppState, sheet: u32) {
 }
 
 mod ai_config;
+mod ui_lang;
+mod conversation_store;
+use ui_lang::StatusExt;
+
+// ── Agent 对话持久化接线(只存 user/assistant;目录与 ai_profiles.json 同级) ──
+thread_local! {
+    // 查看历史对话时,暂存正在聊的活跃对话 (id, 消息),点回它时恢复
+    static AGENT_STASH: RefCell<Option<(String, Vec<AgentMessage>)>> = RefCell::new(None);
+    // 回看历史对话时,正在看的是哪一份(删除它时界面要退出回看)
+    static VIEWING_CONV_ID: RefCell<Option<String>> = RefCell::new(None);
+}
+
+fn refresh_agent_history(app: &AppWindow) {
+    let active: Option<String> = if app.get_agent_archived() {
+        AGENT_STASH.with(|s| s.borrow().as_ref().map(|(i, _)| i.clone()))
+    } else {
+        CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()).clone()
+    };
+    app.set_agent_active_id(active.unwrap_or_default().into());
+    let items: Vec<AgentConversation> = conversations_dir()
+        .map(|d| conversation_store::list(&d))
+        .unwrap_or_default()
+        .into_iter()
+        .map(|m| AgentConversation { id: m.id.into(), title: m.title.into() })
+        .collect();
+    app.set_agent_history(std::rc::Rc::new(slint::VecModel::from(items)).into());
+}
+
+static CURRENT_CONV_ID: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+fn conversations_dir() -> Option<std::path::PathBuf> {
+    ai_config::config_path().and_then(|p| p.parent().map(|d| d.join("conversations")))
+}
+
+fn persist_agent_messages(msgs: &[AgentMessage]) {
+    let items: Vec<(String, String)> = msgs
+        .iter()
+        .filter(|m| conversation_store::is_persistable_kind(m.kind.as_str()))
+        .map(|m| {
+            let t = if m.raw.is_empty() { m.text.to_string() } else { m.raw.to_string() };
+            (m.kind.to_string(), t)
+        })
+        .collect();
+    if items.is_empty() {
+        return;
+    }
+    let Some(dir) = conversations_dir() else { return };
+    let dur = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    let now = dur.as_secs();
+    let id = {
+        let mut g = CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner());
+        g.get_or_insert_with(|| format!("c{}", dur.as_millis())).clone()
+    };
+    let existing = conversation_store::load(&dir, &id).ok();
+    let snap = conversation_store::build_snapshot(existing.as_ref(), &id, now, &items);
+    if let Err(e) = conversation_store::save(&dir, &snap) {
+        eprintln!("[agent] 对话存盘失败: {e}");
+    }
+}
 
 /// 设置页语言下标 -> 翻译语言。0=简体中文(原文)；1=English；其余语言暂无译文，退回中文。
 fn apply_ui_language(idx: i32) {
     let code = match idx { 1 => "en", 2 => "ja", 3 => "ko", 4 => "fr", 5 => "de", 6 => "es", 7 => "zh_TW", _ => "" };
     let _ = slint::select_bundled_translation(code);
+    ui_lang::set_code(code);
+    doc_core::set_placeholder_lang(!(code.is_empty() || code.starts_with("zh")));
 }
 
 fn main() -> Result<(), slint::PlatformError> {
@@ -597,7 +734,7 @@ fn main() -> Result<(), slint::PlatformError> {
     }
 
     let app = AppWindow::new()?;
-    if let Ok(l) = std::env::var("ROE_LANG") { let _ = slint::select_bundled_translation(&l); }
+    if let Ok(l) = std::env::var("ROE_LANG") { let _ = slint::select_bundled_translation(&l); ui_lang::set_code(&l); doc_core::set_placeholder_lang(!(l.is_empty() || l.starts_with("zh"))); }
     // 套用表格格式弹层的缩略图取色(60 项,下标与 tstyle:<idx> 一致)
     {
         let pv = doc_core::table_preview::table_style_previews();
@@ -670,11 +807,16 @@ fn main() -> Result<(), slint::PlatformError> {
                         thinking_seconds: 0.0,
                         expanded: false,
                         shadow_handle: "".into(),
+                        file_path: "".into(),
                     });
                     app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
                 }
                 agent_bridge::AgentUiEvent::ThinkingStatus(is_thinking) => {
                     app.set_agent_sending(is_thinking);
+                    if !is_thinking {
+                        persist_agent_messages(&msgs);
+                        refresh_agent_history(&app);
+                    }
                     // 思考态开始时插入一条 thinking 卡片；结束时不需要
                     // 移除它——后续的 assistant/script 消息会自然接在
                     // 后面，thinking 卡片本身作为历史记录保留（与初始
@@ -689,6 +831,7 @@ fn main() -> Result<(), slint::PlatformError> {
                             thinking_seconds: 0.0,
                             expanded: false,
                             shadow_handle: "".into(),
+                            file_path: "".into(),
                         });
                         app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
                     }
@@ -703,6 +846,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         thinking_seconds: 0.0,
                         expanded: false,
                         shadow_handle: shadow_handle.into(),
+                        file_path: "".into(),
                     });
                     app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
                 }
@@ -730,21 +874,24 @@ fn main() -> Result<(), slint::PlatformError> {
                             thinking_seconds: 0.0,
                             expanded: false,
                             shadow_handle: "".into(),
+                            file_path: "".into(),
                         });
                     }
                     app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
                 }
                 agent_bridge::AgentUiEvent::FileSaved(path) => {
                     // 程序在保存真正成功时发的提示行(纯界面反馈,不进后台历史)
+                    let __fname = std::path::Path::new(&path).file_name()
+                        .map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.clone());
                     msgs.push(AgentMessage {
                         raw: "".into(),
-                        kind: "notice".into(),
-                        text: format!("已保存 {path}").into(),
+                        kind: if std::path::Path::new(&path).extension().is_none() { "folder".into() } else { "file".into() },
+                        text: __fname.into(),
                         script_code: "".into(),
                         script_status: "".into(),
                         thinking_seconds: 0.0,
                         expanded: false,
-                        shadow_handle: "".into(),
+                        shadow_handle: "".into(), file_path: path.clone().into(),
                     });
                     app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
                 }
@@ -770,6 +917,7 @@ fn main() -> Result<(), slint::PlatformError> {
                         thinking_seconds: 0.0,
                         expanded: false,
                         shadow_handle: "".into(),
+                        file_path: "".into(),
                     });
                     app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
                 }
@@ -813,7 +961,7 @@ fn main() -> Result<(), slint::PlatformError> {
         Rc::new(move |mut session: Box<doc_core::TileCacheRust>, handle: u64| {
             *current_path_fo.borrow_mut() = None;
             { let ext = match session.get_doc_type().to_string().as_str() { "calc" => "xlsx", "impress" => "pptx", _ => "docx" };
-              if let Some(a) = app_weak_fo.upgrade() { a.set_doc_file_name(format!("未命名.{}", ext).into()); } }
+              if let Some(a) = app_weak_fo.upgrade() { a.set_doc_file_name(format!("{}.{}", ui_lang::t("未命名", "Untitled"), ext).into()); } }
             let state = state_fo.clone();
             let app_weak = app_weak_fo.clone();
             let agent_context = agent_context_fo.clone();
@@ -848,7 +996,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 { let mut st = state.borrow_mut(); st.float_store.clear_all(); st.float_sel = 0; st.chart_selected_id = 0; }
                 app.set_calc_obj_id(-1);
                 app.set_show_start_page(false);
-                app.set_status_message("".into());
+                app.set_status_msg("".into());
                 app.set_ai_script_result("".into());
                 app.set_ai_script_ok(true);
                 app.set_ai_panel_visible(false);
@@ -872,6 +1020,9 @@ fn main() -> Result<(), slint::PlatformError> {
                     s.writer_sel_anchor_offset = 0;
                     s.writer_ime_session_start = None;
                     s.writer_ime_session_prev_len = 0;
+                    // v309: 新打开的文档修订开关默认关（内核新句柄本来就是关），前台状态同步清零
+                    s.writer_track_changes = false;
+                    app.set_writer_track_changes(false);
                     if let Some(sess) = s.session.as_mut() {
                         // v51更新：改用canvas_height（含留白+页间距+所有页面），替代旧的单页height手工补偿
                         if let Some((doc_w, canvas_h, page_count)) = sess.get_writer_document_size() {
@@ -890,6 +1041,23 @@ fn main() -> Result<(), slint::PlatformError> {
                         eprintln!("[WRITER-OPEN] 初始光标定位到 para=0 offset=0 -> x={:.1} y={:.1} h={:.1}", cx, cy, ch);
                     }
                     app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(Vec::<SelectionRect>::new())));
+                    // v306: 新打开的文档从顶部开始，不继承上一个文档的滚动位置
+                    // v307: 新打开的文档缩放回到 100%，不继承上一个文档的缩放（内核、slint、状态栏、视口 pt 尺寸一起复位）
+                    if app.get_doc_type().as_str() == "writer" {
+                        let old_zoom = app.get_writer_zoom();
+                        if (old_zoom - 1.0).abs() > 1e-4 && old_zoom > 0.0 {
+                            let vw = app.get_writer_view_width();
+                            let vh = app.get_writer_view_height();
+                            doc_core::set_writer_zoom(1.0);
+                            app.set_writer_zoom(1.0);
+                            app.set_zoom_level(1.0);
+                            app.set_writer_view_width(vw * old_zoom);
+                            app.set_writer_view_height(vh * old_zoom);
+                            eprintln!("[WRITER-OPEN] 缩放 {:.0}% -> 100%", old_zoom * 100.0);
+                        }
+                    }
+                    app.set_writer_scroll_y_pt(0.0);
+                    app.invoke_scroll_writer_to(0.0);
                     app.set_writer_needs_render(true);
                     // v303: 换文档时清掉上一个文档遗留的对象选中框 / 画图模式 / 形状菜单
                     app.set_writer_obj_sel(-1);
@@ -975,6 +1143,8 @@ fn main() -> Result<(), slint::PlatformError> {
                             let total_h = sess.get_sheet_total_height(0);
                             app.set_calc_sheet_total_width((total_w) * (96.0 / 72.0));
                             app.set_calc_sheet_total_height((total_h) * (96.0 / 72.0));
+                            calc_frozen::refresh_extent(&app, sess, 0);
+                            app.set_calc_gridlines_on(sess.get_gridlines(0));
                             eprintln!("[CALC-INIT] total_w={:?} total_h={:?}", total_w, total_h);
 
                             // 初始化SheetTabBar：拉取所有sheet名称，默认激活第一个
@@ -1042,15 +1212,15 @@ fn main() -> Result<(), slint::PlatformError> {
     app.on_open_file_clicked(move || {
         let app_weak = app_weak_open.clone();
         let file = rfd::FileDialog::new()
-            .add_filter("文档", &["docx", "xlsx", "pptx", "odt", "ods", "odp", "wai", "sai", "pai"])
-            .add_filter("所有文件", &["*"])
+            .add_filter(ui_lang::t("文档", "Documents"), &["docx", "xlsx", "pptx", "odt", "ods", "odp", "wai", "sai", "pai"])
+            .add_filter(ui_lang::t("所有文件", "All files"), &["*"])
             .pick_file();
         let Some(path) = file else { return; };
         let bytes = match std::fs::read(&path) {
             Ok(b) => b,
             Err(e) => {
                 if let Some(app) = app_weak.upgrade() {
-                    app.set_status_message(format!("读取文件失败: {}", e).into());
+                    app.set_status_msg(format!("读取文件失败: {}", e).into());
                 }
                 return;
             }
@@ -1059,7 +1229,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let handle = session.open_document_from_bytes(&bytes, 99);
         if handle == 0 {
             if let Some(app) = app_weak.upgrade() {
-                app.set_status_message(format!("打开文档失败: {:?}", path).into());
+                app.set_status_msg(format!("打开文档失败: {:?}", path).into());
             }
             return;
         }
@@ -1077,7 +1247,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let (hint, ext) = {
             let st = state_save.borrow();
             let Some(sess) = st.session.as_ref() else {
-                app.set_status_message("没有打开的文档".into());
+                app.set_status_msg("没有打开的文档".into());
                 return;
             };
             let t = sess.get_doc_type().to_string();
@@ -1086,7 +1256,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 "calc" => (5, "xlsx"),
                 "impress" => (6, "pptx"),
                 _ => {
-                    app.set_status_message("当前文档类型不支持保存".into());
+                    app.set_status_msg("当前文档类型不支持保存".into());
                     return;
                 }
             }
@@ -1095,11 +1265,11 @@ fn main() -> Result<(), slint::PlatformError> {
             .borrow()
             .as_ref()
             .and_then(|p| p.file_stem().map(|x| x.to_string_lossy().into_owned()))
-            .unwrap_or_else(|| "未命名".to_string());
+            .unwrap_or_else(|| ui_lang::t("未命名", "Untitled").to_string());
         let default_name = format!("{}_roe.{}", stem, ext);
         let Some(mut out_path) = rfd::FileDialog::new()
             .set_file_name(default_name)
-            .add_filter("文档", &[ext])
+            .add_filter(ui_lang::t("文档", "Documents"), &[ext])
             .save_file() else { return };
         if out_path.extension().is_none() {
             out_path.set_extension(ext);
@@ -1113,7 +1283,7 @@ fn main() -> Result<(), slint::PlatformError> {
         };
         if bytes.is_empty() {
             eprintln!("[save] 序列化失败 hint={}", hint);
-            app.set_status_message("保存失败:序列化出错".into());
+            app.set_status_msg("保存失败:序列化出错".into());
             return;
         }
         let tmp = out_path.with_extension(format!("{}.tmp", ext));
@@ -1121,13 +1291,13 @@ fn main() -> Result<(), slint::PlatformError> {
         match res {
             Ok(_) => {
                 eprintln!("[save] 已保存 {:?} ({} bytes)", out_path, bytes.len());
-                app.set_status_message(format!("已保存: {}", out_path.display()).into());
+                app.set_status_msg(format!("已保存: {}", out_path.display()).into());
                 if let Some(n) = out_path.file_name() { app.set_doc_file_name(n.to_string_lossy().to_string().into()); }
             }
             Err(e) => {
                 let _ = std::fs::remove_file(&tmp);
                 eprintln!("[save] 写文件失败: {}", e);
-                app.set_status_message(format!("保存失败: {}", e).into());
+                app.set_status_msg(format!("保存失败: {}", e).into());
             }
         }
     });
@@ -1140,7 +1310,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let handle = session.new_document(1);
         if handle == 0 {
             if let Some(app) = app_weak_new_writer.upgrade() {
-                app.set_status_message("新建文档失败".into());
+                app.set_status_msg("新建文档失败".into());
             }
             return;
         }
@@ -1154,7 +1324,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let handle = session.new_document(2);
         if handle == 0 {
             if let Some(app) = app_weak_new_calc.upgrade() {
-                app.set_status_message("新建文档失败".into());
+                app.set_status_msg("新建文档失败".into());
             }
             return;
         }
@@ -1168,7 +1338,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let handle = session.new_document(3);
         if handle == 0 {
             if let Some(app) = app_weak_new_impress.upgrade() {
-                app.set_status_message("新建文档失败".into());
+                app.set_status_msg("新建文档失败".into());
             }
             return;
         }
@@ -1241,9 +1411,12 @@ fn main() -> Result<(), slint::PlatformError> {
         let mut s = state_sheet_switched.borrow_mut();
         if let Some(sess) = s.session.as_mut() {
             sess.set_current_sheet(idx);
+            ribbon::calc_home::sync_pivot_state(&app, sess, idx as u32);
+            app.set_calc_gridlines_on(sess.get_gridlines(idx as u32));
             // 滚动总宽高随 sheet 刷新(此前只在打开文件时按 sheet 0 设置一次)
             app.set_calc_sheet_total_width((sess.get_sheet_total_width(idx as u32)) * (96.0 / 72.0));
             app.set_calc_sheet_total_height((sess.get_sheet_total_height(idx as u32)) * (96.0 / 72.0));
+            calc_frozen::refresh_extent(&app, sess, idx as u32);
             {
                 let (r, c) = (app.get_calc_selected_row(), app.get_calc_selected_col());
                 if r >= 0 && c >= 0 {
@@ -1754,8 +1927,8 @@ fn main() -> Result<(), slint::PlatformError> {
             }
             return;
         }
-        let x_pt = ((mouse_x - header_col_w) + scroll_x) / PT_TO_PX;
-        let y_pt = ((mouse_y - header_row_h) + scroll_y) / PT_TO_PX;
+        let x_pt = calc_frozen::click_to_pt(mouse_x, header_col_w, scroll_x, app.get_calc_frozen_w());
+        let y_pt = calc_frozen::click_to_pt(mouse_y, header_row_h, scroll_y, app.get_calc_frozen_h());
 
         // v226: 在透视结果 sheet 上点击表格 → 展开透视面板（已有别的面板时不抢）
         let is_pivot_click = sheet_idx_click.get() as i32 == app.get_pivot_result_sheet()
@@ -2073,7 +2246,8 @@ fn main() -> Result<(), slint::PlatformError> {
         app.on_calc_obj_try_select(move |vx, vy| {
             let Some(app) = aw.upgrade() else { return false };
             let sheet = si.get();
-            let cm = calc_chart::CoordMap::new(app.get_calc_scroll_x(), app.get_calc_scroll_y());
+            let cm = calc_chart::CoordMap::new(app.get_calc_scroll_x(), app.get_calc_scroll_y())
+                .with_frozen(app.get_calc_frozen_w(), app.get_calc_frozen_h());
             let mut s = st.borrow_mut();
             refresh_float_objs(&app, &mut s, sheet);
             match s.float_store.hit_view(sheet, &cm, vx, vy) {
@@ -2087,7 +2261,8 @@ fn main() -> Result<(), slint::PlatformError> {
             let Some(app) = aw.upgrade() else { return };
             let sheet = si.get();
             let (vx, vy) = (x + calc_chart::HEADER_W, y + calc_chart::HEADER_H);
-            let cm = calc_chart::CoordMap::new(app.get_calc_scroll_x(), app.get_calc_scroll_y());
+            let cm = calc_chart::CoordMap::new(app.get_calc_scroll_x(), app.get_calc_scroll_y())
+                .with_frozen(app.get_calc_frozen_w(), app.get_calc_frozen_h());
             {
                 let mut s = st.borrow_mut();
                 refresh_float_objs(&app, &mut s, sheet);
@@ -2186,6 +2361,101 @@ fn main() -> Result<(), slint::PlatformError> {
         });
     }
 
+    // ── Calc 行列标题分隔线缩放 ─────────────────────────────────────────────
+    // 已知限制:沿用 calc-cell-click 的写死常数(标题 30x18 逻辑px、PT_TO_PX),缩放比变化后需统一改。
+    {
+        use calc_header_resize::{full_span, hit_edge, new_size, resize_targets, zone, HeaderDrag, Zone};
+        const HDR_COL_W: f32 = 30.0;
+        const HDR_ROW_H: f32 = 18.0;
+        const MIN_PT: f32 = 3.0;
+
+        let st = state.clone(); let aw = app_weak.clone(); let si = current_sheet_idx.clone();
+        app.on_calc_header_resize_start(move |x, y| {
+            let Some(app) = aw.upgrade() else { return false };
+            let z = zone(x, y, HDR_COL_W, HDR_ROW_H);
+            if z == Zone::Other { return false; }
+            let is_col = z == Zone::ColHeader;
+            let sheet = si.get();
+            let mut s = st.borrow_mut();
+            let Some(sess) = s.session.as_mut() else { return false };
+            let (pos_px, scroll, hdr) = if is_col {
+                (x, app.get_calc_scroll_x(), HDR_COL_W)
+            } else {
+                (y, app.get_calc_scroll_y(), HDR_ROW_H)
+            };
+            let fz = if is_col { app.get_calc_frozen_w() } else { app.get_calc_frozen_h() };
+            let pos_pt = calc_header_resize::edge_pos_pt(pos_px, hdr, scroll, fz, 4.0, PT_TO_PX);
+            let tol_pt = 4.0 / PT_TO_PX;
+            let hit = if is_col {
+                hit_edge(pos_pt, tol_pt, |p| sess.get_col_at_offset(sheet, p), |c| sess.get_col_offset_pt(sheet, c))
+            } else {
+                hit_edge(pos_pt, tol_pt, |p| sess.get_row_at_offset(sheet, p), |r| sess.get_row_offset_pt(sheet, r))
+            };
+            let Some(index) = hit else { return false };
+            let orig_pt = if is_col { sess.get_column_width_pt(sheet, index) } else { sess.get_row_height_pt(sheet, index) };
+            // 反推整列/整行选区
+            let (fill_rows, fill_cols) = calc_selection::fill_extent(&app, sess, sheet);
+            let (ar, ac) = (app.get_calc_selected_row().max(0) as u32, app.get_calc_selected_col().max(0) as u32);
+            let (er, ec) = (app.get_calc_sel_end_row(), app.get_calc_sel_end_col());
+            let (er, ec) = if er < 0 || ec < 0 { (ar, ac) } else { (er as u32, ec as u32) };
+            let span = if is_col { full_span(ar, er, fill_rows, ac, ec) } else { full_span(ac, ec, fill_cols, ar, er) };
+            let selected: Vec<(u32, u32)> = span.into_iter().collect();
+            let targets = resize_targets(index, &selected);
+            s.header_drag = Some(HeaderDrag { is_col, index, orig_pt, start_px: pos_px, targets });
+            app.set_calc_header_resizing(true);
+            app.set_calc_header_guide_is_col(is_col);
+            app.set_calc_header_guide(pos_px);
+            true
+        });
+
+        let st = state.clone(); let aw = app_weak.clone(); let si = current_sheet_idx.clone();
+        app.on_calc_header_resize_move(move |x, y| {
+            let Some(app) = aw.upgrade() else { return };
+            let sheet = si.get();
+            let mut s = st.borrow_mut();
+            let Some(d) = s.header_drag.clone() else { return };
+            let Some(sess) = s.session.as_mut() else { return };
+            let cur = if d.is_col { x } else { y };
+            let new_pt = new_size(d.orig_pt, cur - d.start_px, PT_TO_PX, MIN_PT);
+            let (hdr, scroll) = if d.is_col { (HDR_COL_W, app.get_calc_scroll_x()) } else { (HDR_ROW_H, app.get_calc_scroll_y()) };
+            let off = if d.is_col { sess.get_col_offset_pt(sheet, d.index) } else { sess.get_row_offset_pt(sheet, d.index) };
+            let fz = if d.is_col { app.get_calc_frozen_w() } else { app.get_calc_frozen_h() };
+            app.set_calc_header_guide(calc_header_resize::guide_px(hdr, off, new_pt, scroll, fz, PT_TO_PX));
+        });
+
+        let st = state.clone(); let aw = app_weak.clone(); let si = current_sheet_idx.clone();
+        app.on_calc_header_resize_end(move |x, y| {
+            let Some(app) = aw.upgrade() else { return };
+            let sheet = si.get();
+            let mut s = st.borrow_mut();
+            let Some(d) = s.header_drag.take() else { return };
+            app.set_calc_header_resizing(false);
+            let cur = if d.is_col { x } else { y };
+            if (cur - d.start_px).abs() < 0.5 { return; } // 没有位移,不改
+            let new_pt = new_size(d.orig_pt, cur - d.start_px, PT_TO_PX, MIN_PT);
+            let mut merges = std::mem::take(&mut s.calc_merges);
+            if let Some(sess) = s.session.as_mut() {
+                sess.begin_edit();
+                let mut ok = true;
+                'all: for &(a, b) in &d.targets {
+                    for i in a..=b {
+                        let r = if d.is_col { sess.set_column_width_pt(sheet, i, new_pt) } else { sess.set_row_height_pt(sheet, i, new_pt) };
+                        if !r { ok = false; break 'all; }
+                    }
+                }
+                if ok { sess.commit_edit(); } else { sess.discard_edit(); }
+                eprintln!("[CALC-HEADER-RESIZE] is_col={} index={} new_pt={:.1} targets={:?} ok={}", d.is_col, d.index, new_pt, d.targets, ok);
+                app.set_calc_sheet_total_width(sess.get_sheet_total_width(sheet) * (96.0 / 72.0));
+                app.set_calc_sheet_total_height(sess.get_sheet_total_height(sheet) * (96.0 / 72.0));
+                calc_frozen::refresh_extent(&app, sess, sheet);
+                ribbon::calc_home::refresh_view(&app, sess);
+                calc_selection::refresh_merges(&mut merges, sess, sheet);
+                calc_selection::reapply(&app, sess, &merges, sheet);
+            }
+            s.calc_merges = merges;
+        });
+    }
+
     // ── Calc 拖拽范围选择 ──────────────────────────────────────────────────────
     let state_drag = state.clone();
     let app_weak_drag = app_weak.clone();
@@ -2201,8 +2471,8 @@ fn main() -> Result<(), slint::PlatformError> {
         let start_row = app.get_calc_selected_row();
         if start_col < 0 || start_row < 0 { return; }
         if mouse_x < header_col_w || mouse_y < header_row_h { return; }
-        let x_pt = ((mouse_x - header_col_w) + scroll_x) / PT_TO_PX;
-        let y_pt = ((mouse_y - header_row_h) + scroll_y) / PT_TO_PX;
+        let x_pt = calc_frozen::click_to_pt(mouse_x, header_col_w, scroll_x, app.get_calc_frozen_w());
+        let y_pt = calc_frozen::click_to_pt(mouse_y, header_row_h, scroll_y, app.get_calc_frozen_h());
         let mut s = state_drag.borrow_mut();
         let merges = s.calc_merges.clone();
         if let Some(sess) = s.session.as_mut() {
@@ -2428,7 +2698,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let aw = app_weak.clone();
         app.on_goto_page(move |p| {
             let Some(app) = aw.upgrade() else { return };
-            let Ok(n) = p.trim().parse::<i32>() else { app.set_status_message("请输入页码".into()); return; };
+            let Ok(n) = p.trim().parse::<i32>() else { app.set_status_msg("请输入页码".into()); return; };
             let mut s = st.borrow_mut();
             let Some(sess) = s.session.as_mut() else { return };
             if sess.get_doc_type() != "writer" { return; }
@@ -2443,7 +2713,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let target = (tops[(n - 1) as usize] - 8.0).max(0.0).min(max_scroll);
             app.invoke_scroll_writer_to(target);
             app.set_page_current(n);
-            app.set_status_message(format!("已转到第 {} 页，共 {} 页", n, total).into());
+            app.set_status_msg(format!("已转到第 {} 页，共 {} 页", n, total).into());
         });
     }
 
@@ -3181,7 +3451,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 {
                     let mut s = state_ic.borrow_mut();
                     let is_chart = s.session.as_mut()
-                        .and_then(|sess| sess.impress_get_chart_json(idx, id)).is_some();
+                        .map(|sess| sess.impress_is_chart_like(idx, id)).unwrap_or(false);
                     app.set_impress_sel_is_chart(is_chart);
                 }
                 let li = {
@@ -3556,7 +3826,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 r
             };
             eprintln!("[IMPRESS-SLIDE] new after={} -> {}", cur, new_idx);
-            if new_idx < 0 { app.set_status_message("新建幻灯片失败".into()); return; }
+            if new_idx < 0 { app.set_status_msg("新建幻灯片失败".into()); return; }
             impress_reload_slides_v220(&app, &state, new_idx + 1);
         });
     }
@@ -3618,7 +3888,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 r
             };
             eprintln!("[IMPRESS-SLIDE] pick layout slide={} layout={} ok={}", cur, idx, ok);
-            if !ok { app.set_status_message("set layout failed".into()); return; }
+            if !ok { app.set_status_msg("set layout failed".into()); return; }
             impress_reload_slides_v220(&app, &state, cur as i32 + 1);
         });
     }
@@ -3642,7 +3912,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             };
             eprintln!("[IMPRESS-SLIDE] reset layout slide={} ok={}", cur, ok);
-            if !ok { app.set_status_message("重置版式失败".into()); return; }
+            if !ok { app.set_status_msg("重置版式失败".into()); return; }
             impress_reload_slides_v220(&app, &state, cur as i32 + 1);
         });
     }
@@ -3662,7 +3932,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 r
             };
             eprintln!("[IMPRESS-SLIDE] duplicate {} -> {}", idx, new_idx);
-            if new_idx < 0 { app.set_status_message("复制幻灯片失败".into()); return; }
+            if new_idx < 0 { app.set_status_msg("复制幻灯片失败".into()); return; }
             impress_reload_slides_v220(&app, &state, new_idx + 1);
         });
     }
@@ -3672,7 +3942,7 @@ fn main() -> Result<(), slint::PlatformError> {
         app.on_impress_slide_delete(move |idx| {
             let app = match app_weak.upgrade() { Some(a) => a, None => return };
             if app.get_impress_slide_count() <= 1 {
-                app.set_status_message("至少保留一张幻灯片".into());
+                app.set_status_msg("至少保留一张幻灯片".into());
                 return;
             }
             if app.get_impress_text_edit_id() >= 0 { app.invoke_impress_text_exit(); }
@@ -3686,7 +3956,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 r
             };
             eprintln!("[IMPRESS-SLIDE] delete {} -> ok={}", idx, ok);
-            if !ok { app.set_status_message("删除幻灯片失败".into()); return; }
+            if !ok { app.set_status_msg("删除幻灯片失败".into()); return; }
             impress_reload_slides_v220(&app, &state, idx + 1);
         });
     }
@@ -3885,16 +4155,16 @@ fn main() -> Result<(), slint::PlatformError> {
     app.on_impress_insert_image_clicked(move || {
         let app = match app_weak_img.upgrade() { Some(a) => a, None => return };
         let file = rfd::FileDialog::new()
-            .add_filter("图片", &["png", "jpg", "jpeg"])
+            .add_filter(ui_lang::t("图片", "Images"), &["png", "jpg", "jpeg"])
             .pick_file();
         let Some(path) = file else { return; };
         let bytes = match std::fs::read(&path) {
             Ok(b) => b,
-            Err(e) => { app.set_status_message(format!("读取图片失败: {}", e).into()); return; }
+            Err(e) => { app.set_status_msg(format!("读取图片失败: {}", e).into()); return; }
         };
         let (iw, ih) = match doc_core::TileCacheRust::impress_image_dimensions(&bytes) {
             Some(v) if v.0 > 0 && v.1 > 0 => v,
-            _ => { app.set_status_message("无法识别图片（仅支持 PNG/JPEG）".into()); return; }
+            _ => { app.set_status_msg("无法识别图片（仅支持 PNG/JPEG）".into()); return; }
         };
         let idx = (app.get_impress_current_slide() - 1).max(0) as u32;
         if app.get_impress_master_mode() {
@@ -3914,7 +4184,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 if id < 0 { sess.discard_edit(); None } else { sess.commit_edit(); Some(id as u32) }
             };
             match new_id {
-                None => app.set_status_message("插入图片失败".into()),
+                None => app.set_status_msg("插入图片失败".into()),
                 Some(id) => {
                     show_master_canvas(&app, &state_img, m_row);
                     refresh_master_thumb_one(&app, &state_img, m_row);
@@ -3952,7 +4222,7 @@ fn main() -> Result<(), slint::PlatformError> {
         };
         eprintln!("[IMPRESS-IMAGE] {}x{} -> rect=({:.1},{:.1},{:.1},{:.1}) id={:?}", iw, ih, x, y, w, h, new_id);
         match new_id {
-            None => app.set_status_message("插入图片失败".into()),
+            None => app.set_status_msg("插入图片失败".into()),
             Some(id) => {
                 app.invoke_impress_render_viewport(0.0);
                 let q = {
@@ -3983,13 +4253,13 @@ fn main() -> Result<(), slint::PlatformError> {
         let defs = crate::chart_registry::types_in_cat(cat);
         if defs.is_empty() { return; }
         let ty = (ty.max(0) as usize).min(defs.len() - 1);
-        let cats: Vec<slint::SharedString> = crate::chart_registry::CATS.iter().map(|s| (*s).into()).collect();
+        let cats: Vec<slint::SharedString> = crate::chart_registry::CATS.iter().map(|s| crate::ui_lang::tr_chart(s).into()).collect();
         app.set_chart2_cats(slint::ModelRc::new(slint::VecModel::from(cats)));
-        let names: Vec<slint::SharedString> = defs.iter().map(|d| d.name.into()).collect();
+        let names: Vec<slint::SharedString> = defs.iter().map(|d| crate::ui_lang::tr_chart(d.name).into()).collect();
         app.set_chart2_type_names(slint::ModelRc::new(slint::VecModel::from(names)));
         let ids: Vec<slint::SharedString> = defs.iter().map(|d| d.id.into()).collect();
         app.set_chart2_type_ids(slint::ModelRc::new(slint::VecModel::from(ids)));
-        app.set_chart2_type_title(defs[ty].name.into());
+        app.set_chart2_type_title(crate::ui_lang::tr_chart(defs[ty].name).into());
         let pkey = (cat, ty);
         if let Some(im) = c2_prev_cache.borrow().get(&pkey).cloned() {
             app.set_chart2_preview(im);
@@ -4031,7 +4301,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let is_writer = state_cins.borrow().session.as_ref().map(|x| x.get_doc_type() == "writer").unwrap_or(false);
             if is_writer {
                 let (p, o) = { let s = state_cins.borrow(); (s.writer_cursor_para, s.writer_cursor_offset) };
-                if p < 0 || o < 0 { app.set_status_message("请先在正文中点击要插入图表的位置".into()); return; }
+                if p < 0 || o < 0 { app.set_status_msg("请先在正文中点击要插入图表的位置".into()); return; }
                 let page_w: f32 = app.get_writer_doc_width_pt() as f32;
                 let w = (page_w - 144.0).clamp(200.0, 432.0);
                 let h = w * 0.5625;
@@ -4049,9 +4319,9 @@ fn main() -> Result<(), slint::PlatformError> {
                             writer_refresh_canvas(&app, &mut s);
                         }
                         app.set_writer_needs_render(true);
-                        app.set_status_message("已插入图表".into());
+                        app.set_status_msg("已插入图表".into());
                     }
-                    Some(Err(e)) => app.set_status_message(format!("插入图表失败: {}", e).into()),
+                    Some(Err(e)) => app.set_status_msg(format!("插入图表失败: {}", e).into()),
                     None => {}
                 }
                 return;
@@ -4088,7 +4358,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 .and_then(|m| crate::chart_registry::extract_chart_data(&m));
             let data = match data {
                 Some(d) => d,
-                None => { app.set_status_message("插入图表失败：所选区域没有可用于绘图的数据".into()); return; }
+                None => { app.set_status_msg("插入图表失败：所选区域没有可用于绘图的数据".into()); return; }
             };
 
             // 落点：视口中心(逻辑 px) -> pt。px = pt*96/72 - scroll + 表头(30,18)
@@ -4124,7 +4394,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             };
             if chart_id == 0 {
-                app.set_status_message("插入图表失败".into());
+                app.set_status_msg("插入图表失败".into());
                 return;
             }
 
@@ -4147,7 +4417,7 @@ fn main() -> Result<(), slint::PlatformError> {
 
             refresh_float_objs(&app, &mut s, sheet_idx);
             for w in &data.warnings { eprintln!("[CHART2-CALC] {}", w); }
-            if let Some(w) = data.warnings.first() { app.set_status_message(w.as_str().into()); }
+            if let Some(w) = data.warnings.first() { app.set_status_msg(w.as_str().into()); }
             eprintln!("[CHART2-CALC] 插入 id={} sel=({},{})-({},{})", chart_id, r1, c1, r2, c2);
             return;
         }
@@ -4171,7 +4441,7 @@ fn main() -> Result<(), slint::PlatformError> {
         };
         eprintln!("[IMPRESS-CHART] rect=({:.1},{:.1},{:.1},{:.1}) id={:?}", x, y, w, h, new_id);
         match new_id {
-            None => app.set_status_message("插入图表失败".into()),
+            None => app.set_status_msg("插入图表失败".into()),
             Some(id) => {
                 app.invoke_impress_render_viewport(0.0);
                 let q = {
@@ -4914,7 +5184,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             let cmd = cmd.to_string();
             let sel = app.get_impress_sel_id();
             if sel < 0 {
-                app.set_status_message("请先选中文本框".into());
+                app.set_status_msg("请先选中文本框".into());
                 return;
             }
             let editing = app.get_impress_text_edit_id() == sel;
@@ -4941,7 +5211,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 done
             };
             if ok { app.invoke_impress_render_viewport(0.0); }
-            else { app.set_status_message("设置段落样式失败".into()); }
+            else { app.set_status_msg("设置段落样式失败".into()); }
         });
     }
     app.on_impress_wheel_scrolled(move |delta_y| {
@@ -4980,6 +5250,8 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
         }
         let app = match app_weak_wk.upgrade() { Some(a) => a, None => return };
         let mut s = state_writer_key.borrow_mut();
+        // v302: 有选区时先删除选区，再按折叠后的光标输入
+        writer_delete_selection(&app, &mut s);
         // 先读光标位置，再借用session（避免借用冲突）
         let para = s.writer_cursor_para;
         let offset = s.writer_cursor_offset;
@@ -5102,6 +5374,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                                 app.set_writer_cursor_y(cy as i32);
                                 app.set_writer_cursor_h(ch_h as i32);
                                 app.set_writer_cursor_visible(true);
+                                app.set_formula_box_visible(false);
                             }
                         }
                     }
@@ -5176,8 +5449,40 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
     // ── Writer点击（记录光标位置，暂时只打log）────────────────────────────────
     let state_wclick = state.clone();
     let app_weak_wclick = app_weak.clone();
+    {
+        // v309: 悬停修订文字显示作者、类型、时间
+        let app_weak_hv = app.as_weak();
+        let state_hv = state.clone();
+        let last_hv = std::cell::Cell::new(std::time::Instant::now());
+        app.on_writer_hover(move |x, y| {
+            let now = std::time::Instant::now();
+            if now.duration_since(last_hv.get()).as_millis() < 60 { return; }
+            last_hv.set(now);
+            let Some(app) = app_weak_hv.upgrade() else { return };
+            let tip: Option<String> = {
+                let Ok(mut s) = state_hv.try_borrow_mut() else { return };
+                let Some(sess) = s.session.as_mut() else { return };
+                let (para, off) = sess.writer_hit_test(x, y - doc_core::CANVAS_OFFSET_PT);
+                if para < 0 || off < 0 { None } else {
+                    let (p, o) = (para as u32, off as u32);
+                    sess.writer_list_revisions().into_iter()
+                        .find(|r| r.para == p && r.start <= o && o <= r.end)
+                        .map(|r| {
+                            let kind = if r.kind == "delete" { "删除" } else { "插入" };
+                            let date = r.date.replace('T', " ").trim_end_matches('Z').to_string();
+                            let date = date.get(..16).unwrap_or(&date).to_string();
+                            format!("{}：{}\n{}", r.author, kind, date)
+                        })
+                }
+            };
+            match tip {
+                Some(t) => { app.set_writer_rev_tip_text(t.into()); app.set_writer_rev_tip_visible(true); }
+                None => app.set_writer_rev_tip_visible(false),
+            }
+        });
+    }
     app.on_writer_click(move |x, y| {
-        eprintln!("[WRITER-CLICK] x={:.1} y={:.1}", x, y);
+        /*DBGOFF eprintln!("[WRITER-CLICK] x={:.1} y={:.1}", x, y); DBGOFF*/
         // v232: 位置离按下点超过3个单位 = 拖选结束，保留拖选得到的选区，不按"点击"折叠
         {
             let mut st = state_wclick.borrow_mut();
@@ -5299,9 +5604,11 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 eprintln!("[V115-DIAG-CLICK] 写入后立刻读回: s.writer_cursor_para={} s.writer_cursor_offset={} (期望等于 para={} offset={})", s.writer_cursor_para, s.writer_cursor_offset, para, offset);
                 // 点击是"非上下移动"操作，按final文档五.2规则，需要重新计算并覆盖ideal_x
                 s.writer_cursor_ideal_x = Some(cx);
-                // 点击会折叠选区：锚点=焦点
-                s.writer_sel_anchor_para = para;
-                s.writer_sel_anchor_offset = offset;
+                // 点击会折叠选区：锚点=焦点（v304: Shift+点击保持锚点）
+                if !(app.get_writer_shift_down() && s.writer_sel_anchor_para >= 0) {
+                    s.writer_sel_anchor_para = para;
+                    s.writer_sel_anchor_offset = offset;
+                }
                 // v95再修正：Writer视口坐标系是「pt数值直接当px用」，不乘PT_TO_PX
                 // （writer-doc-width-pt这个property本身就是这么用的，见app.slint 1125/1127行）。
                 app.set_writer_cursor_x(cx as i32);
@@ -5332,7 +5639,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                     }
                     app.set_writer_needs_render(true);
                 }
-                Some(Err(e)) => app.set_status_message(format!("调整图片失败: {}", e).into()),
+                Some(Err(e)) => app.set_status_msg(format!("调整图片失败: {}", e).into()),
                 None => {}
             }
         });
@@ -5340,13 +5647,15 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
     // v318n: 图表「编辑数据」小窗口（Writer）
     {
         const CD_STRIDE: usize = 13;
-        const CD_MAXR: usize = 51;
+        const CD_MAXR: usize = 501;
         const CD_MAXC: usize = 12;
+        let cd_stat = std::rc::Rc::new(std::cell::Cell::new(false));
 
         // 打开：取 JSON → 填表格
         {
             let app_weak_cd = app_weak.clone();
             let state_cd = state.clone();
+            let cd_stat_open = cd_stat.clone();
             app.on_chart_edit_data(move || {
                 let Some(app) = app_weak_cd.upgrade() else { return };
                 let is_imp_doc = {
@@ -5357,6 +5666,81 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 app.set_chart_dlg_impress(imp);
                 let idx = app.get_writer_obj_sel();
                 if idx < 0 && !imp { return; }
+                cd_stat_open.set(false);
+                app.set_chart_dlg_stat(false);
+                if imp || idx >= 0 {
+                    let sl = (app.get_impress_current_slide() - 1).max(0) as u32;
+                    let sid = app.get_impress_sel_id() as u32;
+                    let stat_json = {
+                        let mut s = state_cd.borrow_mut();
+                        s.session.as_mut().and_then(|x| if imp {
+                            x.impress_get_stat_chart_json(sl, sid)
+                        } else {
+                            x.writer_get_stat_chart_json(idx as u32)
+                        })
+                    };
+                    if let Some(sj) = stat_json {
+                        let v: serde_json::Value = match serde_json::from_str(&sj) {
+                            Ok(v) => v,
+                            Err(e) => {
+                                app.set_status_msg(format!("统计图数据解析失败: {}", e).into());
+                                return;
+                            }
+                        };
+                        let d0 = &v["data"][0];
+                        let cats: Vec<Vec<String>> = d0["categories"].as_array()
+                            .map(|a| a.iter().map(|lv| lv.as_array()
+                                .map(|x| x.iter().map(|s| s.as_str().unwrap_or("").to_string()).collect())
+                                .unwrap_or_default()).collect())
+                            .unwrap_or_default();
+                        let vals: Vec<Option<f64>> = d0["values"].as_array()
+                            .map(|a| a.iter().map(|x| x.as_f64()).collect())
+                            .unwrap_or_default();
+                        let lc = cats.len();
+                        let is_wf = v["kind"].as_str().map(|k| k.eq_ignore_ascii_case("waterfall")).unwrap_or(false)
+                            || v["series"][0]["layout_id"].as_str() == Some("waterfall");
+                        let extra: usize = if is_wf { 1 } else { 0 };
+                        let n = cats.iter().map(|c| c.len()).max().unwrap_or(0).max(vals.len());
+                        if n > CD_MAXR - 1 || lc + extra > CD_MAXC {
+                            app.set_status_msg(format!("统计图数据 {} 行 × {} 层类目,超过编辑上限({} 行 × {} 列),暂不支持编辑", n, lc, CD_MAXR - 1, CD_MAXC).into());
+                            return;
+                        }
+                        let rows = n.max(1);
+                        let vcol = lc.max(1);
+                        let cols = vcol + extra;
+                        let d0_id = d0["id"].as_u64();
+                        let mut subs = std::collections::HashSet::<usize>::new();
+                        if let Some(sa) = v["series"].as_array() {
+                            for sv in sa {
+                                if sv["data_id"].as_u64() == d0_id {
+                                    if let Some(a) = sv["subtotals"].as_array() {
+                                        for x in a { if let Some(i) = x.as_u64() { subs.insert(i as usize); } }
+                                    }
+                                }
+                            }
+                        }
+                        let mut cells = vec![slint::SharedString::default(); CD_STRIDE * CD_MAXR];
+                        for l in 1..lc { cells[l] = format!("类目{}", l + 1).into(); }
+                        cells[vcol] = "值".into();
+                        if is_wf { cells[vcol + 1] = "汇总(0/1)".into(); }
+                        for r in 0..rows {
+                            for l in 0..lc {
+                                if let Some(t) = cats[l].get(r) { cells[(r + 1) * CD_STRIDE + l] = t.as_str().into(); }
+                            }
+                            if let Some(Some(f)) = vals.get(r) { cells[(r + 1) * CD_STRIDE + vcol] = format!("{}", f).into(); }
+                            if is_wf { cells[(r + 1) * CD_STRIDE + vcol + 1] = if subs.contains(&r) { "1" } else { "0" }.into(); }
+                        }
+                        app.set_chart_dlg_rows(rows as i32);
+                        app.set_chart_dlg_cols(cols as i32);
+                        app.set_chart_dlg_single(false);
+                        app.set_chart_dlg_cells(slint::ModelRc::new(slint::VecModel::from(cells)));
+                        app.set_chart_dlg_gen(app.get_chart_dlg_gen() + 1);
+                        cd_stat_open.set(true);
+                        app.set_chart_dlg_stat(true);
+                        app.set_chart_dlg_visible(true);
+                        return;
+                    }
+                }
                 let json = {
                     let mut s = state_cd.borrow_mut();
                     if imp {
@@ -5368,13 +5752,13 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                     }
                 };
                 let Some(json) = json else {
-                    app.set_status_message("该图表暂不支持编辑数据".into());
+                    app.set_status_msg("该图表暂不支持编辑数据".into());
                     return;
                 };
                 let v: serde_json::Value = match serde_json::from_str(&json) {
                     Ok(v) => v,
                     Err(e) => {
-                        app.set_status_message(format!("图表数据解析失败: {}", e).into());
+                        app.set_status_msg(format!("图表数据解析失败: {}", e).into());
                         return;
                     }
                 };
@@ -5419,11 +5803,13 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
         // 加行/加列/删行/删列
         {
             let app_weak_cr = app_weak.clone();
+            let cd_stat_cr = cd_stat.clone();
             app.on_chart_dlg_resize(move |dr, dc| {
                 let Some(app) = app_weak_cr.upgrade() else { return };
                 let rows = (app.get_chart_dlg_rows() + dr).clamp(1, (CD_MAXR - 1) as i32);
                 let mut cols = (app.get_chart_dlg_cols() + dc).clamp(1, CD_MAXC as i32);
                 if app.get_chart_dlg_single() { cols = 1; }
+                if cd_stat_cr.get() { cols = app.get_chart_dlg_cols(); }
                 let cells = app.get_chart_dlg_cells();
                 for r in 0..CD_MAXR {
                     for c in 0..CD_STRIDE {
@@ -5441,12 +5827,14 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
         // 行列互换
         {
             let app_weak_ct = app_weak.clone();
+            let cd_stat_ct = cd_stat.clone();
             app.on_chart_dlg_transpose(move || {
                 let Some(app) = app_weak_ct.upgrade() else { return };
+                if cd_stat_ct.get() { app.set_status_msg("统计图数据不支持行列互换".into()); return; }
                 let rows = app.get_chart_dlg_rows() as usize;
                 let cols = app.get_chart_dlg_cols() as usize;
                 if cols > CD_MAXR - 1 || rows > CD_MAXC {
-                    app.set_status_message("行列互换后超出 50 行 × 12 列上限".into());
+                    app.set_status_msg(format!("行列互换后超出 {} 行 × {} 列上限", CD_MAXR - 1, CD_MAXC).into());
                     return;
                 }
                 let cells = app.get_chart_dlg_cells();
@@ -5469,9 +5857,91 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
         {
             let app_weak_cc = app_weak.clone();
             let state_cc = state.clone();
+            let cd_stat_cc = cd_stat.clone();
             app.on_chart_dlg_confirm(move || {
                 let Some(app) = app_weak_cc.upgrade() else { return };
                 let imp = app.get_chart_dlg_impress();
+                if cd_stat_cc.get() {
+                    let widx = app.get_writer_obj_sel();
+                    let sl = (app.get_impress_current_slide() - 1).max(0) as u32;
+                    let sid = app.get_impress_sel_id() as u32;
+                    let cur = {
+                        let mut s = state_cc.borrow_mut();
+                        s.session.as_mut().and_then(|x| if imp {
+                            x.impress_get_stat_chart_json(sl, sid)
+                        } else {
+                            x.writer_get_stat_chart_json(widx.max(0) as u32)
+                        })
+                    };
+                    let cur_v = cur.and_then(|j| serde_json::from_str::<serde_json::Value>(&j).ok());
+                    let is_wf = cur_v.as_ref().map(|v| {
+                        v["kind"].as_str().map(|k| k.eq_ignore_ascii_case("waterfall")).unwrap_or(false)
+                            || v["series"][0]["layout_id"].as_str() == Some("waterfall")
+                    }).unwrap_or(false);
+                    let lc = cur_v
+                        .and_then(|v| v["data"][0]["categories"].as_array().map(|a| a.len()));
+                    let Some(lc) = lc else {
+                        app.set_status_msg("读取统计图失败,未写回".into());
+                        return;
+                    };
+                    let rows = app.get_chart_dlg_rows().max(1) as usize;
+                    let cols = app.get_chart_dlg_cols().max(1) as usize;
+                    let cells = app.get_chart_dlg_cells();
+                    let get = |r: usize, c: usize| -> String {
+                        slint::Model::row_data(&cells, r * CD_STRIDE + c)
+                            .map(|s| s.to_string())
+                            .unwrap_or_default()
+                    };
+                    let vcol = if is_wf { cols - 1 } else { cols };
+                    let cats: Vec<Vec<String>> = (0..lc)
+                        .map(|l| (0..rows).map(|r| get(r + 1, l)).collect())
+                        .collect();
+                    let vals: Vec<serde_json::Value> = (0..rows).map(|r| {
+                        match get(r + 1, vcol).trim().parse::<f64>() {
+                            Ok(f) if f.is_finite() => serde_json::json!(f),
+                            _ => serde_json::Value::Null,
+                        }
+                    }).collect();
+                    let mut out_v = serde_json::json!({"categories": cats, "values": vals});
+                    if is_wf {
+                        let subs: Vec<usize> = (0..rows).filter(|&r| {
+                            let t = get(r + 1, cols).trim().to_lowercase();
+                            t == "1" || t == "true" || t == "是"
+                        }).collect();
+                        out_v["subtotals"] = serde_json::json!(subs);
+                    }
+                    let out = out_v.to_string();
+                    let ret = {
+                        let mut s = state_cc.borrow_mut();
+                        s.session.as_mut().map(|x| {
+                            if imp {
+                                let n = x.impress_set_stat_chart_data(sl, sid, &out);
+                                if n >= 0 { x.commit_edit(); }
+                                n
+                            } else {
+                                x.writer_set_stat_chart_data(widx.max(0) as u32, &out)
+                            }
+                        }).unwrap_or(-1)
+                    };
+                    if ret >= 0 {
+                        app.set_chart_dlg_visible(false);
+                        if imp {
+                            app.invoke_impress_render_viewport(0.0);
+                        } else {
+                            {
+                                let mut s = state_cc.borrow_mut();
+                                writer_refresh_canvas(&app, &mut s);
+                            }
+                            app.set_writer_needs_render(true);
+                        }
+                        if ret > 0 {
+                            app.set_status_msg(format!("已丢弃 {} 个越界的汇总柱下标", ret).into());
+                        }
+                    } else {
+                        app.set_status_msg("写回统计图数据失败".into());
+                    }
+                    return;
+                }
                 let idx = app.get_writer_obj_sel();
                 if idx < 0 && !imp {
                     app.set_chart_dlg_visible(false);
@@ -5488,13 +5958,13 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                     }
                 };
                 let Some(json) = json else {
-                    app.set_status_message("读取图表失败，未写回".into());
+                    app.set_status_msg("读取图表失败，未写回".into());
                     return;
                 };
                 let mut v: serde_json::Value = match serde_json::from_str(&json) {
                     Ok(v) => v,
                     Err(e) => {
-                        app.set_status_message(format!("图表数据解析失败: {}", e).into());
+                        app.set_status_msg(format!("图表数据解析失败: {}", e).into());
                         return;
                     }
                 };
@@ -5537,7 +6007,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 let out = match serde_json::to_string(&v) {
                     Ok(s) => s,
                     Err(e) => {
-                        app.set_status_message(format!("序列化失败: {}", e).into());
+                        app.set_status_msg(format!("序列化失败: {}", e).into());
                         return;
                     }
                 };
@@ -5559,7 +6029,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                         app.set_chart_dlg_visible(false);
                         app.invoke_impress_render_viewport(0.0);
                     } else {
-                        app.set_status_message("写回图表数据失败".into());
+                        app.set_status_msg("写回图表数据失败".into());
                     }
                     return;
                 }
@@ -5576,7 +6046,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                         }
                         app.set_writer_needs_render(true);
                     }
-                    Some(Err(e)) => app.set_status_message(format!("写回图表数据失败: {}", e).into()),
+                    Some(Err(e)) => app.set_status_msg(format!("写回图表数据失败: {}", e).into()),
                     None => {}
                 }
             });
@@ -5589,14 +6059,31 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
         app.on_impress_probe_chart(move || {
             let Some(app) = app_weak_pc.upgrade() else { return };
             let id = app.get_impress_sel_id();
-            if id < 0 { app.set_impress_sel_is_chart(false); return; }
+            if id < 0 {
+                app.set_impress_sel_is_chart(false);
+                let t = app.get_active_impress_tab().to_string();
+                if !app.get_impress_master_mode() && (t == "shape" || t == "chart") {
+                    app.set_active_impress_tab("home".into());
+                }
+                return;
+            }
             let sl = (app.get_impress_current_slide() - 1).max(0) as u32;
             let is_chart = match state_pc.try_borrow_mut() {
                 Ok(mut s) => s.session.as_mut()
-                    .and_then(|x| x.impress_get_chart_json(sl, id as u32)).is_some(),
+                    .map(|x| x.impress_is_chart_like(sl, id as u32)).unwrap_or(false),
                 Err(_) => false,
             };
             app.set_impress_sel_is_chart(is_chart);
+            if !app.get_impress_master_mode() {
+                app.set_active_impress_tab(if is_chart { "chart" } else { "shape" }.into());
+            }
+            if is_chart {
+                let cfg = match state_pc.try_borrow_mut() {
+                    Ok(mut s) => s.session.as_mut().and_then(|x| x.impress_get_chart_config(sl, id as u32)),
+                    Err(_) => None,
+                };
+                if let Some(j) = cfg { fill_chart_design_props(&app, &j); }
+            }
         });
     }
     // v309: Writer 插入表格
@@ -5621,7 +6108,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                     }
                     app.set_writer_needs_render(true);
                 }
-                Some(Err(e)) => app.set_status_message(format!("插入表格失败: {}", e).into()),
+                Some(Err(e)) => app.set_status_msg(format!("插入表格失败: {}", e).into()),
                 None => {}
             }
         });
@@ -5646,7 +6133,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                     }
                     app.set_writer_needs_render(true);
                 }
-                Some(Err(e)) => app.set_status_message(format!("旋转失败: {}", e).into()),
+                Some(Err(e)) => app.set_status_msg(format!("旋转失败: {}", e).into()),
                 None => {}
             }
         });
@@ -5665,6 +6152,11 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             let is_shape = kind == 2;
             app.set_writer_obj_is_shape(is_shape);
             app.set_writer_obj_is_chart(kind == 3);
+            if kind == 3 {
+                let cfg = state_sc.try_borrow().ok()
+                    .and_then(|s| s.session.as_ref().and_then(|x| x.writer_get_chart_config(idx as u32)));
+                if let Some(j) = cfg { fill_chart_design_props(&app, &j); }
+            }
             let rot = if idx < 0 { 0.0 } else {
                 state_sc.try_borrow().ok()
                     .and_then(|s| s.session.as_ref().map(|x| x.writer_object_rotation(idx as u32)))
@@ -5673,6 +6165,8 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             app.set_writer_obj_rot(rot);
             if is_shape {
                 app.set_active_ribbon_tab("shapefmt".into());
+            } else if kind == 3 {
+                app.set_active_ribbon_tab("chart".into());
             } else if app.get_active_ribbon_tab().as_str() == "shapefmt" {
                 app.set_active_ribbon_tab("home".into());
             }
@@ -5706,7 +6200,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                     }
                     app.set_writer_needs_render(true);
                 }
-                Some(Err(e)) => app.set_status_message(format!("设置形状样式失败: {}", e).into()),
+                Some(Err(e)) => app.set_status_msg(format!("设置形状样式失败: {}", e).into()),
                 None => {}
             }
         });
@@ -5717,11 +6211,11 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
         let state_bi = state.clone();
         app.on_impress_bg_image(move || {
             let Some(app) = app_weak_bi.upgrade() else { return };
-            let file = rfd::FileDialog::new().add_filter("图片", &["png", "jpg", "jpeg"]).pick_file();
+            let file = rfd::FileDialog::new().add_filter(ui_lang::t("图片", "Images"), &["png", "jpg", "jpeg"]).pick_file();
             let Some(path) = file else { return };
             let bytes = match std::fs::read(&path) {
                 Ok(b) => b,
-                Err(e) => { app.set_status_message(format!("读取图片失败: {}", e).into()); return; }
+                Err(e) => { app.set_status_msg(format!("读取图片失败: {}", e).into()); return; }
             };
             let is_png = bytes.starts_with(&[0x89, b'P', b'N', b'G']);
             let mime = if is_png { "image/png" } else { "image/jpeg" };
@@ -5740,7 +6234,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 if ok {
                     show_master_canvas(&app, &state_bi, m_row);
                     refresh_master_thumb_one(&app, &state_bi, m_row);
-                } else { app.set_status_message("设置图片背景失败".into()); }
+                } else { app.set_status_msg("设置图片背景失败".into()); }
                 return;
             }
             let slide = (app.get_impress_current_slide() - 1).max(0) as u32;
@@ -5754,7 +6248,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 done
             };
             if ok { app.invoke_impress_render_viewport(0.0); }
-            else { app.set_status_message("设置图片背景失败".into()); }
+            else { app.set_status_msg("设置图片背景失败".into()); }
         });
     }
     // v318o: Impress 形状样式 / 幻灯片背景（fill:#rrggbb fill:none line:#rrggbb line:none width:n bg:#rrggbb bg:none）
@@ -5766,7 +6260,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             let cmd = cmd.to_string();
             let (k, v) = match cmd.split_once(':') { Some(p) => p, None => return };
             if v.starts_with("grad:") && k != "bg" {
-                app.set_status_message("Impress 暂不支持渐变填充".into());
+                app.set_status_msg("Impress 暂不支持渐变填充".into());
                 return;
             }
             if app.get_impress_master_mode() {
@@ -5774,11 +6268,11 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             let m_mi = app.get_impress_master_mi().row_data(m_row as usize).unwrap_or(0) as u32;
             let m_li = app.get_impress_master_li().row_data(m_row as usize).unwrap_or(-1);
                 if k != "bg" {
-                    app.set_status_message("母版视图暂不支持形状填充和线条样式".into());
+                    app.set_status_msg("母版视图暂不支持形状填充和线条样式".into());
                     return;
                 }
                 if v.starts_with("grad:") {
-                    app.set_status_message("母版背景暂不支持渐变".into());
+                    app.set_status_msg("母版背景暂不支持渐变".into());
                     return;
                 }
                 let ok = {
@@ -5792,7 +6286,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 if ok {
                     show_master_canvas(&app, &state_is, m_row);
                     refresh_master_thumb_one(&app, &state_is, m_row);
-                } else { app.set_status_message("设置背景失败".into()); }
+                } else { app.set_status_msg("设置背景失败".into()); }
                 return;
             }
             let slide = (app.get_impress_current_slide() - 1).max(0) as u32;
@@ -5816,7 +6310,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             if ok {
                 app.invoke_impress_render_viewport(0.0);
             } else {
-                app.set_status_message("设置样式失败".into());
+                app.set_status_msg("设置样式失败".into());
             }
         });
     }
@@ -5848,7 +6342,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
                 app.set_impress_sel_id(id);
                 app.invoke_impress_render_viewport(0.0);
             } else {
-                app.set_status_message("插入表格失败".into());
+                app.set_status_msg("插入表格失败".into());
             }
         });
     }
@@ -5863,7 +6357,7 @@ if app.get_impress_text_edit_dirty() { sess.commit_edit(); sess.begin_edit(); ap
             let slide = (app.get_impress_current_slide() - 1).max(0) as u32;
             let sel = app.get_impress_sel_id();
             if sel < 0 {
-                app.set_status_message("请先选中文本框".into());
+                app.set_status_msg("请先选中文本框".into());
                 return;
             }
             let ok = {
@@ -5895,7 +6389,7 @@ let done = match range {
                 done
             };
             if ok { app.invoke_impress_render_viewport(0.0); }
-            else { app.set_status_message("设置文字样式失败".into()); }
+            else { app.set_status_msg("设置文字样式失败".into()); }
         });
     }
     // v302: Writer 画图提交 → 插入形状并选中
@@ -5943,9 +6437,9 @@ let done = match range {
                         }
                     }
                     app.set_writer_needs_render(true);
-                    app.set_status_message("已插入形状".into());
+                    app.set_status_msg("已插入形状".into());
                 }
-                Some(Err(e)) => app.set_status_message(format!("插入形状失败: {}", e).into()),
+                Some(Err(e)) => app.set_status_msg(format!("插入形状失败: {}", e).into()),
                 None => {}
             }
         });
@@ -5961,7 +6455,7 @@ let done = match range {
                 (s.writer_cursor_para, s.writer_cursor_offset)
             };
             if p < 0 || o < 0 {
-                app.set_status_message("插入公式失败: 没有可插入的光标位置".into());
+                app.set_status_msg("插入公式失败: 没有可插入的光标位置".into());
                 return;
             }
             eprintln!("[FORMULA-INSERT] 待插入占位 para={} offset={}", p, o);
@@ -6022,6 +6516,23 @@ let done = match range {
                     eprintln!("[FORMULA-APPLY] OK para={} run={}", np, nr);
                     app.set_formula_error("".into());
                     app.set_writer_needs_render(true);
+                    // U+FFFC 专项：新插入公式后，光标放到公式之后（公式占 3 字节）
+                    if r < 0 && off >= 0 {
+                        let new_off = (off + 3) as i64;
+                        let mut s = state_fa.borrow_mut();
+                        s.writer_cursor_para = np as i64;
+                        s.writer_cursor_offset = new_off;
+                        s.writer_sel_anchor_para = np as i64;
+                        s.writer_sel_anchor_offset = new_off;
+                        if let Some(sess) = s.session.as_mut() {
+                            let (cx, cy, _cw, ch_h) = sess.writer_query_cursor_rect(np as u64, new_off as u64);
+                            app.set_writer_cursor_x(cx as i32);
+                            app.set_writer_cursor_y(cy as i32);
+                            app.set_writer_cursor_h(ch_h as i32);
+                            app.set_writer_cursor_visible(true);
+                            s.writer_cursor_ideal_x = Some(cx);
+                        }
+                    }
                 }
                 Err(e) => {
                     eprintln!("[FORMULA-APPLY] 失败: {}", e);
@@ -6106,10 +6617,10 @@ let done = match range {
             match res {
                 Ok(Some((p, a, b, idx, total))) => {
                     find_select!($app, $st, p, a, b);
-                    $app.set_status_message(format!("第 {} 处，共 {} 处", idx, total).into());
+                    $app.set_status_msg(format!("第 {} 处，共 {} 处", idx, total).into());
                 }
-                Ok(None) => { $app.set_status_message("未找到".into()); }
-                Err(e) => { $app.set_status_message(format!("查找失败: {}", e).into()); }
+                Ok(None) => { $app.set_status_msg("未找到".into()); }
+                Err(e) => { $app.set_status_msg(format!("查找失败: {}", e).into()); }
             }
         }};
     }
@@ -6118,7 +6629,7 @@ let done = match range {
         let aw = app_weak.clone();
         app.on_find_next(move |q| {
             let Some(app) = aw.upgrade() else { return };
-            if q.is_empty() { app.set_status_message("请输入要查找的内容".into()); return; }
+            if q.is_empty() { app.set_status_msg("请输入要查找的内容".into()); return; }
             find_run!(app, st, q.to_string(), true, None);
         });
     }
@@ -6127,7 +6638,7 @@ let done = match range {
         let aw = app_weak.clone();
         app.on_find_prev(move |q| {
             let Some(app) = aw.upgrade() else { return };
-            if q.is_empty() { app.set_status_message("请输入要查找的内容".into()); return; }
+            if q.is_empty() { app.set_status_msg("请输入要查找的内容".into()); return; }
             find_run!(app, st, q.to_string(), false, None);
         });
     }
@@ -6138,7 +6649,7 @@ let done = match range {
             let Some(app) = aw.upgrade() else { return };
             let q = f.to_string();
             let rep = r.to_string();
-            if q.is_empty() { app.set_status_message("请输入要查找的内容".into()); return; }
+            if q.is_empty() { app.set_status_msg("请输入要查找的内容".into()); return; }
             let (cs, ww, rx) = (app.get_find_match_case(), app.get_find_whole_word(), app.get_find_regex());
             let sel = {
                 let s = st.borrow();
@@ -6178,7 +6689,7 @@ let done = match range {
             let Some(app) = aw.upgrade() else { return };
             let q = f.to_string();
             let rep = r.to_string();
-            if q.is_empty() { app.set_status_message("请输入要查找的内容".into()); return; }
+            if q.is_empty() { app.set_status_msg("请输入要查找的内容".into()); return; }
             let (cs, ww, rx) = (app.get_find_match_case(), app.get_find_whole_word(), app.get_find_regex());
             let res = {
                 let s = st.borrow();
@@ -6190,10 +6701,10 @@ let done = match range {
             match res {
                 Ok(n) if n > 0 => {
                     app.set_writer_needs_render(true);
-                    app.set_status_message(format!("已替换 {} 处", n).into());
+                    app.set_status_msg(format!("已替换 {} 处", n).into());
                 }
-                Ok(_) => { app.set_status_message("未找到".into()); }
-                Err(e) => { app.set_status_message(format!("替换失败: {}", e).into()); }
+                Ok(_) => { app.set_status_msg("未找到".into()); }
+                Err(e) => { app.set_status_msg(format!("替换失败: {}", e).into()); }
             }
         });
     }
@@ -6241,8 +6752,12 @@ let done = match range {
                 s.writer_cursor_para = para;
                 s.writer_cursor_offset = offset;
                 s.writer_cursor_ideal_x = Some(cx);
-                s.writer_sel_anchor_para = para;
-                s.writer_sel_anchor_offset = offset;
+                // v304: 按着Shift按下 = 扩选，锚点不动
+                let keep_anchor = app.get_writer_shift_down() && s.writer_sel_anchor_para >= 0;
+                if !keep_anchor {
+                    s.writer_sel_anchor_para = para;
+                    s.writer_sel_anchor_offset = offset;
+                }
                 s.writer_dragging = true;
                 s.writer_drag_query_count = 0;
                 s.writer_drag_last_query_para = para;
@@ -6251,8 +6766,12 @@ let done = match range {
                 app.set_writer_cursor_y(cy as i32);
                 app.set_writer_cursor_h(ch as i32);
                 app.set_writer_cursor_visible(true);
-                // 刚开始拖拽，锚点=焦点，选区为空，清空高亮
-                app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(Vec::<SelectionRect>::new())));
+                // 刚开始拖拽，锚点=焦点，选区为空，清空高亮；Shift扩选则按新焦点刷新高亮
+                if keep_anchor {
+                    writer_refresh_sel_rects(&app, &mut s);
+                } else {
+                    app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(Vec::<SelectionRect>::new())));
+                }
             }
         }
     });
@@ -6319,7 +6838,7 @@ let done = match range {
 
         let Some(sess) = s.session.as_mut() else { return };
         let (para, offset) = sess.writer_hit_test(x_pt, y_pt);
-        eprintln!("[WRITER-DRAG-RAWXY] 收到鼠标坐标 x={:.1} y={:.1} (x_pt={:.1} y_pt={:.1}) -> para={} offset={}", x, y, x_pt, y_pt, para, offset);
+        /*DBGOFF eprintln!("[WRITER-DRAG-RAWXY] 收到鼠标坐标 x={:.1} y={:.1} (x_pt={:.1} y_pt={:.1}) -> para={} offset={}", x, y, x_pt, y_pt, para, offset); DBGOFF*/
         if para < 0 {
             return;
         }
@@ -6347,10 +6866,10 @@ let done = match range {
         s.writer_drag_query_count += 1;
         s.writer_drag_last_query_para = para;
         s.writer_drag_last_query_offset = offset;
-        eprintln!(
+        /*DBGOFF eprintln!(
             "[WRITER-DRAG-MOVE] #{} para={} offset={} 耗时={:.3}ms 节流={}",
             s.writer_drag_query_count, para, offset, elapsed_ms, throttle_enabled
-        );
+        ); DBGOFF*/
 
         app.set_writer_cursor_x(cx as i32);
         app.set_writer_cursor_y(cy as i32);
@@ -6380,11 +6899,11 @@ let done = match range {
             }
         }
         if let Some(first) = items.first() {
-            eprintln!(
+            /*DBGOFF eprintln!(
                 "[WRITER-DRAG-RECT] 首个矩形: rx={:.2} ry={:.2} rw={:.2} rh={:.2} (writer_cursor_x={} writer_cursor_y={})",
                 first.rx, first.ry, first.rw, first.rh,
                 cx as i32, cy as i32
-            );
+            ); DBGOFF*/
         }
         app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(items)));
     });
@@ -6405,6 +6924,10 @@ let done = match range {
         eprintln!("[WRITER-IME] composed text = {:?} (len={})", text.as_str(), text.len());
         let app = match app_weak_wime.upgrade() { Some(a) => a, None => return };
         let mut s = state_wime.borrow_mut();
+        // v302: 本轮组合的第一次结算，有选区则先删除选区
+        if s.writer_ime_session_start.is_none() {
+            writer_delete_selection(&app, &mut s);
+        }
         let para = s.writer_cursor_para;
         if para < 0 { return; }
         if s.session.as_ref().map(|sess| sess.get_doc_type() != "writer").unwrap_or(true) { return; }
@@ -6521,7 +7044,7 @@ let done = match range {
     // shift+方向键（扩展选区）本次未实现，先跑通纯光标移动主线。
     let state_wcursor = state.clone();
     let app_weak_wcursor = app_weak.clone();
-    app.on_writer_cursor_key(move |key, _shift, ctrl| {
+    app.on_writer_cursor_key(move |key, shift, ctrl| {
         let app = match app_weak_wcursor.upgrade() { Some(a) => a, None => return };
         // v300: 选中图片时，Delete/Backspace 删除图片，其他按键只取消选中
         {
@@ -6540,11 +7063,11 @@ let done = match range {
                             writer_refresh_canvas(&app, &mut s);
                             drop(s);
                             app.set_writer_needs_render(true);
-                            app.set_status_message("已删除图片".into());
+                            app.set_status_msg("已删除图片".into());
                         }
                         Some(Err(e)) => {
                             drop(s);
-                            app.set_status_message(format!("删除图片失败: {}", e).into());
+                            app.set_status_msg(format!("删除图片失败: {}", e).into());
                         }
                         None => {}
                     }
@@ -6587,6 +7110,30 @@ let done = match range {
                     s.writer_cell_sel_anchor = None;
                     s.writer_cell_sel_focus = None;
                     writer_cell_refresh(&app, &mut s);
+                    return;
+                }
+            }
+        }
+
+        // v308a: 正文有选区、未按Shift/Ctrl时，左键折叠到选区起点，右键折叠到终点，不再多走一格（与Word一致）
+        if (is_left || is_right) && !shift && !ctrl && s.writer_cell_cursor.is_none() {
+            let a = (s.writer_sel_anchor_para, s.writer_sel_anchor_offset);
+            let c = (s.writer_cursor_para, s.writer_cursor_offset);
+            if a != c && a.0 >= 0 && a.1 >= 0 && c.0 >= 0 && c.1 >= 0 {
+                let (lo, hi) = if a <= c { (a, c) } else { (c, a) };
+                let t = if is_left { lo } else { hi };
+                let rect = s.session.as_mut().map(|sess| sess.writer_query_cursor_rect(t.0 as u64, t.1 as u64));
+                if let Some((cx, cy, _cw, ch)) = rect {
+                    s.writer_cursor_para = t.0;
+                    s.writer_cursor_offset = t.1;
+                    s.writer_sel_anchor_para = t.0;
+                    s.writer_sel_anchor_offset = t.1;
+                    s.writer_cursor_ideal_x = Some(cx);
+                    app.set_writer_cursor_x(cx as i32);
+                    app.set_writer_cursor_y(cy as i32);
+                    app.set_writer_cursor_h(ch as i32);
+                    app.set_writer_cursor_visible(true);
+                    writer_refresh_sel_rects(&app, &mut s);
                     return;
                 }
             }
@@ -6716,13 +7263,16 @@ let done = match range {
             // 非上下移动：重新计算并覆盖 ideal_x（final文档五.2规则）
             // v95再修正：Writer坐标系pt直接当px用，不乘PT_TO_PX（与calc不同，见1305行注释）
             s.writer_cursor_ideal_x = Some(cx);
-            // 未做选区扩展：折叠选区，锚点跟随焦点
-            s.writer_sel_anchor_para = new_para;
-            s.writer_sel_anchor_offset = new_offset;
+            // v304: 按Shift扩选（锚点不动），否则折叠选区，锚点跟随焦点
+            if !shift {
+                s.writer_sel_anchor_para = new_para;
+                s.writer_sel_anchor_offset = new_offset;
+            }
             app.set_writer_cursor_x(cx as i32);
             app.set_writer_cursor_y(cy as i32);
             app.set_writer_cursor_h(ch as i32);
             app.set_writer_cursor_visible(true);
+            writer_refresh_sel_rects(&app, &mut s);
         } else if is_up || is_down {
             // 路径2：跨行移动，需要 ideal_x。
             // v95再修正：Writer坐标系pt直接当px用，ideal_x/actual_x全程不做PT_TO_PX换算
@@ -6755,17 +7305,40 @@ let done = match range {
             s.writer_cursor_para = new_para;
             s.writer_cursor_offset = new_offset;
             // 上下移动：ideal_x 保持不变，绝不用 actual_x 覆盖（final文档五.2明确强调的常见实现错误）
-            s.writer_sel_anchor_para = new_para;
-            s.writer_sel_anchor_offset = new_offset;
+            // v304: 按Shift扩选时锚点不动
+            if !shift {
+                s.writer_sel_anchor_para = new_para;
+                s.writer_sel_anchor_offset = new_offset;
+            }
             let actual_x = v.get("actual_x").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32;
             app.set_writer_cursor_x(actual_x as i32);
             app.set_writer_cursor_y(cy as i32);
             app.set_writer_cursor_h(ch as i32);
             app.set_writer_cursor_visible(true);
+            writer_refresh_sel_rects(&app, &mut s);
         } else if is_backspace || is_delete {
             // v100：删除/退格。direction 0=Backward(退格) 1=Forward(Delete键)，
             // 与 roe_api::text_edit::DeleteDirection 编码一致。
             let direction: u32 = if is_backspace { 0 } else { 1 };
+            // v309: 多单元格选区：Delete/Backspace 清空矩形内所有格
+            if let (Some(a), Some(f)) = (s.writer_cell_sel_anchor, s.writer_cell_sel_focus) {
+                if a.0 != f.0 && s.writer_cell_cursor.is_some() {
+                    let cleared = s.session.as_mut().and_then(|sess| sess.cell_clear_range(a.0, f.0)).is_some();
+                    if cleared {
+                        let (ra, ca) = ((a.0 & 0xFFFF) / 64, (a.0 & 0xFFFF) % 64);
+                        let (rb, cb) = ((f.0 & 0xFFFF) / 64, (f.0 & 0xFFFF) % 64);
+                        let tl = (a.0 & 0xFFFF0000) | (ra.min(rb) * 64 + ca.min(cb));
+                        s.writer_cell_cursor = Some((tl, 0, 0));
+                        s.writer_cell_sel_anchor = None;
+                        s.writer_cell_sel_focus = None;
+                        s.writer_cell_vert = None;
+                        s.writer_ime_session_start = None;
+                        s.writer_ime_session_prev_len = 0;
+                        writer_cell_refresh(&app, &mut s);
+                    }
+                    return;
+                }
+            }
             if let Some((cid, cp, coff)) = s.writer_cell_cursor {
                 let mut cp = cp;
                 let res = {
@@ -6787,6 +7360,36 @@ let done = match range {
                 }
                 writer_cell_refresh(&app, &mut s);
                 return;
+            }
+            // v302: 正文有选区时，Backspace/Delete 删除选区
+            {
+                let a = (s.writer_sel_anchor_para, s.writer_sel_anchor_offset);
+                let c = (s.writer_cursor_para, s.writer_cursor_offset);
+                if a != c && a.0 >= 0 && a.1 >= 0 && c.0 >= 0 && c.1 >= 0 {
+                    let (x, y) = if a <= c { (a, c) } else { (c, a) };
+                    let res = s.session.as_mut().map(|sess| sess.writer_clip_delete(x.0 as u32, x.1 as u32, y.0 as u32, y.1 as u32));
+                    if let Some(Ok(())) = res {
+                        let rect = s.session.as_mut().map(|sess| sess.writer_query_cursor_rect(x.0 as u64, x.1 as u64));
+                        s.writer_cursor_para = x.0;
+                        s.writer_cursor_offset = x.1;
+                        s.writer_sel_anchor_para = x.0;
+                        s.writer_sel_anchor_offset = x.1;
+                        s.writer_ime_session_start = None;
+                        s.writer_ime_session_prev_len = 0;
+                        if let Some((cx, cy, _cw, ch)) = rect {
+                            s.writer_cursor_ideal_x = Some(cx);
+                            app.set_writer_cursor_x(cx as i32);
+                            app.set_writer_cursor_y(cy as i32);
+                            app.set_writer_cursor_h(ch as i32);
+                            app.set_writer_cursor_visible(true);
+                        }
+                        app.set_formula_box_visible(false);
+                        app.set_writer_selection_rects(slint::ModelRc::new(slint::VecModel::from(Vec::<SelectionRect>::new())));
+                        writer_refresh_canvas(&app, &mut s);
+                        app.set_writer_needs_render(true);
+                    }
+                    return;
+                }
             }
             let Some(sess) = s.session.as_mut() else { return };
             if sess.get_doc_type() != "writer" { return; }
@@ -6845,6 +7448,7 @@ let done = match range {
                     app.set_writer_cursor_y(cy as i32);
                     app.set_writer_cursor_h(ch as i32);
                     app.set_writer_cursor_visible(true);
+                    app.set_formula_box_visible(false);
                 }
                 None => {
                     // v105：段首退格/段尾Delete这个边界原来是静默失败（不
@@ -6871,6 +7475,7 @@ let done = match range {
                             app.set_writer_cursor_y(cy as i32);
                             app.set_writer_cursor_h(ch as i32);
                             app.set_writer_cursor_visible(true);
+                            app.set_formula_box_visible(false);
                         }
                         None => {
                             // 真正的文档边界（已是第一段/最后一段），
@@ -6930,7 +7535,7 @@ let done = match range {
             };
             match res {
                 Ok(()) => app.set_writer_needs_render(true),
-                Err(e) => app.set_status_message(format!("标记完成失败: {}", e).into()),
+                Err(e) => app.set_status_msg(format!("标记完成失败: {}", e).into()),
             }
         });
         let app_weak_ce = app_weak_wundo.clone();
@@ -6990,10 +7595,10 @@ let done = match range {
             match res {
                 Ok(()) => {
                     if app.get_writer_current_comment() == cid { app.set_writer_current_comment(-1); }
-                    app.set_status_message("已删除批注".into());
+                    app.set_status_msg("已删除批注".into());
                     app.set_writer_needs_render(true);
                 }
-                Err(e) => app.set_status_message(format!("删除批注失败: {}", e).into()),
+                Err(e) => app.set_status_msg(format!("删除批注失败: {}", e).into()),
             }
         });
     }
@@ -7430,9 +8035,186 @@ let done = match range {
     let agent_runtime_for_cfg = vec![agent_runtime.clone(), panel_runtime.clone()];
     let agent_runtime_for_send = agent_runtime;
     let agent_runtime_for_new_chat = agent_runtime_for_send.clone();
+    let agent_runtime_for_delete = agent_runtime_for_send.clone();
     let app_weak_new_chat = app_weak.clone();
+    // ── agent 文档预览（只读弹窗，独立 session，不碰主窗口 state.session） ──
+    // Calc 预览滚动范围：已用区域 + 一屏留白（留白在 slint 侧加），封顶 2000 行 / 100 列
+    macro_rules! preview_calc_bounds {
+        ($sess:expr, $i:expr) => {{
+            let __i = $i as u32;
+            let (__mr, __mc) = $sess.get_used_range(__i);
+            let __rows = (__mr + 1).min(2000);
+            let __cols = (__mc + 1).min(100);
+            let __capped = __mr + 1 > 2000 || __mc + 1 > 100;
+            let __w = $sess.get_col_offset_pt(__i, __cols).min($sess.get_sheet_total_width(__i)).max(1.0);
+            let __h = $sess.get_row_offset_pt(__i, __rows).min($sess.get_sheet_total_height(__i)).max(1.0);
+            (__w * PT_TO_PX, __h * PT_TO_PX, __capped)
+        }};
+    }
+    let preview_sess = std::rc::Rc::new(std::cell::RefCell::new(Some(doc_core::new_tile_cache())));
+    {
+        let ps = preview_sess.clone();
+        let aw = app_weak.clone();
+        app.on_preview_render(move |scroll_y, vw, vh| {
+            let Some(app) = aw.upgrade() else { return };
+            let mut guard = ps.borrow_mut();
+            let Some(sess) = guard.as_mut() else { return };
+            if vw <= 0.0 || vh <= 0.0 { return; }
+            let rgba = sess.render_writer_viewport(scroll_y, vw, vh);
+            if rgba.is_empty() { return; }
+            let sc = doc_core::doc_bitmap_scale();
+            let pw = (vw * sc).round() as u32;
+            let ph = (vh * sc).round() as u32;
+            if (pw * ph * 4) as usize != rgba.len() { return; }
+            let buf = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(&rgba, pw, ph);
+            app.set_preview_image(slint::Image::from_rgba8(buf));
+            let tops = sess.get_writer_page_tops();
+            let probe = scroll_y + vh / 3.0;
+            let cur = tops.iter().rposition(|&t| t <= probe).map(|i| i as i32 + 1).unwrap_or(1);
+            if app.get_preview_page_current() != cur { app.set_preview_page_current(cur); }
+        });
+    }
+    {
+        let ps = preview_sess.clone();
+        let aw = app_weak.clone();
+        app.on_preview_close(move || {
+            if let Some(app) = aw.upgrade() { app.set_preview_visible(false); }
+            *ps.borrow_mut() = None;
+        });
+    }
+    let preview_slides: std::rc::Rc<std::cell::RefCell<Vec<(f32, f32, f32)>>> =
+        std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    {
+        let ps = preview_sess.clone();
+        let sl = preview_slides.clone();
+        let aw = app_weak.clone();
+        app.on_preview_goto(move |n| {
+            let Some(app) = aw.upgrade() else { return };
+            let total = app.get_preview_page_total().max(1);
+            let n = n.clamp(1, total);
+            let (y, w, h) = match sl.borrow().get((n - 1) as usize) {
+                Some(&v) => v,
+                None => return,
+            };
+            let mut guard = ps.borrow_mut();
+            let Some(sess) = guard.as_mut() else { return };
+            let rgba = sess.render_impress_viewport(0.0, y, w, h);
+            if rgba.is_empty() { return; }
+            let sc = doc_core::impress_bitmap_scale();
+            let pw = (w * sc).round() as u32;
+            let ph = (h * sc).round() as u32;
+            if (pw * ph * 4) as usize != rgba.len() { return; }
+            let buf = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(&rgba, pw, ph);
+            app.set_preview_image(slint::Image::from_rgba8(buf));
+            app.set_preview_page_current(n);
+        });
+    }
+    {
+        let ps = preview_sess.clone();
+        let aw = app_weak.clone();
+        app.on_preview_render_calc(move |sx, sy, vw, vh| {
+            let Some(app) = aw.upgrade() else { return };
+            if vw <= 0 || vh <= 0 { return; }
+            let mut guard = ps.borrow_mut();
+            let Some(sess) = guard.as_mut() else { return };
+            let __t0 = std::time::Instant::now();
+            let (sx, sy) = (sx.max(0.0), sy.max(0.0));
+            let rgba = sess.render_sheet_viewport(sx, sy, vw as u32, vh as u32);
+            eprintln!("[PREVIEW-CALC] render {}x{} at ({:.0},{:.0}) took {:?}", vw, vh, sx, sy, __t0.elapsed());
+            if rgba.is_empty() { return; }
+            let (pw, ph) = doc_core::calc_phys_size(vw as u32, vh as u32);
+            if (pw * ph * 4) as usize != rgba.len() { return; }
+            let buf = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(&rgba, pw, ph);
+            app.set_preview_image(slint::Image::from_rgba8(buf));
+        });
+    }
+    {
+        let ps = preview_sess.clone();
+        let aw = app_weak.clone();
+        app.on_preview_sheet_select(move |i| {
+            let Some(app) = aw.upgrade() else { return };
+            let mut guard = ps.borrow_mut();
+            let Some(sess) = guard.as_mut() else { return };
+            sess.set_current_sheet(i);
+            let (tw, th, cp) = preview_calc_bounds!(sess, i);
+            app.set_preview_calc_total_w(tw);
+            app.set_preview_calc_total_h(th);
+            app.set_preview_calc_capped(cp);
+            app.set_preview_sheet_current(i);
+            // 渲染由 slint 侧 sheet-watch 触发一次，这里不再重复渲染
+        });
+    }
+    let preview_slides_send = preview_slides.clone();
+    let preview_sess_send = preview_sess.clone();
     app.on_agent_send_message(move |text| {
         if text.trim().is_empty() { return; }
+        if let Some(rest) = text.trim().strip_prefix("/preview ") {
+            let path_str = rest.trim().trim_matches('"').trim_matches('\'').to_string();
+            if let Some(app) = app_weak_send.upgrade() {
+                app.set_agent_input_text("".into());
+                let bytes = match std::fs::read(&path_str) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        app.set_status_msg(format!("预览：读取失败 {}", e).into());
+                        let fname = std::path::Path::new(&path_str).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                        agent_runtime_for_send.send_action(agent_bridge::AgentAction::PreviewFailed(format!("[系统提示] 用户点击预览文件 {} 失败：读取失败（{}）。此条仅供你了解，无需单独回复。", fname, e)));
+                        return;
+                    }
+                };
+                let mut sess = doc_core::new_tile_cache();
+                if sess.open_document_from_bytes(&bytes, 99) == 0 {
+                    app.set_status_msg("预览：打开文档失败".into());
+                    let fname = std::path::Path::new(&path_str).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                    agent_runtime_for_send.send_action(agent_bridge::AgentAction::PreviewFailed(format!("[系统提示] 用户点击预览文件 {} 失败：文档无法打开（文件可能损坏或格式不被支持）。此条仅供你了解，无需单独回复。", fname)));
+                    return;
+                }
+                let dt = sess.get_doc_type();
+                let (doc_w, canvas_h, page_count, slides) = if dt == "writer" {
+                    let Some((w, h, n)) = sess.get_writer_document_size() else { return };
+                    (w, h, n, Vec::new())
+                } else if dt == "impress" {
+                    let Some((w, h, n, sl)) = sess.get_impress_document_size() else { return };
+                    (w, h, n, sl)
+                } else if dt == "calc" {
+                    let names = sess.get_all_sheet_names();
+                    sess.set_current_sheet(0);
+                    let (tw, th, cp) = preview_calc_bounds!(sess, 0);
+                    app.set_preview_calc_total_w(tw);
+                    app.set_preview_calc_total_h(th);
+                    app.set_preview_calc_capped(cp);
+                    app.set_preview_sheet_current(0);
+                    let v: Vec<slint::SharedString> = names.into_iter().map(slint::SharedString::from).collect();
+                    app.set_preview_sheets(slint::ModelRc::new(slint::VecModel::from(v)));
+                    (0.0, 0.0, 0, Vec::new())
+                } else {
+                    app.set_status_msg("预览：目前只支持 Writer、Impress、Calc 文档".into());
+                    return;
+                };
+                *preview_slides_send.borrow_mut() = slides;
+                *preview_sess_send.borrow_mut() = Some(sess);
+                let name = std::path::Path::new(&path_str).file_name()
+                    .map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                app.set_preview_title(name.into());
+                if dt == "impress" {
+                    app.set_preview_kind("impress".into());
+                    app.set_preview_accent(slint::Color::from_rgb_u8(0xe8, 0x83, 0x3a));
+                } else if dt == "calc" {
+                    app.set_preview_kind("calc".into());
+                    app.set_preview_accent(slint::Color::from_rgb_u8(0x2f, 0x9e, 0x5b));
+                } else {
+                    app.set_preview_kind("writer".into());
+                    app.set_preview_accent(slint::Color::from_rgb_u8(0x4a, 0x86, 0xe8));
+                }
+                app.set_preview_doc_width_pt(doc_w);
+                app.set_preview_canvas_height_pt(canvas_h);
+                app.set_preview_page_total(page_count);
+                app.set_preview_page_current(1);
+                app.set_preview_visible(true);
+                if dt == "impress" { app.invoke_preview_goto(1); }
+                if dt == "calc" { app.invoke_preview_render_calc(0.0, 0.0, 1190, 842); }
+            }
+            return;
+        }
         if let Some(app) = app_weak_send.upgrade() {
             let existing = app.get_agent_messages();
             let mut msgs: Vec<AgentMessage> =
@@ -7446,7 +8228,10 @@ let done = match range {
                 thinking_seconds: 0.0,
                 expanded: false,
                 shadow_handle: "".into(),
+                file_path: "".into(),
             });
+            persist_agent_messages(&msgs);
+            refresh_agent_history(&app);
             app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
             app.set_agent_input_text("".into());
         }
@@ -7456,8 +8241,22 @@ let done = match range {
 
     // 新对话/新项目/历史选择/项目选择/模式切换：暂无后端状态，先占位不报错
     // 新对话:清空界面消息 + 清空后台对话历史(预览版对话用完即丢;/exports 里的文件保留)
+    refresh_agent_history(&app);
     app.on_agent_new_chat_clicked(move || {
         if let Some(app) = app_weak_new_chat.upgrade() {
+            {
+                let cur = app.get_agent_messages();
+                let v: Vec<AgentMessage> = (0..cur.row_count()).filter_map(|i| cur.row_data(i)).collect();
+                if !app.get_agent_archived() {
+                    persist_agent_messages(&v);
+                }
+                refresh_agent_history(&app);
+            }
+            *CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            AGENT_STASH.with(|s| *s.borrow_mut() = None);
+            VIEWING_CONV_ID.with(|v| *v.borrow_mut() = None);
+            app.set_agent_archived(false);
+            refresh_agent_history(&app);
             app.set_agent_messages(std::rc::Rc::new(slint::VecModel::<AgentMessage>::default()).into());
             app.set_agent_input_text("".into());
         }
@@ -7482,15 +8281,71 @@ let done = match range {
             eprintln!("[AGENT-OPEN-WORKSPACE] 拉起文件管理器失败 {}: {e}", root.display());
         }
     });
+    // 文件卡片：预览(复用 /preview 命令路径，调用前后保存恢复输入框)
+    {
+        let aw_fp = app_weak.clone();
+        app.on_agent_file_preview(move |idx| {
+            let Some(app) = aw_fp.upgrade() else { return };
+            let msgs = app.get_agent_messages();
+            let Some(msg) = msgs.row_data(idx as usize) else { return };
+            let vp = msg.file_path.to_string();
+            let rel = vp.trim_start_matches('/');
+            if rel.is_empty() || rel.split('/').any(|c| c == ".." || c.is_empty()) {
+                app.set_status_msg("预览：路径不合法".into());
+                return;
+            }
+            let phys = agent_bridge::agent_workspace_root().join(rel);
+            if !phys.is_file() {
+                app.set_status_msg("预览：文件不存在".into());
+                return;
+            }
+            let saved_input = app.get_agent_input_text();
+            app.invoke_agent_send_message(format!("/preview {}", phys.display()).into());
+            app.set_agent_input_text(saved_input);
+        });
+    }
+    // 文件卡片：在文件夹中显示(打开 exports 目录)
+    let aw_ff = app_weak.clone();
+    app.on_agent_file_folder(move |idx| {
+        let mut dir = agent_bridge::agent_workspace_root().join("exports");
+        if let Some(app) = aw_ff.upgrade() {
+            let msgs = app.get_agent_messages();
+            if let Some(msg) = msgs.row_data(idx as usize) {
+                let rel = msg.file_path.to_string().trim_start_matches('/').to_string();
+                if !rel.is_empty() && !rel.split('/').any(|c| c == ".." || c.is_empty()) {
+                    let p = agent_bridge::agent_workspace_root().join(&rel);
+                    if p.is_dir() {
+                        dir = p;
+                    } else if let Some(parent) = p.parent() {
+                        if parent.is_dir() { dir = parent.to_path_buf(); }
+                    }
+                }
+            }
+        }
+        if let Err(e) = std::fs::create_dir_all(&dir) {
+            eprintln!("[AGENT-FILE-FOLDER] 创建目录失败 {}: {e}", dir.display());
+            return;
+        }
+        let mut cmd = if cfg!(target_os = "windows") {
+            std::process::Command::new("explorer")
+        } else if cfg!(target_os = "macos") {
+            std::process::Command::new("open")
+        } else {
+            std::process::Command::new("xdg-open")
+        };
+        if let Err(e) = cmd.arg(&dir).spawn() {
+            eprintln!("[AGENT-FILE-FOLDER] 拉起文件管理器失败 {}: {e}", dir.display());
+        }
+    });
     // "+"号:选文件 -> 校验并复制进工作区 inputs/ -> 对话区追加提示行(只是界面反馈,不进后台历史)
     let app_weak_add = app_weak.clone();
     app.on_agent_add_clicked(move || {
         let Some(path) = rfd::FileDialog::new()
-            .add_filter("文档与图片", &["xlsx", "docx", "pptx", "csv", "png", "jpg", "jpeg"])
+            .add_filter(ui_lang::t("文档与图片", "Documents and images"), &["xlsx", "docx", "pptx", "csv", "png", "jpg", "jpeg"])
             .pick_file() else { return };
         let notice = match agent_bridge::upload_to_inputs(&agent_bridge::agent_workspace_root(), &path) {
-            Ok(name) => format!("已添加 {name}"),
-            Err(e) => format!("添加失败:{e}"),
+            Ok(name) => format!("{} {name}", ui_lang::t("已添加", "Added")),
+            Err(e) => format!("{}: {e}", ui_lang::t("添加失败", "Add failed")),
         };
         if let Some(app) = app_weak_add.upgrade() {
             let existing = app.get_agent_messages();
@@ -7505,6 +8360,7 @@ let done = match range {
                 thinking_seconds: 0.0,
                 expanded: false,
                 shadow_handle: "".into(),
+                file_path: "".into(),
             });
             app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
         }
@@ -7512,8 +8368,120 @@ let done = match range {
     app.on_agent_new_project_clicked(move || {
         eprintln!("[AGENT-NEW-PROJECT] 占位，未实现新项目逻辑");
     });
+    let app_weak_conv = app_weak.clone();
     app.on_agent_conversation_selected(move |id| {
-        eprintln!("[AGENT-CONV-SELECTED] id={} 占位，未实现历史对话切换", id);
+        let Some(app) = app_weak_conv.upgrade() else { return };
+        if app.get_agent_sending() { return; }
+        if !app.get_agent_archived() {
+            let cur = CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()).clone();
+            if cur.as_deref() == Some(id.as_str()) { return; }
+        } else {
+            let taken = AGENT_STASH.with(|s| {
+                let mut b = s.borrow_mut();
+                if b.as_ref().map(|(sid, _)| sid.as_str() == id.as_str()).unwrap_or(false) { b.take() } else { None }
+            });
+            if let Some((sid, smsgs)) = taken {
+                *CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()) = Some(sid);
+                app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(smsgs)).into());
+                app.set_agent_input_text("".into());
+                VIEWING_CONV_ID.with(|v| *v.borrow_mut() = None);
+                app.set_agent_archived(false);
+                refresh_agent_history(&app);
+                return;
+            }
+        }
+        let Some(dir) = conversations_dir() else { return };
+        let conv = match conversation_store::load(&dir, id.as_str()) {
+            Ok(c) => c,
+            Err(e) => { eprintln!("[agent] 加载历史对话失败: {e}"); return; }
+        };
+        let msgs: Vec<AgentMessage> = conv
+            .messages
+            .iter()
+            .filter(|m| conversation_store::is_persistable_kind(&m.role))
+            .map(|m| {
+                let is_ai = m.role == "assistant";
+                AgentMessage {
+                    kind: m.role.clone().into(),
+                    raw: if is_ai { m.text.clone().into() } else { "".into() },
+                    text: if is_ai {
+                        agent_bridge::md_plain::strip_markdown(&m.text).into()
+                    } else {
+                        m.text.clone().into()
+                    },
+                    script_code: "".into(),
+                    script_status: "".into(),
+                    thinking_seconds: 0.0,
+                    expanded: false,
+                    shadow_handle: "".into(),
+                    file_path: "".into(),
+                }
+            })
+            .collect();
+        if !app.get_agent_archived() {
+            let cur = CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()).clone();
+            if let Some(cid) = cur {
+                let now_msgs = app.get_agent_messages();
+                let v: Vec<AgentMessage> = (0..now_msgs.row_count()).filter_map(|i| now_msgs.row_data(i)).collect();
+                AGENT_STASH.with(|s| *s.borrow_mut() = Some((cid, v)));
+            }
+        }
+        *CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()) = None;
+        app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(msgs)).into());
+        app.set_agent_input_text("".into());
+        VIEWING_CONV_ID.with(|v| *v.borrow_mut() = Some(id.to_string()));
+        app.set_agent_archived(true);
+        refresh_agent_history(&app);
+    });
+    let app_weak_rename = app_weak.clone();
+    app.on_agent_conversation_renamed(move |id, title| {
+        let Some(app) = app_weak_rename.upgrade() else { return };
+        let Some(dir) = conversations_dir() else { return };
+        match conversation_store::rename(&dir, id.as_str(), title.as_str()) {
+            Ok(()) => refresh_agent_history(&app),
+            Err(e) => eprintln!("[agent] 改名失败: {e}"),
+        }
+    });
+    let app_weak_delete = app_weak.clone();
+    app.on_agent_conversation_deleted(move |id| {
+        let Some(app) = app_weak_delete.upgrade() else { return };
+        if app.get_agent_sending() { return; }
+        let Some(dir) = conversations_dir() else { return };
+        if let Err(e) = conversation_store::delete(&dir, id.as_str()) {
+            eprintln!("[agent] 删除对话失败: {e}");
+            return;
+        }
+        let is_current = !app.get_agent_archived()
+            && CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()).as_deref() == Some(id.as_str());
+        let is_stashed = app.get_agent_archived()
+            && AGENT_STASH.with(|s| s.borrow().as_ref().map(|(sid, _)| sid.as_str() == id.as_str()).unwrap_or(false));
+        let is_viewing = app.get_agent_archived()
+            && VIEWING_CONV_ID.with(|v| v.borrow().as_deref() == Some(id.as_str()));
+        if is_current {
+            // 不能走新对话回调:那条路径会先把当前消息存回磁盘,刚删的文件会复活
+            *CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()) = None;
+            AGENT_STASH.with(|s| *s.borrow_mut() = None);
+            app.set_agent_messages(std::rc::Rc::new(slint::VecModel::<AgentMessage>::default()).into());
+            app.set_agent_input_text("".into());
+            agent_runtime_for_delete.send_action(agent_bridge::AgentAction::ResetHistory);
+        } else if is_stashed {
+            // 回看别的历史时删掉了被暂存的活跃对话:丢弃暂存;界面仍停在正在回看的那份
+            AGENT_STASH.with(|s| *s.borrow_mut() = None);
+            agent_runtime_for_delete.send_action(agent_bridge::AgentAction::ResetHistory);
+        } else if is_viewing {
+            // 删的正是正在回看的那份:退出回看;有暂存的活跃对话就恢复它,否则回到空白新对话
+            VIEWING_CONV_ID.with(|v| *v.borrow_mut() = None);
+            let taken = AGENT_STASH.with(|s| s.borrow_mut().take());
+            if let Some((sid, smsgs)) = taken {
+                *CURRENT_CONV_ID.lock().unwrap_or_else(|e| e.into_inner()) = Some(sid);
+                app.set_agent_messages(std::rc::Rc::new(slint::VecModel::from(smsgs)).into());
+            } else {
+                app.set_agent_messages(std::rc::Rc::new(slint::VecModel::<AgentMessage>::default()).into());
+            }
+            app.set_agent_input_text("".into());
+            app.set_agent_archived(false);
+        }
+        refresh_agent_history(&app);
     });
     app.on_agent_project_selected(move |id| {
         eprintln!("[AGENT-PROJECT-SELECTED] id={} 占位，未实现项目切换", id);
@@ -7739,7 +8707,7 @@ let done = match range {
         if x_labels.is_empty() {
             eprintln!("[CHART] 选中单元格 row={} col={} 无数据，取消插入", data_row, data_col);
             app.set_chart_dialog_visible(false);
-            app.set_status_message("插入图表失败：所选起始单元格为空，请先选中含数据的区域左上角".into());
+            app.set_status_msg("插入图表失败：所选起始单元格为空，请先选中含数据的区域左上角".into());
             return;
         }
 
@@ -7784,7 +8752,7 @@ let done = match range {
             .unwrap_or(0);
 
         if chart_id == 0 {
-            app.set_status_message(format!("插入图表失败: {}", result).into());
+            app.set_status_msg(format!("插入图表失败: {}", result).into());
             return;
         }
 
@@ -7891,8 +8859,9 @@ let done = match range {
                 let Some(sess) = s.session.as_mut() else { return };
                 let sheet = sheet_idx.get() as u32;
                 let (sx, sy) = (app.get_calc_scroll_x(), app.get_calc_scroll_y());
-                let col = sess.get_col_at_offset(sheet, ((mx - 30.0) + sx) / PT_TO_PX);
-                let row = sess.get_row_at_offset(sheet, ((my - 18.0) + sy) / PT_TO_PX);
+                let (fw, fh) = (app.get_calc_frozen_w(), app.get_calc_frozen_h());
+                let col = sess.get_col_at_offset(sheet, calc_frozen::view_to_doc(mx - 30.0, sx, fw) / PT_TO_PX);
+                let row = sess.get_row_at_offset(sheet, calc_frozen::view_to_doc(my - 18.0, sy, fh) / PT_TO_PX);
                 if col < 0 || row < 0 { return; }
                 let (col, row) = (col as u32, row as u32);
                 let dr = row.saturating_sub(r2);
@@ -7903,8 +8872,8 @@ let done = match range {
                 let x1 = (sess.get_col_offset_pt(sheet, tc) + sess.get_column_width_pt(sheet, tc)) * PT_TO_PX;
                 let y0 = sess.get_row_offset_pt(sheet, r1) * PT_TO_PX;
                 let y1 = (sess.get_row_offset_pt(sheet, tr) + sess.get_row_height_pt(sheet, tr)) * PT_TO_PX;
-                app.set_calc_fill_x(x0 - sx + 30.0);
-                app.set_calc_fill_y(y0 - sy + 18.0);
+                app.set_calc_fill_x(calc_frozen::doc_to_view(x0, sx, fw) + 30.0);
+                app.set_calc_fill_y(calc_frozen::doc_to_view(y0, sy, fh) + 18.0);
                 app.set_calc_fill_w(x1 - x0);
                 app.set_calc_fill_h(y1 - y0);
                 app.set_calc_fill_show(tr != r2 || tc != c2);
@@ -7929,7 +8898,7 @@ let done = match range {
                 let (lo_t, hi_t) = if down { (r2 + 1, tr) } else { (c2 + 1, tc) };
                 let lines: Vec<u32> = if down { (c1..=c2).collect() } else { (r1..=r2).collect() };
                 if (hi_t - lo_t + 1) as u64 * lines.len() as u64 > 200_000 {
-                    app.set_status_message("填充范围过大（上限 20 万格）".into());
+                    app.set_status_msg("填充范围过大（上限 20 万格）".into());
                     return;
                 }
                 let esc = |t: &str| t.replace('\\', "\\\\").replace('"', "\\\"");
@@ -7977,7 +8946,7 @@ let done = match range {
                 let ok = sess.calc_run_script(&script);
                 eprintln!("[CALC-FILL] src=({},{})-({},{}) target_end=({},{}) down={} ok={}", r1, c1, r2, c2, tr, tc, down, ok);
                 if !ok {
-                    app.set_status_message("填充失败".into());
+                    app.set_status_msg("填充失败".into());
                     return;
                 }
                 calc_selection::select_anchor(&app, sess, &merges, sheet, r1, c1);
@@ -8044,6 +9013,81 @@ let done = match range {
         ok
     }
 
+    // 通用图表参数入口:key + value(JSON 或字符串),图表设计页签用
+    let state_chart_patch = state.clone();
+    let app_weak_chart_patch = app_weak.clone();
+    let sheet_idx_chart_patch = current_sheet_idx.clone();
+    app.on_chart_patch(move |key, value| {
+        let app = match app_weak_chart_patch.upgrade() { Some(a) => a, None => return };
+        let val: serde_json::Value = serde_json::from_str(value.as_str())
+            .unwrap_or_else(|_| serde_json::Value::String(value.to_string()));
+        let mut obj = serde_json::Map::new();
+        obj.insert(key.to_string(), val);
+        let json = serde_json::Value::Object(obj).to_string();
+        // Impress:改样式 -> commit_edit -> 回读 -> 重绘
+        if app.get_impress_sel_is_chart() && app.get_impress_sel_id() >= 0 {
+            let sl = (app.get_impress_current_slide() - 1).max(0) as u32;
+            let sid = app.get_impress_sel_id() as u32;
+            let cfg = {
+                let mut s = state_chart_patch.borrow_mut();
+                match s.session.as_mut() {
+                    Some(x) => {
+                        if x.impress_set_chart_style(sl, sid, &json) {
+                            x.commit_edit();
+                            x.impress_get_chart_config(sl, sid)
+                        } else { None }
+                    }
+                    None => None,
+                }
+            };
+            match cfg {
+                Some(j) => { fill_chart_design_props(&app, &j); app.invoke_impress_render_viewport(0.0); }
+                None => app.set_status_msg(format!("修改图表参数失败: {}", key).into()),
+            }
+            return;
+        }
+        // Writer:set_chart_style 自带撤销与版面失效 -> 回读 -> 刷新画布
+        if app.get_writer_obj_is_chart() && app.get_writer_obj_sel() >= 0 {
+            let idx = app.get_writer_obj_sel() as u32;
+            let res = {
+                let s = state_chart_patch.borrow();
+                s.session.as_ref().map(|x| x.writer_set_chart_style(idx, &json))
+            };
+            match res {
+                Some(Ok(())) => {
+                    {
+                        let mut s = state_chart_patch.borrow_mut();
+                        writer_refresh_canvas(&app, &mut s);
+                    }
+                    app.set_writer_needs_render(true);
+                    let cfg = state_chart_patch.borrow().session.as_ref().and_then(|x| x.writer_get_chart_config(idx));
+                    if let Some(j) = cfg { fill_chart_design_props(&app, &j); }
+                }
+                Some(Err(e)) => app.set_status_msg(format!("修改图表参数失败: {}", e).into()),
+                None => {}
+            }
+            return;
+        }
+        let mut s = state_chart_patch.borrow_mut();
+        let id = s.chart_selected_id;
+        let sheet_idx = sheet_idx_chart_patch.get() as u32;
+        if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
+            drop(s);
+            app.set_status_msg(format!("修改图表参数失败: {}", key).into());
+            return;
+        }
+        // 回读刷新页签当前值(不动侧边栏开关状态)
+        let cfg = s.session.as_mut().and_then(|sess| sess.get_chart_config(sheet_idx, id));
+        if let Some(j) = cfg {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&j) {
+                app.set_chart_show_legend(v.get("show_legend").and_then(|x| x.as_bool()).unwrap_or(true));
+                app.set_chart_show_grid(v.get("show_grid").and_then(|x| x.as_bool()).unwrap_or(true));
+                app.set_chart_legend_pos(v.get("legend_pos").and_then(|x| x.as_str()).unwrap_or("").into());
+                fill_chart_design_props(&app, &j);
+            }
+        }
+    });
+
     let state_chart_legend = state.clone();
     let app_weak_chart_legend = app_weak.clone();
     let sheet_idx_chart_legend = current_sheet_idx.clone();
@@ -8056,7 +9100,7 @@ let done = match range {
         let json = format!("{{\"show_legend\":{}}}", v);
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改图例显示失败".into());
+            app.set_status_msg("修改图例显示失败".into());
         }
     });
 
@@ -8071,7 +9115,7 @@ let done = match range {
         let json = format!("{{\"show_grid\":{}}}", v);
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改网格显示失败".into());
+            app.set_status_msg("修改网格显示失败".into());
         }
     });
 
@@ -8087,7 +9131,7 @@ let done = match range {
         let json = format!("{{\"x_axis_label\":\"{}\"}}", escaped);
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改X轴标题失败".into());
+            app.set_status_msg("修改X轴标题失败".into());
         }
     });
 
@@ -8103,7 +9147,7 @@ let done = match range {
         let json = format!("{{\"y_axis_label\":\"{}\"}}", escaped);
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改Y轴标题失败".into());
+            app.set_status_msg("修改Y轴标题失败".into());
         }
     });
 
@@ -8135,7 +9179,7 @@ let done = match range {
         let json = format!("{{\"kind\":\"{}\"}}", kind_str);
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改图表类型失败".into());
+            app.set_status_msg("修改图表类型失败".into());
         }
     });
 
@@ -8151,7 +9195,7 @@ let done = match range {
         let json = if text.is_empty() { "{\"title\":null}".to_string() } else { format!("{{\"title\":\"{}\"}}", escaped) };
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改图表标题失败".into());
+            app.set_status_msg("修改图表标题失败".into());
         }
     });
 
@@ -8181,7 +9225,7 @@ let done = match range {
             app.set_chart_border_color_brush(parse_hex_to_slint_color(&text));
         } else {
             drop(s);
-            app.set_status_message("修改边框颜色失败".into());
+            app.set_status_msg("修改边框颜色失败".into());
         }
     });
 
@@ -8196,7 +9240,7 @@ let done = match range {
         let json = format!("{{\"border_width\":{:.2}}}", v);
         if !apply_chart_style_patch(&app, &mut s, sheet_idx, id, &json) {
             drop(s);
-            app.set_status_message("修改边框宽度失败".into());
+            app.set_status_msg("修改边框宽度失败".into());
         }
     });
 
@@ -8205,7 +9249,7 @@ let done = match range {
         let st = state.clone(); let aw = app_weak.clone(); let si = current_sheet_idx.clone();
         app.on_calc_insert_image(move || {
             let Some(app) = aw.upgrade() else { return };
-            let Some(path) = rfd::FileDialog::new().add_filter("图片", &["png", "jpg", "jpeg"]).pick_file() else { return };
+            let Some(path) = rfd::FileDialog::new().add_filter(ui_lang::t("图片", "Images"), &["png", "jpg", "jpeg"]).pick_file() else { return };
             let sheet = si.get() as u32;
             let (sx, sy) = (app.get_calc_scroll_x(), app.get_calc_scroll_y());
             let kk = 96.0f32 / 72.0;
@@ -8223,7 +9267,7 @@ let done = match range {
                 }
             };
             match new_id {
-                None => app.set_status_message("插入图片失败(仅支持 PNG/JPEG,不超过 10MB)".into()),
+                None => app.set_status_msg("插入图片失败(仅支持 PNG/JPEG,不超过 10MB)".into()),
                 Some(id) => {
                     { let mut s = st.borrow_mut(); refresh_float_objs(&app, &mut s, sheet); select_float_obj(&app, &mut s, sheet, id); }
                     app.invoke_calc_render_viewport(sx, sy);
@@ -8251,7 +9295,7 @@ let done = match range {
                 }
             };
             match new_id {
-                None => app.set_status_message("插入文本框失败".into()),
+                None => app.set_status_msg("插入文本框失败".into()),
                 Some(id) => {
                     { let mut s = st.borrow_mut(); refresh_float_objs(&app, &mut s, sheet); select_float_obj(&app, &mut s, sheet, id); }
                     app.invoke_calc_render_viewport(sx, sy);
@@ -8284,7 +9328,7 @@ let done = match range {
                 }
             };
             match new_id {
-                None => app.set_status_message("插入形状失败".into()),
+                None => app.set_status_msg("插入形状失败".into()),
                 Some(id) => {
                     { let mut s = st.borrow_mut(); refresh_float_objs(&app, &mut s, sheet); select_float_obj(&app, &mut s, sheet, id); }
                     app.invoke_calc_render_viewport(sx, sy);
@@ -8332,7 +9376,7 @@ let done = match range {
                 done
             };
             if !ok {
-                app.set_status_message("设置文字失败".into());
+                app.set_status_msg("设置文字失败".into());
                 return;
             }
             let (sx, sy) = (app.get_calc_scroll_x(), app.get_calc_scroll_y());
@@ -8350,7 +9394,7 @@ let done = match range {
             let cmd = cmd.to_string();
             let (k, v) = match cmd.split_once(':') { Some(p) => p, None => return };
             if v.starts_with("grad:") {
-                app.set_status_message("Calc 图形暂不支持渐变填充".into());
+                app.set_status_msg("Calc 图形暂不支持渐变填充".into());
                 return;
             }
             let sheet = sheet_idx_ss.get() as u32;
@@ -8383,7 +9427,7 @@ let done = match range {
                 done
             };
             if !ok {
-                app.set_status_message("设置图形样式失败".into());
+                app.set_status_msg("设置图形样式失败".into());
                 return;
             }
             let (sx, sy) = (app.get_calc_scroll_x(), app.get_calc_scroll_y());
@@ -8475,7 +9519,7 @@ let done = match range {
             }
         } else {
             drop(s);
-            app.set_status_message("删除图表失败".into());
+            app.set_status_msg("删除图表失败".into());
         }
     });
 
@@ -8514,6 +9558,7 @@ let done = match range {
         // 切换当前sheet索引并重渲染viewport（新sheet默认空白，从(0,0)开始显示）
         sheet_idx_add.set(new_idx as u32);
         sess.set_current_sheet(new_idx);
+        app.set_calc_gridlines_on(sess.get_gridlines(new_idx as u32));
         {
             let (r, c) = (app.get_calc_selected_row(), app.get_calc_selected_col());
             if r >= 0 && c >= 0 {
@@ -8695,7 +9740,7 @@ let done = match range {
         eprintln!("[PIVOT-DRAG] started name={} x={} y={}", name, x, y);
     });
     app.on_pivot_field_drag_moved(move |x, y| {
-        eprintln!("[PIVOT-DRAG] moved x={} y={}", x, y);
+        let _ = (x, y); // 移动日志刷屏,已关闭
     });
     app.on_pivot_field_drag_ended(move |x, y| {
         eprintln!("[PIVOT-DRAG] ended x={} y={}", x, y);
@@ -8846,6 +9891,7 @@ let done = match range {
         }
         sheet_idx_pivot_accept.set(new_idx as u32);
         sess.set_current_sheet(new_idx as i32);
+        ribbon::calc_home::sync_pivot_state(&app, sess, new_idx as u32);
 
         let pivot_scale = app.window().scale_factor();
         let vw = (app.get_calc_view_width() as f32) as u32;

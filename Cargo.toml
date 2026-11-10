@@ -56,3 +56,37 @@ opt-level = 3
 opt-level = 3
 [profile.dev.package.hashbrown]
 opt-level = 3
+
+# polars CSV 读取路径:debug 下极慢,仅这些依赖开优化(自身代码仍是 debug)
+[profile.dev.package.polars-io]
+opt-level = 3
+[profile.dev.package.polars-core]
+opt-level = 3
+[profile.dev.package.polars-arrow]
+opt-level = 3
+[profile.dev.package.polars-compute]
+opt-level = 3
+[profile.dev.package.polars-buffer]
+opt-level = 3
+[profile.dev.package.polars-utils]
+opt-level = 3
+[profile.dev.package.polars-row]
+opt-level = 3
+[profile.dev.package.polars-schema]
+opt-level = 3
+[profile.dev.package.polars-dtype]
+opt-level = 3
+[profile.dev.package.polars-ops]
+opt-level = 3
+
+# xlsx 导入路径(calamine 解压 + XML 解析):debug 下慢约十倍,仅这些依赖开优化
+[profile.dev.package.calamine]
+opt-level = 3
+[profile.dev.package.quick-xml]
+opt-level = 3
+[profile.dev.package.zip]
+opt-level = 3
+[profile.dev.package.zlib-rs]
+opt-level = 3
+[profile.dev.package.atoi_simd]
+opt-level = 3

@@ -14,16 +14,19 @@ pub const HEADER_H: f32 = 18.0; // 行标题高(逻辑px)
 pub struct PtRect { pub x: f32, pub y: f32, pub w: f32, pub h: f32 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct CoordMap { pub scroll_x: f32, pub scroll_y: f32 }
+pub struct CoordMap { pub scroll_x: f32, pub scroll_y: f32, pub fw: f32, pub fh: f32 }
 
 impl CoordMap {
-    pub fn new(scroll_x: f32, scroll_y: f32) -> Self { Self { scroll_x, scroll_y } }
+    pub fn new(scroll_x: f32, scroll_y: f32) -> Self { Self { scroll_x, scroll_y, fw: 0.0, fh: 0.0 } }
+
+    /// 设置冻结区逻辑 px 宽高(数据区坐标,不含标题栏);0/0 等同未冻结。
+    pub fn with_frozen(mut self, fw: f32, fh: f32) -> Self { self.fw = fw; self.fh = fh; self }
 
     /// pt 矩形 → 视口逻辑 px 矩形（含表头偏移）。
     pub fn rect_to_view(&self, r: PtRect) -> PtRect {
         PtRect {
-            x: r.x * PT_TO_PX - self.scroll_x + HEADER_W,
-            y: r.y * PT_TO_PX - self.scroll_y + HEADER_H,
+            x: crate::calc_frozen::doc_to_view(r.x * PT_TO_PX, self.scroll_x, self.fw) + HEADER_W,
+            y: crate::calc_frozen::doc_to_view(r.y * PT_TO_PX, self.scroll_y, self.fh) + HEADER_H,
             w: r.w * PT_TO_PX,
             h: r.h * PT_TO_PX,
         }
@@ -31,7 +34,8 @@ impl CoordMap {
 
     /// 视口逻辑 px 点 → sheet pt 点。
     pub fn view_to_pt(&self, vx: f32, vy: f32) -> (f32, f32) {
-        ((vx - HEADER_W + self.scroll_x) / PT_TO_PX, (vy - HEADER_H + self.scroll_y) / PT_TO_PX)
+        (crate::calc_frozen::view_to_doc(vx - HEADER_W, self.scroll_x, self.fw) / PT_TO_PX,
+         crate::calc_frozen::view_to_doc(vy - HEADER_H, self.scroll_y, self.fh) / PT_TO_PX)
     }
 
     /// 视口 px 矩形 → pt 矩形（拖拽提交用）。
@@ -126,6 +130,65 @@ mod tests {
         let back = m.rect_to_pt(m.rect_to_view(src));
         assert!((back.x - src.x).abs() < 0.01 && (back.y - src.y).abs() < 0.01);
         assert!((back.w - src.w).abs() < 0.01 && (back.h - src.h).abs() < 0.01);
+    }
+
+    // ── 冻结窗格(语义A):冻结区(数据区坐标 < f)不随滚动,其余同原公式 ──
+    fn near(a: f32, b: f32) -> bool { (a - b).abs() < 0.01 }
+
+    #[test]
+    fn frozen_zero_equals_plain() {
+        let src = r(123.4, 56.7, 200.0, 150.0);
+        let a = CoordMap::new(37.0, 11.0).rect_to_view(src);
+        let b = CoordMap::new(37.0, 11.0).with_frozen(0.0, 0.0).rect_to_view(src);
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn frozen_region_ignores_scroll() {
+        // fw=80px, fh=40px;x=30pt=40px<80,y=15pt=20px<40 → 不减滚动
+        let m = CoordMap::new(100.0, 50.0).with_frozen(80.0, 40.0);
+        let v = m.rect_to_view(r(30.0, 15.0, 10.0, 10.0));
+        assert!(near(v.x, 70.0) && near(v.y, 38.0), "{:?}", v);
+    }
+
+    #[test]
+    fn frozen_scroll_region_uses_scroll() {
+        // x=150pt=200px>=80 → 200-100+30=130;y=90pt=120px>=40 → 120-50+18=88
+        let m = CoordMap::new(100.0, 50.0).with_frozen(80.0, 40.0);
+        let v = m.rect_to_view(r(150.0, 90.0, 10.0, 10.0));
+        assert!(near(v.x, 130.0) && near(v.y, 88.0), "{:?}", v);
+    }
+
+    #[test]
+    fn frozen_view_to_pt_segments() {
+        let m = CoordMap::new(100.0, 50.0).with_frozen(80.0, 40.0);
+        // vx=70 → v=40<80 → doc=40px=30pt;vy=38 → v=20<40 → 20px=15pt
+        let (x, y) = m.view_to_pt(70.0, 38.0);
+        assert!(near(x, 30.0) && near(y, 15.0), "{} {}", x, y);
+        // vx=130 → v=100>=80 → 200px=150pt;vy=88 → v=70>=40 → 120px=90pt
+        let (x, y) = m.view_to_pt(130.0, 88.0);
+        assert!(near(x, 150.0) && near(y, 90.0), "{} {}", x, y);
+    }
+
+    #[test]
+    fn frozen_roundtrip_both_regions() {
+        let m = CoordMap::new(37.0, 11.0).with_frozen(80.0, 40.0);
+        for src in [r(30.0, 15.0, 20.0, 20.0), r(300.0, 200.0, 50.0, 40.0)] {
+            let back = m.rect_to_pt(m.rect_to_view(src));
+            assert!(near(back.x, src.x) && near(back.y, src.y), "{:?} -> {:?}", src, back);
+        }
+    }
+
+    #[test]
+    fn frozen_hit_view_in_frozen_area_ignores_scroll() {
+        let mut s = ChartStore::new();
+        s.set(0, 7, r(30.0, 15.0, 20.0, 20.0));
+        // 已滚动(100,50),但视口点(80,43)落在冻结区 → 按未滚动换算命中图表
+        let m = CoordMap::new(100.0, 50.0).with_frozen(80.0, 40.0);
+        assert_eq!(s.hit_view(0, &m, 80.0, 43.0), Some(7));
+        // 不冻结时同一点已被滚动移走 → 不命中
+        let m0 = CoordMap::new(100.0, 50.0);
+        assert_eq!(s.hit_view(0, &m0, 80.0, 43.0), None);
     }
 
     #[test]

@@ -2969,8 +2969,8 @@ msgstr "AI Configuration"
 msgid "界面语言"
 msgstr "Interface language"
 
-msgid "切换后立即生效；目前仅提供英文译文。"
-msgstr "Takes effect immediately; only English is available for now."
+msgid "切换后立即生效。"
+msgstr "Takes effect immediately."
 
 msgid "主题色"
 msgstr "Theme color"
@@ -3134,3 +3134,72 @@ msgstr "Bring to Front"
 msgid "置于底层"
 msgstr "Send to Back"
 
+msgid "Carlito (默认)"
+msgstr "Carlito (default)"
+
+msgid "等线 (中文正文)"
+msgstr "DengXian (Chinese body)"
+
+msgid "空值"
+msgstr "Nulls"
+
+msgid "中位数"
+msgstr "Median"
+
+msgid "统计量"
+msgstr "Statistic"
+
+msgid "前 5 行"
+msgstr "First 5 rows"
+
+msgid "正在读取并分析… 已用 {} 秒"
+msgstr "Reading and analyzing… {}s elapsed"
+
+msgid "导入概览:{}"
+msgstr "Import overview: {}"
+
+msgid "共 {} 行,{} 列"
+msgstr "{} rows, {} columns"
+
+msgid "{} 列"
+msgstr "{} columns"
+
+msgid "仅预览前 5 行"
+msgstr "Preview: first 5 rows only"
+
+msgid "仅第一个工作表"
+msgstr "First sheet only"
+
+msgid "小计与总计"
+msgstr "Subtotals & Grand Totals"
+
+msgid "行小计"
+msgstr "Row Subtotals"
+
+msgid "列小计"
+msgstr "Column Subtotals"
+
+msgid "底部总计行"
+msgstr "Bottom Grand Total Row"
+
+msgid "右侧总计列"
+msgstr "Right Grand Total Column"
+
+
+msgid "紧凑形式"
+msgstr "Compact Form"
+
+msgid "大纲形式"
+msgstr "Outline Form"
+
+msgid "表格形式"
+msgstr "Tabular Form"
+
+msgid "小计位置"
+msgstr "Subtotal Position"
+
+msgid "小计显示在组顶部"
+msgstr "Subtotals at Top of Group"
+
+msgid "小计显示在组底部"
+msgstr "Subtotals at Bottom of Group"

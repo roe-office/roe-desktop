@@ -7,8 +7,13 @@ export component RibbonBigButton inherits Rectangle {
     in property <bool> active: false;
     callback clicked();
 
-    width: 48px;
+    width: max(48px, min(measure.preferred-width + 10px, 104px));
     height: 62px;
+    measure := Text {
+        visible: false;
+        text: root.label;
+        font-size: 10px;
+    }
     border-radius: 3px;
     border-width: root.active ? 1px : 0px;
     border-color: root.active ? #2b579a : transparent;

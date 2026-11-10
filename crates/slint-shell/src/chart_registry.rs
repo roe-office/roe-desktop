@@ -59,6 +59,10 @@ pub fn find(cat: usize, ty: usize) -> Option<&'static ChartTypeDef> {
 /// 生成该类型的假数据 JSON。thumb=true：无标题、无图例（缩略图用）。
 /// 同一份 JSON 既能喂 roe_render_chart_to_png（预览），也能喂 roe_impress_insert_chart（插入）。
 pub fn chart_json(def: &ChartTypeDef, w: u32, h: u32, thumb: bool) -> String {
+    crate::ui_lang::localize_chart(chart_json_zh(def, w, h, thumb))
+}
+
+fn chart_json_zh(def: &ChartTypeDef, w: u32, h: u32, thumb: bool) -> String {
     let (labels, series): (Vec<&str>, Vec<Value>) = match def.kind {
         "Pie" | "Doughnut" => (
             vec!["第一季度", "第二季度", "第三季度", "第四季度"],
@@ -122,6 +126,10 @@ pub fn is_stat(cat: i32, ty: i32) -> bool {
 
 /// 统计图假数据：完整 StatChartModel JSON（该模型字段无默认值，需写全）
 pub fn stat_json(def: &ChartTypeDef) -> String {
+    crate::ui_lang::localize_chart(stat_json_zh(def))
+}
+
+fn stat_json_zh(def: &ChartTypeDef) -> String {
     let series_of = |name: &str, layout: &str, data_id: u32, subtotals: Vec<usize>, bin_width: Option<f64>, labels: Value| -> Value {
         json!({
             "name": name, "layout_id": layout, "format_idx": data_id, "data_id": data_id,
@@ -314,7 +322,7 @@ pub fn chart_json_real(def: &ChartTypeDef, data: &RealData, w_pt: f32, h_pt: f32
     let title_v = if thumb {
         Value::Null
     } else {
-        match title { Some(t) if !t.trim().is_empty() => json!(t), _ => json!("图表标题") }
+        match title { Some(t) if !t.trim().is_empty() => json!(t), _ => json!(crate::ui_lang::t("图表标题", "Chart Title")) }
     };
     Some(json!({
         "kind": def.kind,

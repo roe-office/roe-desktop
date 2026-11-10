@@ -1349,12 +1349,12 @@ dependencies = [
 
 [[package]]
 name = "charts-rs"
-version = "1.0.0"
+version = "2.3.0"
 dependencies = [
  "arc-swap",
- "fontdue",
  "serde",
  "serde_json",
+ "ttf-parser",
 ]
 
 [[package]]
@@ -2393,16 +2393,6 @@ dependencies = [
  "memmap2",
  "slotmap",
  "tinyvec",
- "ttf-parser",
-]
-
-[[package]]
-name = "fontdue"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7894823fa221401399e2598f8b63f81ac77ff5c63248b7656779bff1632d7d3d"
-dependencies = [
- "hashbrown 0.15.5",
  "ttf-parser",
 ]
 
@@ -6830,6 +6820,7 @@ name = "roe-agent"
 version = "0.1.0"
 dependencies = [
  "cap-std",
+ "chrono",
  "dotenvy",
  "futures",
  "rig-agent",

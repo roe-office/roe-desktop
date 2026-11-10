@@ -3,7 +3,7 @@
 
 use std::cell::{Cell, RefCell};
 
-use slint::{ModelRc, SharedString, VecModel};
+use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 
 use super::RibbonCtx;
 
@@ -15,7 +15,7 @@ thread_local! {
 }
 
 fn status(app: &crate::AppWindow, msg: &str) {
-    app.set_status_message(msg.into());
+    crate::ui_lang::StatusExt::set_status_msg(app, msg.into());
 }
 
 /// 文件夹名 -> 合法数据集名(字母/数字/下划线,其余换成下划线;空则 data)。
@@ -63,7 +63,7 @@ pub fn open(ctx: &RibbonCtx) {
             }
         }
     }
-    let Some(dir) = rfd::FileDialog::new().set_title("选择 parquet 文件夹(如 Hive 表目录)").pick_folder() else {
+    let Some(dir) = rfd::FileDialog::new().set_title(crate::ui_lang::t("选择 parquet 文件夹(如 Hive 表目录)", "Select parquet folder (e.g. Hive table directory)")).pick_folder() else {
         return;
     };
     let name = make_name(&dir);
@@ -127,6 +127,10 @@ const SHEET_HEAD_ROWS: u32 = 50;
 thread_local! {
     /// 待确认的导入:(路径, 类型)。取消或确认后清空。
     static PENDING: RefCell<Option<(String, String)>> = RefCell::new(None);
+    /// 预览代次号:取消/重开后递增,旧后台线程的结果据此丢弃。
+    static GEN: Cell<u64> = Cell::new(0);
+    /// 读秒 Timer(每秒 +1),结果返回或取消时销毁。
+    static TIMER: RefCell<Option<slint::Timer>> = RefCell::new(None);
 }
 
 fn jcell(v: &serde_json::Value) -> String {
@@ -168,36 +172,90 @@ pub fn open_file(ctx: &RibbonCtx, kind: &str) {
     }
     let picked = match kind {
         "csv" => rfd::FileDialog::new()
-            .set_title("选择 CSV 文件")
-            .add_filter("CSV / 文本", &["csv", "tsv", "txt"])
-            .add_filter("所有文件", &["*"])
+            .set_title(crate::ui_lang::t("选择 CSV 文件", "Select CSV file"))
+            .add_filter(crate::ui_lang::t("CSV / 文本", "CSV / Text"), &["csv", "tsv", "txt"])
+            .add_filter(crate::ui_lang::t("所有文件", "All files"), &["*"])
             .pick_file(),
         "xlsx" => rfd::FileDialog::new()
-            .set_title("选择 Excel 文件")
+            .set_title(crate::ui_lang::t("选择 Excel 文件", "Select Excel file"))
             .add_filter("Excel / ODS", &["xlsx", "xls", "ods"])
-            .add_filter("所有文件", &["*"])
+            .add_filter(crate::ui_lang::t("所有文件", "All files"), &["*"])
             .pick_file(),
-        _ => rfd::FileDialog::new().set_title("选择 parquet 文件夹(如 Hive 表目录)").pick_folder(),
+        "parquet_file" => rfd::FileDialog::new()
+            .set_title(crate::ui_lang::t("选择 Parquet 文件", "Select Parquet file"))
+            .add_filter("Parquet", &["parquet", "parq"])
+            .add_filter(crate::ui_lang::t("所有文件", "All files"), &["*"])
+            .pick_file(),
+        _ => rfd::FileDialog::new().set_title(crate::ui_lang::t("选择 parquet 文件夹(如 Hive 表目录)", "Select parquet folder (e.g. Hive table directory)")).pick_folder(),
     };
     let Some(p) = picked else { return };
+    // "parquet_file" 只用于区分选文件/选目录,选完归一为 "parquet",后续流程不变
+    let kind = if kind == "parquet_file" { "parquet" } else { kind };
     let path = p.to_string_lossy().into_owned();
 
-    let pv = {
-        let s = ctx.state.borrow();
-        let Some(sess) = s.session.as_ref() else { return };
-        let r = sess.df_preview_file(&path, kind, r#"{"head":10}"#);
-        r
-    };
-    let v = match pv {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("[ribbon] calc.df_open_file 预览失败: {}", e);
-            status(&app, &format!("读取失败: {}", e));
-            return;
+    let fname = std::path::Path::new(&path)
+        .file_name()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_else(|| path.clone());
+    let my_gen = GEN.with(|g| { g.set(g.get() + 1); g.get() });
+
+    // 立即弹出概览窗并进入读取状态(清空旧内容),预览放后台线程
+    app.set_dfo_title(fname.to_string().into());
+    app.set_dfo_info("".into());
+    app.set_dfo_shape("".into());
+    app.set_dfo_col_info(to_model_rows(Vec::new()));
+    app.set_dfo_head_cols(ModelRc::new(VecModel::from(Vec::<SharedString>::new())));
+    app.set_dfo_head_rows(to_model_rows(Vec::new()));
+    app.set_dfo_desc_cols(ModelRc::new(VecModel::from(Vec::<SharedString>::new())));
+    app.set_dfo_desc_rows(to_model_rows(Vec::new()));
+    app.set_dfo_elapsed(0);
+    app.set_dfo_loading(true);
+    app.set_dfo_visible(true);
+
+    let timer = slint::Timer::default();
+    let tw = app.as_weak();
+    timer.start(slint::TimerMode::Repeated, std::time::Duration::from_secs(1), move || {
+        if let Some(a) = tw.upgrade() {
+            a.set_dfo_elapsed(a.get_dfo_elapsed() + 1);
         }
-    };
+    });
+    TIMER.with(|t| *t.borrow_mut() = Some(timer));
+
+    let weak = app.as_weak();
+    let kind_s = kind.to_string();
+    std::thread::spawn(move || {
+        // xlsx:重活(整表物化并落 IPC 缓存)前置到预览阶段,确认时命中缓存、注册瞬间完成
+        let r = (|| {
+            if kind_s == "xlsx" {
+                doc_core::TileCacheRust::df_prepare_file_detached(&path, &kind_s, "{}")?;
+            }
+            doc_core::TileCacheRust::df_preview_file_detached(&path, &kind_s, r#"{"head":5}"#)
+        })();
+        let _ = slint::invoke_from_event_loop(move || {
+            if GEN.with(|g| g.get()) != my_gen {
+                return; // 用户已取消或重开,丢弃
+            }
+            TIMER.with(|t| *t.borrow_mut() = None);
+            let Some(app) = weak.upgrade() else { return };
+            app.set_dfo_loading(false);
+            match r {
+                Ok(v) => apply_preview(&app, path, &kind_s, v),
+                Err(e) => {
+                    eprintln!("[ribbon] calc.df_open_file 预览失败: {}", e);
+                    app.set_dfo_visible(false);
+                    status(&app, &format!("读取失败: {}", e));
+                }
+            }
+        });
+    });
+}
+
+/// 把预览 JSON 填进概览弹窗并登记待确认导入。
+fn apply_preview(app: &crate::AppWindow, path: String, kind: &str, v: serde_json::Value) {
     let rows = v.get("rows").and_then(|x| x.as_u64()).unwrap_or(0);
+    let preview_only = v.get("preview_only").and_then(|x| x.as_bool()).unwrap_or(false);
     let ncols = v.get("cols").and_then(|x| x.as_u64()).unwrap_or(0);
+    let approx_rows = v.get("approx_rows").and_then(|x| x.as_u64());
     let col_info: Vec<Vec<String>> = v
         .get("columns")
         .and_then(|x| x.as_array())
@@ -206,7 +264,12 @@ pub fn open_file(ctx: &RibbonCtx, kind: &str) {
                 .map(|c| {
                     ["name", "dtype", "nulls", "min", "max", "mean"]
                         .iter()
-                        .map(|k| c.get(*k).map(jcell).unwrap_or_default())
+                        .map(|k| match c.get(*k) {
+                            Some(x) => jcell(x),
+                            // 预览模式不做全表统计:统计列显示 —,避免空白被误解为缺数据
+                            None if preview_only && matches!(*k, "nulls" | "min" | "max" | "mean") => "—".to_string(),
+                            None => String::new(),
+                        })
                         .collect()
                 })
                 .collect()
@@ -225,19 +288,69 @@ pub fn open_file(ctx: &RibbonCtx, kind: &str) {
         })
         .unwrap_or_default();
 
+    let desc_cols: Vec<SharedString> = v["describe"]["columns"]
+        .as_array()
+        .map(|a| a.iter().map(|c| SharedString::from(jcell(c))).collect())
+        .unwrap_or_default();
+    let desc_rows: Vec<Vec<String>> = v["describe"]["rows"]
+        .as_array()
+        .map(|rs| {
+            rs.iter()
+                .map(|r| r.as_array().map(|cs| cs.iter().map(jcell).collect()).unwrap_or_default())
+                .collect()
+        })
+        .unwrap_or_default();
+    // 弹窗只显示精简统计行(bridge 仍返回完整 9 行,供脚本/AI 使用)
+    const DESC_KEEP: [&str; 7] = ["count", "null_count", "mean", "std", "min", "50%", "max"];
+    let desc_rows: Vec<Vec<String>> = desc_rows
+        .into_iter()
+        .filter(|r| r.first().map(|k| DESC_KEEP.contains(&k.as_str())).unwrap_or(false))
+        .collect();
+    // 统计单元格整理:数值最多 4 位小数且去尾零,"null" 显示为空;首列(统计名)与非数值文本原样
+    fn fmt_stat(t: &str) -> String {
+        if t == "null" { return String::new(); }
+        match t.trim().parse::<f64>() {
+            Ok(f) if f.is_finite() && !t.contains(':') && !t.contains('-') || t.trim().parse::<f64>().map(|f| f.is_finite() && t.trim_start_matches('-').chars().all(|c| c.is_ascii_digit() || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-')).unwrap_or(false) => {
+                let f: f64 = t.trim().parse().unwrap_or(0.0);
+                if f.abs() >= 1e15 { return t.to_string(); }
+                let r = format!("{:.4}", f);
+                r.trim_end_matches('0').trim_end_matches('.').to_string()
+            }
+            _ => t.to_string(),
+        }
+    }
+    let desc_rows: Vec<Vec<String>> = desc_rows
+        .into_iter()
+        .map(|r| r.into_iter().enumerate().map(|(i, c)| if i == 0 { c } else { fmt_stat(&c) }).collect())
+        .collect();
+    let shape_txt = match (preview_only, approx_rows) {
+        (true, Some(n)) => format!("shape: ({}, {})", n, ncols),
+        (true, None) => String::new(),
+        _ => format!("shape: ({}, {})", rows, ncols),
+    };
+
     let fname = std::path::Path::new(&path)
         .file_name()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.clone());
-    let mut info = format!("共 {} 行,{} 列。确定后注册数据集并写入前 {} 行预览", rows, ncols, SHEET_HEAD_ROWS);
-    if kind == "xlsx" {
-        info.push_str("(Excel 仅读取第一个工作表)");
-    }
-    app.set_dfo_title(format!("导入概览:{}", fname).into());
-    app.set_dfo_info(info.into());
+    let (info_mode, info_rows): (i32, i32) = if let (true, Some(n)) = (preview_only, approx_rows) {
+        (1, n as i32)
+    } else if preview_only {
+        (2, 0)
+    } else {
+        (0, rows as i32)
+    };
+    app.set_dfo_info_mode(info_mode);
+    app.set_dfo_info_rows(info_rows);
+    app.set_dfo_info_ncols(ncols as i32);
+    app.set_dfo_info_xlsx(kind == "xlsx");
+    app.set_dfo_title(fname.to_string().into());
     app.set_dfo_col_info(to_model_rows(col_info));
     app.set_dfo_head_cols(ModelRc::new(VecModel::from(head_cols)));
     app.set_dfo_head_rows(to_model_rows(head_rows));
+    app.set_dfo_desc_cols(ModelRc::new(VecModel::from(desc_cols)));
+    app.set_dfo_desc_rows(to_model_rows(desc_rows));
+    app.set_dfo_shape(shape_txt.into());
     PENDING.with(|p| *p.borrow_mut() = Some((path, kind.to_string())));
     app.set_dfo_visible(true);
 }
@@ -281,8 +394,13 @@ pub fn confirm(ctx: &RibbonCtx) {
 }
 
 /// 取消:丢弃待确认状态,不注册任何东西。
-pub fn cancel(_ctx: &RibbonCtx) {
+pub fn cancel(ctx: &RibbonCtx) {
     PENDING.with(|p| *p.borrow_mut() = None);
+    GEN.with(|g| g.set(g.get() + 1));
+    TIMER.with(|t| *t.borrow_mut() = None);
+    if let Some(app) = ctx.app_weak.upgrade() {
+        app.set_dfo_loading(false);
+    }
 }
 
 
@@ -308,13 +426,23 @@ pub fn open_sql(ctx: &RibbonCtx) {
             return;
         }
     };
-    if names.is_empty() {
-        status(&app, "还没有数据集,请先用「获取数据(Polars)」导入");
+    let tables: Vec<String> = {
+        let s = ctx.state.borrow();
+        s.session.as_ref().and_then(|sess| sess.df_sheet_tables().ok()).unwrap_or_default()
+    };
+    let mut all: Vec<String> = names.iter().map(|(n, _)| n.clone()).collect();
+    for t in tables {
+        if !all.contains(&t) {
+            all.push(t);
+        }
+    }
+    if all.is_empty() {
+        status(&app, "当前文档没有可查询的数据");
         return;
     }
-    let chips: Vec<SharedString> = names.iter().map(|(n, _)| SharedString::from(n.as_str())).collect();
+    let chips: Vec<SharedString> = all.iter().map(|n| SharedString::from(n.as_str())).collect();
     if app.get_sql_text().trim().is_empty() {
-        app.set_sql_text(format!("SELECT * FROM {} LIMIT 100", names[0].0).into());
+        app.set_sql_text(format!("SELECT * FROM {} LIMIT 100", all[0]).into());
     }
     app.set_sql_ds_names(ModelRc::new(VecModel::from(chips)));
     app.set_sql_cols(ModelRc::new(VecModel::from(Vec::<SharedString>::new())));
@@ -473,11 +601,14 @@ pub fn open_chain(ctx: &RibbonCtx) {
                 return;
             }
         };
+        // sheet 按需注册出的数据集不算"已导入数据",剔除后再判断(否则先点 SQL 会让 df 分析误弹窗)
+        let sheet_tables = sess.df_sheet_tables().unwrap_or_default();
+        let names: Vec<(String, u64)> = names.into_iter().filter(|(n, _)| !sheet_tables.contains(n)).collect();
         let cols = names.first().and_then(|(n, _)| sess.df_columns(n).ok()).unwrap_or_default();
         (names, cols)
     };
     if names.is_empty() {
-        status(&app, "还没有数据集,请先用「获取数据(Polars)」导入");
+        status(&app, "还没有数据集,请先用「获取数据(Polars)」导入,或直接用 SQL 查询当前表格");
         return;
     }
     let ds: Vec<String> = names.iter().map(|(n, _)| n.clone()).collect();

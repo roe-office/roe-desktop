@@ -12,6 +12,7 @@ pub mod calc_df;
 mod chain_line;
 pub mod calc_names;
 pub mod calc_home;
+pub mod calc_view;
 pub mod calc_sparkline;
 pub mod calc_stat;
 pub mod writer_home;
@@ -195,7 +196,7 @@ fn dispatch(cmd: &str, ctx: &RibbonCtx) {
     match cmd.split_once('.') {
         Some(("calc", sub)) => {
             // 先试「数据」页命令,未处理再交「开始」页
-            if !calc_data::handle(sub, ctx) {
+            if !calc_data::handle(sub, ctx) && !calc_view::handle(sub, ctx) {
                 calc_home::handle(sub, ctx);
             }
         }

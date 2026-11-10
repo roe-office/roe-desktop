@@ -2972,7 +2972,7 @@ msgstr "KI-Konfiguration"
 msgid "界面语言"
 msgstr "Oberflächensprache"
 
-msgid "切换后立即生效；目前仅提供英文译文。"
+msgid "切换后立即生效。"
 msgstr "Wird sofort übernommen."
 
 msgid "主题色"
@@ -3137,3 +3137,72 @@ msgstr "In den Vordergrund"
 msgid "置于底层"
 msgstr "In den Hintergrund"
 
+msgid "Carlito (默认)"
+msgstr "Carlito (Std.)"
+
+msgid "等线 (中文正文)"
+msgstr "DengXian (Chin.)"
+
+msgid "空值"
+msgstr "Leer"
+
+msgid "中位数"
+msgstr "Median"
+
+msgid "统计量"
+msgstr "Statistik"
+
+msgid "前 5 行"
+msgstr "Erste 5 Zeilen"
+
+msgid "正在读取并分析… 已用 {} 秒"
+msgstr "Wird gelesen und analysiert… {} s"
+
+msgid "导入概览:{}"
+msgstr "Importübersicht: {}"
+
+msgid "共 {} 行,{} 列"
+msgstr "{} Zeilen, {} Spalten"
+
+msgid "{} 列"
+msgstr "{} Spalten"
+
+msgid "仅预览前 5 行"
+msgstr "Nur 5 Zeilen Vorschau"
+
+msgid "仅第一个工作表"
+msgstr "Nur erstes Blatt"
+
+msgid "小计与总计"
+msgstr "Zwischen- und Gesamtsummen"
+
+msgid "行小计"
+msgstr "Zeilenzwischensummen"
+
+msgid "列小计"
+msgstr "Spaltenzwischensummen"
+
+msgid "底部总计行"
+msgstr "Gesamtsumme unten"
+
+msgid "右侧总计列"
+msgstr "Gesamtsumme rechts"
+
+
+msgid "紧凑形式"
+msgstr "Kompaktformat"
+
+msgid "大纲形式"
+msgstr "Gliederungsformat"
+
+msgid "表格形式"
+msgstr "Tabellenformat"
+
+msgid "小计位置"
+msgstr "Position der Zwischensummen"
+
+msgid "小计显示在组顶部"
+msgstr "Zwischensummen oben in der Gruppe"
+
+msgid "小计显示在组底部"
+msgstr "Zwischensummen unten in der Gruppe"

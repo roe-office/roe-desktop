@@ -5,6 +5,18 @@ use super::RibbonCtx;
 
 /// 处理「数据」页命令。返回 true 表示已处理,false 交给其它页继续分发。
 pub fn handle(cmd: &str, ctx: &RibbonCtx) -> bool {
+    if let Some(arg) = cmd.strip_prefix("pivot_layout:") {
+        pivot_layout(ctx, arg);
+        return true;
+    }
+    if let Some(arg) = cmd.strip_prefix("pivot_subtotals_top:") {
+        pivot_subtotals_top(ctx, arg);
+        return true;
+    }
+    if let Some(arg) = cmd.strip_prefix("pivot_switch:") {
+        pivot_switch(ctx, arg);
+        return true;
+    }
     if cmd == "name_manager" {
         super::calc_names::open(ctx);
         return true;
@@ -40,6 +52,10 @@ pub fn handle(cmd: &str, ctx: &RibbonCtx) -> bool {
         }
         "df_open" => {
             super::calc_df::open(ctx);
+            true
+        }
+        "df_open_parquet_file" => {
+            super::calc_df::open_file(ctx, "parquet_file");
             true
         }
         "df_open_parquet" => {
@@ -2024,5 +2040,73 @@ fn filter_cmd(cmd: &str, ctx: &RibbonCtx) {
         // 行的显示变了:选区落到表头格,并按新行高重算高亮
         crate::calc_selection::select_anchor(&app, sess, &merges, sheet, hr, hc);
         reflow_selection(&app, &mut s, sheet);
+    }
+}
+
+/// 透视表小计/总计开关。arg 形如 "subtotal_row:1"(which:0|1)。
+/// 先读当前四个状态,只改其中一个,再整体写回后端;成功后由 sync_state_inner 回灌勾选态。
+pub fn pivot_switch(ctx: &RibbonCtx, arg: &str) {
+    let Some(app) = ctx.app_weak.upgrade() else { return };
+    let Some((which, v)) = arg.split_once(':') else { return };
+    let on = v == "1";
+    let mut sr = app.get_pivot_subtotal_row_on();
+    let mut sc = app.get_pivot_subtotal_col_on();
+    let mut gb = app.get_pivot_grand_bottom_on();
+    let mut gr = app.get_pivot_grand_right_on();
+    let is_sub = match which {
+        "subtotal_row" => { sr = on; true }
+        "subtotal_col" => { sc = on; true }
+        "grand_bottom" => { gb = on; false }
+        "grand_right" => { gr = on; false }
+        _ => return,
+    };
+    let sheet = ctx.current_sheet_idx.get();
+    let mut s = ctx.state.borrow_mut();
+    let Some(sess) = s.session.as_mut() else { return };
+    if !sess.is_pivot_sheet(sheet) { return; }
+    sess.begin_edit();
+    let ok = if is_sub { sess.pivot_set_subtotals(sheet, sr, sc) } else { sess.pivot_set_grand_totals(sheet, gb, gr) };
+    if ok { sess.commit_edit(); } else { sess.discard_edit(); }
+    eprintln!("[ribbon] pivot.switch sheet={} {}={} ok={}", sheet, which, on, ok);
+    if ok {
+        refresh_view(&app, sess);
+        sync_state_inner(&app, sess, sheet);
+    }
+}
+
+/// 透视表小计位置切换。arg: 1=组顶 0=组底(大纲/紧凑有效)。成功后刷新视图并回灌状态。
+pub fn pivot_subtotals_top(ctx: &RibbonCtx, arg: &str) {
+    let Some(app) = ctx.app_weak.upgrade() else { return };
+    let top = match arg { "1" => true, "0" => false, _ => return };
+    let sheet = ctx.current_sheet_idx.get();
+    let mut s = ctx.state.borrow_mut();
+    let Some(sess) = s.session.as_mut() else { return };
+    if !sess.is_pivot_sheet(sheet) { return; }
+    sess.begin_edit();
+    let ok = sess.pivot_set_subtotals_top(sheet, top);
+    if ok { sess.commit_edit(); } else { sess.discard_edit(); }
+    eprintln!("[ribbon] pivot.subtotals_top sheet={} top={} ok={}", sheet, top, ok);
+    if ok {
+        refresh_view(&app, sess);
+        sync_state_inner(&app, sess, sheet);
+    }
+}
+
+/// 透视表布局形态切换。arg: 0=大纲 1=紧凑 2=表格。成功后刷新视图并回灌状态。
+pub fn pivot_layout(ctx: &RibbonCtx, arg: &str) {
+    let Some(app) = ctx.app_weak.upgrade() else { return };
+    let Ok(mode) = arg.parse::<i32>() else { return };
+    if !(0..=2).contains(&mode) { return; }
+    let sheet = ctx.current_sheet_idx.get();
+    let mut s = ctx.state.borrow_mut();
+    let Some(sess) = s.session.as_mut() else { return };
+    if !sess.is_pivot_sheet(sheet) { return; }
+    sess.begin_edit();
+    let ok = sess.pivot_set_layout(sheet, mode);
+    if ok { sess.commit_edit(); } else { sess.discard_edit(); }
+    eprintln!("[ribbon] pivot.layout sheet={} mode={} ok={}", sheet, mode, ok);
+    if ok {
+        refresh_view(&app, sess);
+        sync_state_inner(&app, sess, sheet);
     }
 }

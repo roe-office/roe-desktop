@@ -70,6 +70,7 @@ use roe_agent::workspace::WorkspaceContext;
 use crate::config::AgentConfig;
 use crate::event::{AgentAction, AgentUiEvent};
 use crate::saved_hook::SavedHook;
+use crate::stream_err::friendly_stream_error;
 use crate::turn_budget_hook::TurnBudgetHook;
 
 /// 临时方案（明确知道会被替换）：DEEPSEEK_API_KEY 目前硬编码从
@@ -352,6 +353,7 @@ impl AgentRuntimeHandle {
             };
 
             let mut history: Vec<rig_core::message::Message> = Vec::new();
+            let mut pending_notes: Vec<String> = Vec::new();
 
             while let Some(action) = receiver.recv().await {
                 match action {
@@ -388,8 +390,16 @@ impl AgentRuntimeHandle {
 
                         emit_to_ui(on_event.clone(), AgentUiEvent::ThinkingStatus(true));
 
+                        let prompt_text = if pending_notes.is_empty() {
+                            text.clone()
+                        } else {
+                            eprintln!("[agent-bridge] 附带 {} 条系统提示", pending_notes.len());
+                            let joined = pending_notes.join("\n");
+                            pending_notes.clear();
+                            format!("{}\n\n{}", joined, text)
+                        };
                         let mut response_stream = active_agent
-                            .stream_prompt(text.clone())
+                            .stream_prompt(prompt_text.clone())
                             .history(history.clone())
                             .max_turns(GUI_AGENT_MAX_TURNS)
                             .add_hook(TurnBudgetHook::new(GUI_AGENT_MAX_TURNS))
@@ -425,7 +435,7 @@ impl AgentRuntimeHandle {
                                     eprintln!("[agent-bridge] stream_prompt 错误: {e}");
                                     emit_to_ui(
                                         on_event.clone(),
-                                        AgentUiEvent::ExecutionError(format!("[错误] {e}")),
+                                        AgentUiEvent::ExecutionError(friendly_stream_error(&e.to_string())),
                                     );
                                     break;
                                 }
@@ -438,7 +448,7 @@ impl AgentRuntimeHandle {
                         if let Some(messages) = new_messages {
                             history.extend(messages);
                         } else if !acc.is_empty() {
-                            history.push(rig_core::message::Message::user(text));
+                            history.push(rig_core::message::Message::user(prompt_text));
                             history.push(rig_core::message::Message::assistant(acc));
                         }
 
@@ -478,7 +488,12 @@ impl AgentRuntimeHandle {
                     }
                     // 确认流程已移除(脚本直接生效,可撤销);变体暂留,UI 清理后删除。
                     AgentAction::UserConfirm(_) | AgentAction::UserDiscard(_) => {}
+                    AgentAction::PreviewFailed(note) => {
+                        if pending_notes.len() >= 5 { pending_notes.remove(0); }
+                        pending_notes.push(note);
+                    }
                     AgentAction::ResetHistory => {
+                        pending_notes.clear();
                         history.clear();
                     }
                 }

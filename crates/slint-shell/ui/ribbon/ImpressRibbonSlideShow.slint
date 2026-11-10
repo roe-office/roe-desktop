@@ -37,9 +37,9 @@ export component ImpressRibbonSlideShow inherits Rectangle {
             label: @tr("设置");
             VerticalLayout {
                 spacing: 1px; alignment: center;
-                RibbonButton { label: @tr("放映设置");   show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/settings.svg"); }
-                RibbonButton { label: @tr("排练计时");   show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/timer.svg"); }
-                RibbonButton { label: @tr("隐藏幻灯片"); show-label: true; width: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/eye_hide.svg"); }
+                RibbonButton { label: @tr("放映设置");   show-label: true; min-w: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/settings.svg"); }
+                RibbonButton { label: @tr("排练计时");   show-label: true; min-w: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/timer.svg"); }
+                RibbonButton { label: @tr("隐藏幻灯片"); show-label: true; min-w: 96px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/eye_hide.svg"); }
             }
         }
     }

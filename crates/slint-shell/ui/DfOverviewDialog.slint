@@ -3,14 +3,51 @@
 
 import { ListView } from "std-widgets.slint";
 
+component DfBtn inherits Rectangle {
+    in property <string> label;
+    in property <bool> primary: false;
+    callback clicked();
+    min-width: max(64px, measure.preferred-width + 28px);
+    preferred-width: self.min-width;
+    height: 28px;
+    border-radius: 4px;
+    border-width: root.primary ? 0px : 1px;
+    border-color: #c0c0c0;
+    background: root.primary
+        ? (ta.has-hover ? #1a5c38 : #217346)
+        : (ta.has-hover ? #f0f0f0 : #ffffff);
+    Text {
+        x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+        text: root.label; font-size: 12px;
+        color: root.primary ? #ffffff : #333333;
+    }
+    measure := Text { visible: false; text: root.label; font-size: 12px; }
+    ta := TouchArea { clicked => { root.clicked(); } }
+}
+
 export component DfOverviewDialog inherits Rectangle {
     in-out property <bool> visible-dialog: false;
     in property <string> title: "";
-    in property <string> info-text: "";
+    in property <int> info-mode: 0;
+    in property <int> info-rows: 0;
+    in property <int> info-ncols: 0;
+    in property <bool> info-xlsx: false;
+    property <string> info-line: root.loading ? "" :
+        ((root.info-mode == 0
+            ? @tr("共 {} 行,{} 列", root.info-rows, root.info-ncols)
+            : (root.info-mode == 1
+                ? @tr("共 {} 行,{} 列", root.info-rows, root.info-ncols) + " · " + @tr("仅预览前 5 行")
+                : @tr("{} 列", root.info-ncols) + " · " + @tr("仅预览前 5 行")))
+         + (root.info-xlsx ? " · " + @tr("仅第一个工作表") : ""));
     // 每行: [列名, 类型, 空值数, min, max, mean]
     in property <[[string]]> col-info: [];
     in property <[string]> head-cols: [];
     in property <[[string]]> head-rows: [];
+    in property <[string]> desc-cols: [];
+    in property <[[string]]> desc-rows: [];
+    in property <string> shape: "";
+    in property <bool> loading: false;
+    in property <int> elapsed-secs: 0;
 
     callback confirmed();
     callback cancelled();
@@ -21,10 +58,22 @@ export component DfOverviewDialog inherits Rectangle {
     property <length> card-w: 860px;
     property <length> card-h: 580px;
     property <[length]> w: [200px, 100px, 80px, 110px, 110px, 110px];
-    property <length> head-col-w: root.head-cols.length > 0
-        ? max(110px, (root.card-w - 32px) / root.head-cols.length)
+    pure function stat-name(k: string) -> string {
+        if (k == "count") { return @tr("计数"); }
+        if (k == "null_count") { return @tr("空值"); }
+        if (k == "mean") { return @tr("均值"); }
+        if (k == "std") { return @tr("标准差"); }
+        if (k == "min") { return @tr("最小"); }
+        if (k == "50%") { return @tr("中位数"); }
+        if (k == "max") { return @tr("最大"); }
+        return k;
+    }
+    property <bool> has-desc: root.desc-cols.length > 0;
+    property <int> n-cols: max(root.head-cols.length, root.desc-cols.length);
+    property <length> head-col-w: root.n-cols > 0
+        ? max(110px, (root.card-w - 32px) / root.n-cols)
         : 100px;
-    property <length> head-view-w: max(root.card-w, root.head-cols.length * root.head-col-w + 32px);
+    property <length> head-view-w: max(root.card-w, root.n-cols * root.head-col-w + 32px);
 
     Rectangle {
         width: parent.width; height: parent.height;
@@ -47,10 +96,11 @@ export component DfOverviewDialog inherits Rectangle {
         // 标题栏
         Rectangle {
             x: 0px; y: 0px; width: parent.width; height: 40px;
+            background: @linear-gradient(90deg, #21734622 0%, #ffffff 70%);
             Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: #e8e8e8; }
             Text {
                 x: 16px; y: (parent.height - self.height) / 2;
-                text: root.title; font-size: 14px; font-weight: 600; color: #1a1a1a;
+                text: @tr("导入概览:{}", root.title); font-size: 14px; font-weight: 600; color: #1a1a1a;
             }
             close-touch := TouchArea {
                 x: parent.width - 32px; y: (parent.height - 24px) / 2;
@@ -66,6 +116,7 @@ export component DfOverviewDialog inherits Rectangle {
 
         // 列信息表头
         Rectangle {
+            visible: !root.has-desc;
             x: 0px; y: 40px; width: parent.width; height: 28px;
             background: #f3f3f3;
             HorizontalLayout {
@@ -82,6 +133,7 @@ export component DfOverviewDialog inherits Rectangle {
 
         // 列信息行
         ListView {
+            visible: !root.has-desc;
             x: 0px; y: 68px;
             width: parent.width; height: 168px;
             for row in root.col-info: Rectangle {
@@ -101,14 +153,16 @@ export component DfOverviewDialog inherits Rectangle {
 
         // 前 N 行
         Rectangle {
+            visible: !root.has-desc;
             x: 0px; y: 236px; width: parent.width; height: 24px;
             background: #fafafa;
             Text {
                 x: 16px; y: (parent.height - self.height) / 2;
-                text: @tr("前 10 行"); font-size: 12px; font-weight: 600; color: #666666;
+                text: @tr("前 5 行"); font-size: 12px; font-weight: 600; color: #666666;
             }
         }
         Rectangle {
+            visible: !root.has-desc;
             x: 0px; y: 260px; width: parent.width; height: 28px;
             background: #f3f3f3;
             clip: true;
@@ -130,6 +184,7 @@ export component DfOverviewDialog inherits Rectangle {
             }
         }
         head-list := ListView {
+            visible: !root.has-desc;
             x: 0px; y: 288px;
             width: parent.width; height: parent.height - 288px - 48px;
             viewport-width: root.head-view-w;
@@ -148,6 +203,159 @@ export component DfOverviewDialog inherits Rectangle {
             }
         }
 
+
+        // ---- 有 describe:shape + describe + 前 5 行 ----
+        Rectangle {
+            visible: root.has-desc;
+            x: 0px; y: 40px; width: parent.width; height: 24px;
+            background: #fafafa;
+            Text {
+                x: 16px; y: (parent.height - self.height) / 2;
+                text: root.shape; font-size: 12px; font-weight: 600; color: #666666;
+            }
+        }
+        Rectangle {
+            visible: root.has-desc;
+            x: 0px; y: 64px; width: parent.width; height: 28px;
+            background: @linear-gradient(90deg, #e9f1ec 0%, #eef2f7 100%);
+            clip: true;
+            Flickable {
+                x: 0px; y: 0px; width: parent.width; height: parent.height;
+                interactive: false;
+                viewport-width: root.head-view-w;
+                viewport-x <=> desc-list.viewport-x;
+                HorizontalLayout {
+                    x: 16px; width: root.head-view-w - 32px;
+                    alignment: start;
+                    for c[i] in root.desc-cols: Text {
+                        width: root.head-col-w;
+                        text: i == 0 ? @tr("统计量") : c; overflow: elide;
+                        font-size: 12px; font-weight: 600; color: #1a1a1a;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        desc-list := ListView {
+            visible: root.has-desc;
+            x: 0px; y: 92px; width: parent.width; height: 168px;
+            viewport-width: root.head-view-w;
+            for row in root.desc-rows: Rectangle {
+                height: 24px;
+                HorizontalLayout {
+                    x: 16px; width: root.head-view-w - 32px;
+                    alignment: start;
+                    for cell[i] in row: Text {
+                        width: root.head-col-w;
+                        text: i == 0 ? root.stat-name(cell) : cell; overflow: elide;
+                        font-size: 12px; color: #333333;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        Rectangle {
+            visible: root.has-desc;
+            x: 0px; y: 260px; width: parent.width; height: 24px;
+            background: #fafafa;
+            Rectangle { x: 0px; width: 3px; height: parent.height; background: #217346; }
+            Text {
+                x: 16px; y: (parent.height - self.height) / 2;
+                text: @tr("前 5 行"); font-size: 12px; font-weight: 600; color: #666666;
+            }
+        }
+        Rectangle {
+            visible: root.has-desc;
+            x: 0px; y: 284px; width: parent.width; height: 28px;
+            background: @linear-gradient(90deg, #e9f1ec 0%, #eef2f7 100%);
+            clip: true;
+            Flickable {
+                x: 0px; y: 0px; width: parent.width; height: parent.height;
+                interactive: false;
+                viewport-width: root.head-view-w;
+                viewport-x <=> desc-list.viewport-x;
+                HorizontalLayout {
+                    x: 16px; width: root.head-view-w - 32px;
+                    alignment: start;
+                    for c in root.head-cols: Text {
+                        width: root.head-col-w;
+                        text: c; overflow: elide;
+                        font-size: 12px; font-weight: 600; color: #1a1a1a;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+        head-list2 := ListView {
+            visible: root.has-desc;
+            x: 0px; y: 312px; width: parent.width; height: 120px;
+            viewport-width: root.head-view-w;
+            viewport-x: desc-list.viewport-x;
+            for row in root.head-rows: Rectangle {
+                height: 24px;
+                HorizontalLayout {
+                    x: 16px; width: root.head-view-w - 32px;
+                    alignment: start;
+                    for cell in row: Text {
+                        width: root.head-col-w;
+                        text: cell; overflow: elide;
+                        font-size: 12px; color: #333333;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        // 读取中覆盖层:盖住内容区,底栏(取消按钮)保持可用
+        Rectangle {
+            visible: root.loading;
+            x: 0px; y: 40px; width: parent.width; height: parent.height - 40px - 48px;
+            background: @linear-gradient(180deg, #21734612 0%, #ffffff 60%);
+            TouchArea { width: parent.width; height: parent.height; scroll-event(e) => { accept } }
+            Text {
+                x: (parent.width - self.width) / 2; y: parent.height / 2 - 40px;
+                text: @tr("正在读取并分析… 已用 {} 秒", root.elapsed-secs);
+                font-size: 14px; color: #333333;
+            }
+            Rectangle {
+                x: (parent.width - self.width) / 2; y: parent.height / 2;
+                width: 260px; height: 6px; border-radius: 3px;
+                background: #e8e8e8; clip: true;
+                Rectangle {
+                    width: 80px; height: parent.height; border-radius: 3px;
+                    background: #217346;
+                    x: Math.mod(animation-tick() / 1.4s, 1.0) * (parent.width + self.width) - self.width;
+                }
+            }
+        }
+
+        // 自绘横向滚动条(describe 与前 5 行共用 desc-list.viewport-x,内容不超宽时隐藏)
+        Rectangle {
+            visible: root.has-desc && !root.loading && root.head-view-w > root.card-w;
+            x: 16px; y: parent.height - 48px - 14px; width: parent.width - 32px; height: 10px;
+            border-radius: 5px; background: #e6e9ec;
+            property <length> thumb-w: max(40px, self.width * root.card-w / root.head-view-w);
+            property <length> track: self.width - thumb-w;
+            property <length> max-scroll: root.head-view-w - root.card-w;
+            thumb := Rectangle {
+                width: parent.thumb-w; height: parent.height; border-radius: 5px;
+                background: sb-touch.has-hover || sb-touch.pressed ? #1a5c38 : #217346;
+                x: parent.track * (-desc-list.viewport-x) / parent.max-scroll;
+            }
+            sb-touch := TouchArea {
+                property <length> start-thumb-x;
+                pointer-event(e) => {
+                    if (e.kind == PointerEventKind.down) { self.start-thumb-x = thumb.x; }
+                }
+                moved => {
+                    if (self.pressed) {
+                        let nx = max(0px, min(parent.track, self.start-thumb-x + (self.mouse-x - self.pressed-x)));
+                        desc-list.viewport-x = -(nx / parent.track) * parent.max-scroll;
+                    }
+                }
+            }
+        }
+
         // 底部栏
         Rectangle {
             x: 0px; y: parent.height - 48px; width: parent.width; height: 48px;
@@ -155,30 +363,21 @@ export component DfOverviewDialog inherits Rectangle {
             Rectangle { y: 0px; width: parent.width; height: 1px; background: #e8e8e8; }
             Text {
                 x: 16px; y: (parent.height - self.height) / 2;
-                text: root.info-text; font-size: 12px; color: #666666;
+                width: parent.width - 16px - 360px;
+                text: root.info-line; overflow: elide; font-size: 12px; color: #666666;
             }
-            HorizontalLayout {
-                x: parent.width - 16px - 220px; y: (parent.height - 28px) / 2;
-                width: 220px; height: 28px;
-                spacing: 8px; alignment: end;
-                cancel-touch := TouchArea {
-                    width: 64px; height: 28px;
-                    clicked => { root.cancelled(); }
-                    Rectangle {
-                        border-radius: 4px; border-color: #c0c0c0; border-width: 1px;
-                        background: cancel-touch.has-hover ? #f0f0f0 : #ffffff;
-                        Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("取消"); font-size: 12px; color: #333333; }
-                    }
-                }
-                ok-touch := TouchArea {
-                    width: 88px; height: 28px;
-                    clicked => { root.confirmed(); }
-                    Rectangle {
-                        border-radius: 4px;
-                        background: ok-touch.has-hover ? #1a5c38 : #217346;
-                        Text { x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; text: @tr("导入并预览"); font-size: 12px; color: #ffffff; }
-                    }
-                }
+            ok-btn := DfBtn {
+                label: @tr("导入并预览"); primary: true; visible: !root.loading;
+                width: self.min-width;
+                x: parent.width - 16px - self.width; y: (parent.height - self.height) / 2;
+                clicked => { root.confirmed(); }
+            }
+            DfBtn {
+                label: @tr("取消");
+                width: self.min-width;
+                x: ok-btn.visible ? ok-btn.x - 8px - self.width : parent.width - 16px - self.width;
+                y: (parent.height - self.height) / 2;
+                clicked => { root.cancelled(); }
             }
         }
     }

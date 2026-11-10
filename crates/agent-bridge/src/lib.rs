@@ -15,6 +15,7 @@ mod event;
 mod runtime;
 mod saved_hook;
 mod turn_budget_hook;
+mod stream_err;
 pub mod md_plain;
 mod ui_executor;
 mod upload;

@@ -6,6 +6,7 @@
 export component RibbonCheckBox inherits Rectangle {
     in property <string> text: "";
     in-out property <bool> checked: false;
+    in property <bool> enabled: true;
 
     callback toggled(bool);
 
@@ -20,7 +21,7 @@ export component RibbonCheckBox inherits Rectangle {
         border-radius: 2px;
         background: white;
         border-width: 1px;
-        border-color: root.checked ? #2b579a : #999999;
+        border-color: !root.enabled ? #cccccc : (root.checked ? #2b579a : #999999);
 
         Rectangle {
             x: 3px;
@@ -28,7 +29,7 @@ export component RibbonCheckBox inherits Rectangle {
             width: 8px;
             height: 8px;
             border-radius: 1px;
-            background: #2b579a;
+            background: root.enabled ? #2b579a : #bbbbbb;
             visible: root.checked;
         }
     }
@@ -36,12 +37,13 @@ export component RibbonCheckBox inherits Rectangle {
     label := Text {
         text: root.text;
         font-size: 11px;
-        color: #333333;
+        color: root.enabled ? #333333 : #aaaaaa;
         x: 14px + 6px;
         y: (parent.height - self.height) / 2;
     }
 
     touch := TouchArea {
+        enabled: root.enabled;
         clicked => {
             root.checked = !root.checked;
             root.toggled(root.checked);

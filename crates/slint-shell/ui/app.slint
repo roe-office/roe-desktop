@@ -44,6 +44,7 @@ import { CalcRibbonData } from "ribbon/CalcRibbonData.slint";
 import { CalcRibbonView } from "ribbon/CalcRibbonView.slint";
 import { CalcRibbonPivotTable } from "ribbon/CalcRibbonPivotTable.slint";
 import { CalcRibbonShapeFormat } from "ribbon/CalcRibbonShapeFormat.slint";
+import { ChartDesignTab } from "ribbon/ChartDesignTab.slint";
 import { SheetTabBar } from "ribbon/SheetTabBar.slint";
 import { ImpressRibbonHome } from "ribbon/ImpressRibbonHome.slint";
 import { ImpressRibbonInsert } from "ribbon/ImpressRibbonInsert.slint";
@@ -74,6 +75,7 @@ import { InsertChartDialog } from "InsertChartDialog.slint";
 import { ChartInsertDialogV2 } from "ChartInsertDialogV2.slint";
 import { ActivityBar } from "ActivityBar.slint";
 import { AgentView, AgentMessage, AgentConversation, AgentProject } from "AgentView.slint";
+import { PreviewDialog } from "PreviewDialog.slint";
 
 // 选区高亮矩形（拖拽选区，本次新增）。用具名struct而非匿名struct数组，
 // 保证Slint生成的Rust类型名固定为SelectionRect，避免匿名struct自动命名的不确定性。
@@ -552,6 +554,7 @@ component WriterImeInput inherits TextInput {
         if (event.modifiers.control && !event.modifiers.shift && (event.text == "c" || event.text == "C")) { root.composed-format("writer.copy"); return accept; }
         if (event.modifiers.control && !event.modifiers.shift && (event.text == "x" || event.text == "X")) { root.composed-format("writer.cut"); return accept; }
         if (event.modifiers.control && !event.modifiers.shift && (event.text == "v" || event.text == "V")) { root.composed-format("writer.paste"); return accept; }
+        if (event.modifiers.control && !event.modifiers.shift && (event.text == "a" || event.text == "A")) { root.composed-format("writer.select_all"); return accept; }
         if (event.modifiers.control && (event.text == "s" || event.text == "S")) {
             root.composed-save();
             return accept;
@@ -613,8 +616,9 @@ export component AppWindow inherits Window {
     in-out property <bool> ai-script-ok: true;
     callback ai-undo-script();
     in-out property <bool> calc-filter-active: false;
+    in-out property <bool> calc-gridlines-on: true;
     in-out property <int> ai-privacy-level: 0;
-    title: "office-rs2 (Slint)";
+    title: "roe-office";
     preferred-width: 1200px;
     preferred-height: 800px;
     no-frame: true;
@@ -639,6 +643,8 @@ export component AppWindow inherits Window {
     in-out property <string> agent-input-text: "";
     in-out property <bool> agent-autonomous-mode: false;
     in-out property <bool> agent-sending: false;
+    in-out property <bool> agent-archived: false;
+    in-out property <string> agent-active-id: "";
 
     callback activity-item-clicked(string);
     callback activity-new-clicked();
@@ -647,9 +653,30 @@ export component AppWindow inherits Window {
     callback agent-open-workspace-clicked();
     callback agent-add-clicked();
     callback agent-conversation-selected(string);
+    callback agent-conversation-renamed(string, string);
+    callback agent-conversation-deleted(string);
     callback agent-project-selected(string);
     callback agent-mode-changed(bool);
     callback agent-send-message(string);
+    in-out property <bool> preview-visible: false;
+    in-out property <string> preview-title: "";
+    in-out property <color> preview-accent: #4a86e8;
+    in-out property <string> preview-kind: "writer";
+    in-out property <image> preview-image;
+    in-out property <float> preview-doc-width-pt: 612.0;
+    in-out property <float> preview-canvas-height-pt: 842.0;
+    in-out property <int> preview-page-current: 1;
+    in-out property <int> preview-page-total: 1;
+    callback preview-render(float, float, float);
+    callback preview-close();
+    callback preview-goto(int);
+    in-out property <[string]> preview-sheets: [];
+    in-out property <int> preview-sheet-current: 0;
+    in-out property <float> preview-calc-total-w: 0.0;
+    in-out property <float> preview-calc-total-h: 0.0;
+    in-out property <bool> preview-calc-capped: false;
+    callback preview-render-calc(float, float, int, int);
+    callback preview-sheet-select(int);
     // Ribbon 统一命令入口："软件.命令"，如 "calc.bold"
     callback ribbon-action(string);
     in-out property <bool> calc-bold-active: false;
@@ -664,11 +691,14 @@ export component AppWindow inherits Window {
     in-out property <string> calc-align-h: "";
     in-out property <string> calc-align-v: "";
     callback agent-script-preview(int);
+    callback agent-file-preview(int);
+    callback agent-file-folder(int);
     callback agent-script-confirm(int);
     callback agent-script-discard(int);
     callback agent-thinking-toggle(int);
     callback agent-copy-message(int);
     callback agent-copy-all();
+    in-out property <bool> writer-track-changes: false;
     in-out property <string> active-ribbon-tab: "home";
     in-out property <string> active-calc-tab: "home";
     property <string> color-menu-kind: ""; // "" 关闭 / "bg" / "fg"，颜色下拉浮层状态，
@@ -764,6 +794,7 @@ export component AppWindow inherits Window {
     property <[string]> spacing-menu-labels: [@tr("1.0 单倍行距"), @tr("1.5 倍行距"), @tr("2.0 双倍行距"), @tr("段前加间距"), @tr("段后加间距"), @tr("行距选项…")];
     property <[string]> list-menu-items: root.list-menu-kind == "bullet" ? root.list-bullet-labels
         : root.list-menu-kind == "number" ? root.list-number-labels
+        : root.list-menu-kind == "multi" ? root.list-multi-labels
         : root.list-menu-kind == "case" ? root.case-menu-labels
         : root.doc-type == "impress" ? root.spacing-menu-labels-impress : root.spacing-menu-labels;
     in-out property <bool> line-dlg-visible: false;
@@ -779,6 +810,7 @@ export component AppWindow inherits Window {
     in-out property <int> chart-dlg-rows: 4;
     in-out property <int> chart-dlg-cols: 3;
     in-out property <bool> chart-dlg-single: false;
+    in-out property <bool> chart-dlg-stat: false;
     in-out property <int> chart-dlg-gen: 0;
     in-out property <[string]> chart-dlg-cells;
     callback chart-edit-data();
@@ -820,6 +852,10 @@ export component AppWindow inherits Window {
     property <length> wstyle-menu-y: 0px;
     property <[string]> wstyle-names: [@tr("正文"), @tr("标题 1"), @tr("标题 2"), @tr("标题 3"), @tr("标题 4"), @tr("标题"), @tr("副标题")];
     property <[string]> list-bullet-labels: [@tr("无"), @tr("●  实心圆"), @tr("○  空心圆"), @tr("■  实心方"), @tr("–  短横线"), @tr("✓  勾选")];
+    property <[string]> list-multi-labels: [@tr("无"), "a", "b", "c", "d", "e"];
+    property <[string]> list-multi-l1: ["", "1.  标题", "1)  标题", "I.  标题", "●  标题", "➤  标题"];
+    property <[string]> list-multi-l2: ["", "1.1.  子项", "a)  子项", "A.  子项", "○  子项", "◆  子项"];
+    property <[string]> list-multi-l3: ["", "1.1.1.  细项", "i)  细项", "1.  细项", "■  细项", "–  细项"];
     property <[string]> list-number-labels: [@tr("无"), "1. 2. 3.", "1) 2) 3)", "a. b. c.", "A. B. C.", "i. ii. iii.", "I. II. III."];
     property <length> size-menu-x: 0px;
     property <length> size-menu-y: 0px;
@@ -875,6 +911,12 @@ export component AppWindow inherits Window {
     callback impress-master-rename-open();
     callback impress-master-rename-apply(string);
     in-out property <bool> pivot-table-active: false;
+    in-out property <bool> pivot-subtotal-row-on: false;   // 行小计(true=显示)
+    in-out property <bool> pivot-subtotal-col-on: false;   // 列小计
+    in-out property <bool> pivot-grand-bottom-on: true;    // 底部总计行
+    in-out property <bool> pivot-grand-right-on: true;     // 右侧总计列
+    in-out property <bool> pivot-subtotals-top: true;     // 大纲/紧凑小计位置 true=组顶
+    in-out property <int> pivot-layout-mode: 0;           // 布局形态 0=大纲 1=紧凑 2=表格
     in-out property <bool> pivot-sidebar-visible: false;  // 右侧透视表字段面板（独立于viewport，与SQL/AI面板共用同一套机制）
     in-out property <string> sidebar-kind: "none";   // v226: none | pivot | chart（后续: formula | image | shape | ai）
     in-out property <int> pivot-result-sheet: -1;    // v226: 透视结果所在 sheet 索引，-1=无
@@ -926,6 +968,12 @@ export component AppWindow inherits Window {
     property <bool> cursor-blink-phase: true;
     changed writer-cursor-x => { root.cursor-blink-phase = true; }
     changed impress-sel-id => { root.impress-probe-chart(); }
+    changed impress-sel-is-chart => {
+        if !self.impress-sel-is-chart && self.active-impress-tab == "chart" { self.active-impress-tab = "home"; }
+    }
+    changed writer-obj-is-chart => {
+        if !self.writer-obj-is-chart && self.active-ribbon-tab == "chart" { self.active-ribbon-tab = "home"; }
+    }
     changed writer-cursor-y => { root.cursor-blink-phase = true; }
     // ── 选区高亮（拖拽选区，本次新增）──
     in-out property <[SelectionRect]> writer-selection-rects: [];
@@ -984,8 +1032,16 @@ export component AppWindow inherits Window {
     in-out property <bool> impress-text-selecting: false;
     callback impress-text-drag(float, float);
     changed writer-obj-sel => { root.writer-obj-sel-changed(root.writer-obj-sel); }
+    // v304: 鼠标按下时是否按着Shift（Shift+点击扩选用）
+    in-out property <bool> writer-shift-down: false;
     callback writer-drag-start(float, float);
     callback writer-drag-move(float, float);
+    // v309: 悬停修订文字气泡
+    callback writer-hover(float, float);
+    in-out property <bool> writer-rev-tip-visible: false;
+    in-out property <string> writer-rev-tip-text: "";
+    in-out property <length> writer-rev-tip-x: 0px;
+    in-out property <length> writer-rev-tip-y: 0px;
     // ── Calc viewport（新方案，roe_render_sheet_viewport）──
     in property <image> calc-viewport-image;
     in-out property <length> calc-sheet-total-height: 14.25px * 1000;
@@ -996,6 +1052,20 @@ export component AppWindow inherits Window {
     in-out property <float> calc-scale: 1.0;
     in-out property <float> calc-scroll-x: 0.0;
     in-out property <float> calc-scroll-y: 0.0;
+    // 冻结区逻辑px宽高(不含标题栏),由 calc_frozen::refresh_extent 下发;0=未冻结
+    in-out property <float> calc-frozen-w: 0.0;
+    in-out property <float> calc-frozen-h: 0.0;
+    // 文档位置(逻辑px,数据区坐标) -> 数据区视口位置;冻结区不随滚动。与 Rust calc_frozen::doc_to_view 同口径。
+    pure function d2v(doc: float, scroll: float, f: float) -> float {
+        (f > 0.0 && doc < f) ? doc : doc - scroll
+    }
+    // 滚动区元素被冻结区遮挡时的裁剪:v=数据区视口坐标,w=尺寸,doc=文档位置(逻辑px),f=冻结尺寸。冻结区内元素/冻结为0时原样返回。
+    pure function cl-start(v: float, doc: float, f: float) -> float {
+        (f > 0.0 && doc >= f) ? max(v, f) : v
+    }
+    pure function cl-size(v: float, w: float, doc: float, f: float) -> float {
+        (f > 0.0 && doc >= f) ? max(0.0, v + w - max(v, f)) : w
+    }
     // 位图渲染时所用的 scroll(逻辑px),与 calc-viewport-image 同步更新;覆盖层裁剪用
     in-out property <float> calc-render-scroll-x: 0.0;
     in-out property <float> calc-render-scroll-y: 0.0;
@@ -1009,6 +1079,13 @@ export component AppWindow inherits Window {
     callback calc-pointer-up();
     callback calc-painter-cancel();                        // Esc 退出格式刷                            // 网格鼠标抬起,Rust 端执行格式刷
     callback calc-cell-click(float, float);
+    // 行列标题分隔线缩放:start 命中分隔线返回 true(此时不应再走 calc-cell-click)
+    callback calc-header-resize-start(float, float) -> bool;
+    callback calc-header-resize-move(float, float);
+    callback calc-header-resize-end(float, float);
+    in-out property <bool> calc-header-resizing: false;
+    in-out property <bool> calc-header-guide-is-col: true;
+    in-out property <float> calc-header-guide: 0.0;   // 参考线位置(逻辑px,控件坐标)
     callback calc-fill-start();
     callback calc-fill-move(float, float);
     callback calc-fill-end();  // mouse_x_px, mouse_y_px
@@ -1153,9 +1230,16 @@ export component AppWindow inherits Window {
     in-out property <[string]> calc-sheet-names: ["Sheet1"];
     in-out property <string> calc-active-sheet: "Sheet1";
     changed calc-active-sheet => { self.calc-obj-id = -1; }
+    changed pivot-table-active => {
+        if !self.pivot-table-active && self.active-calc-tab == "pivot" { self.active-calc-tab = "home"; }
+    }
+    changed calc-obj-chart => {
+        if !self.calc-obj-chart && self.active-calc-tab == "chart" { self.active-calc-tab = "home"; }
+    }
     changed calc-obj-id => {
         if self.calc-obj-id < 0 {
             self.calc-obj-shape = false;
+            self.calc-obj-chart = false;
             if self.active-calc-tab == "shape" { self.active-calc-tab = "home"; }
         }
         if !self.calc-editing { cell-edit.focus(); }
@@ -1313,6 +1397,7 @@ export component AppWindow inherits Window {
     in-out property <float> calc-obj-w-pt: 0.0;
     in-out property <float> calc-obj-h-pt: 0.0;
     in-out property <bool> calc-obj-rotatable: false;
+    in-out property <bool> calc-obj-chart: false;   // 选中的是图表(显示"图表设计"页签)
     in-out property <bool> calc-obj-shape: false;   // 选中的是图形/文本框(显示"形状格式"页签)
     callback calc-shape-style(string);
     in-out property <bool> calc-text-visible: false;
@@ -1355,6 +1440,14 @@ export component AppWindow inherits Window {
     callback chart-style-y-label-edited(string);
     callback chart-style-border-color-edited(string);
     callback chart-style-border-width-edited(float);
+    in-out property <string> chart-legend-pos: "";
+    in-out property <string> chart-kind-name: "";
+    in-out property <string> chart-grouping: "Standard";
+    in-out property <bool> chart-show-val: false;
+    in-out property <string> chart-gap-width: "";
+    in-out property <string> chart-overlap: "";
+    in-out property <string> chart-hole-size: "";
+    callback chart-patch(string, string);
     callback chart-panel-delete-clicked();
     callback calc-obj-delete-clicked();
     callback chart-panel-closed();
@@ -1460,9 +1553,18 @@ export component AppWindow inherits Window {
     in-out property <bool> dfo-visible: false;
     in-out property <string> dfo-title: "";
     in-out property <string> dfo-info: "";
+    in-out property <int> dfo-info-mode: 0;
+    in-out property <int> dfo-info-rows: 0;
+    in-out property <int> dfo-info-ncols: 0;
+    in-out property <bool> dfo-info-xlsx: false;
     in-out property <[[string]]> dfo-col-info: [];
     in-out property <[string]> dfo-head-cols: [];
     in-out property <[[string]]> dfo-head-rows: [];
+    in-out property <[string]> dfo-desc-cols: [];
+    in-out property <[[string]]> dfo-desc-rows: [];
+    in-out property <string> dfo-shape: "";
+    in-out property <bool> dfo-loading: false;
+    in-out property <int> dfo-elapsed: 0;
     callback dfo-confirmed();
     callback dfo-cancelled();
     // ---- SQL 查询对话框(SqlDialog) ----
@@ -1700,9 +1802,10 @@ export component AppWindow inherits Window {
                             {key: "review", label: @tr("审阅")},
                             {key: "view", label: @tr("视图")},
                             {key: "shapefmt", label: @tr("形状格式")},
+                            {key: "chart", label: @tr("图表设计")},
                         ] : tab-btn := TouchArea {
-                            visible: !(tab.key == "shapefmt" && !root.writer-obj-is-shape);
-                            width: (tab.key == "shapefmt" && !root.writer-obj-is-shape) ? 0px : tab-label.width + 16px;
+                            visible: !((tab.key == "shapefmt" && !root.writer-obj-is-shape) || (tab.key == "chart" && !root.writer-obj-is-chart));
+                            width: ((tab.key == "shapefmt" && !root.writer-obj-is-shape) || (tab.key == "chart" && !root.writer-obj-is-chart)) ? 0px : tab-label.width + 16px;
                             height: root.tabbar-height();
                             clicked => { root.active-ribbon-tab = tab.key; }
 
@@ -1808,6 +1911,23 @@ export component AppWindow inherits Window {
                             Rectangle { z: -1; y: 0px; width: parent.width; height: parent.height - 2px; border-radius: 3px; background: shape-tab-btn.has-hover && root.active-calc-tab != "shape" ? #fdf0e6 : transparent; }
                     }
 
+                        if root.calc-obj-chart : chart-tab-btn := TouchArea {
+                            width: chart-tab-label.width + 16px;
+                            height: root.tabbar-height();
+                            clicked => { root.active-calc-tab = "chart"; }
+                            Rectangle { y: 0px; x: 2px; width: parent.width - 4px; height: 2px; background: #c55a11; }
+                            chart-tab-label := Text {
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2 + 1px;
+                                text: @tr("图表设计");
+                                font-size: 13px;
+                                color: root.active-calc-tab == "chart" ? #c55a11 : #555555;
+                                font-weight: root.active-calc-tab == "chart" ? 600 : 400;
+                            }
+                            Rectangle { y: parent.height - 2px; x: 2px; width: parent.width - 4px; height: 2px; background: root.active-calc-tab == "chart" ? #c55a11 : transparent; }
+                            Rectangle { z: -1; y: 0px; width: parent.width; height: parent.height - 2px; border-radius: 3px; background: chart-tab-btn.has-hover && root.active-calc-tab != "chart" ? #fdf0e6 : transparent; }
+                        }
+
                     // 分隔线（仅"数据透视表"上下文tab显示时出现）
                         if root.pivot-table-active : Rectangle {
                             width: 1px;
@@ -1879,10 +1999,10 @@ export component AppWindow inherits Window {
                         spacing: 0px;
                         alignment: start;
 
-                        for tab-label[idx] in [{ key: "master", name: @tr("幻灯片母版") }, { key: "home", name: @tr("开始") }, { key: "insert", name: @tr("插入") }, { key: "animation", name: @tr("动画") }, { key: "transition", name: @tr("切换") }, { key: "slideshow", name: @tr("幻灯片放映") }, { key: "review", name: @tr("审阅") }, { key: "view", name: @tr("视图") }, { key: "design", name: @tr("设计") }, { key: "shape", name: @tr("形状格式") }] :
+                        for tab-label[idx] in [{ key: "master", name: @tr("幻灯片母版") }, { key: "home", name: @tr("开始") }, { key: "insert", name: @tr("插入") }, { key: "animation", name: @tr("动画") }, { key: "transition", name: @tr("切换") }, { key: "slideshow", name: @tr("幻灯片放映") }, { key: "review", name: @tr("审阅") }, { key: "view", name: @tr("视图") }, { key: "design", name: @tr("设计") }, { key: "shape", name: @tr("形状格式") }, { key: "chart", name: @tr("图表设计") }] :
                         impress-tab-btn := TouchArea {
-                            visible: !(root.impress-master-mode ? tab-label.key != "master" : (tab-label.key == "master" || (tab-label.key == "shape" && root.impress-sel-id < 0)));
-                            width: (root.impress-master-mode ? tab-label.key != "master" : (tab-label.key == "master" || (tab-label.key == "shape" && root.impress-sel-id < 0))) ? 0px : impress-tab-label.width + 16px;
+                            visible: !(root.impress-master-mode ? tab-label.key != "master" : (tab-label.key == "master" || (tab-label.key == "shape" && root.impress-sel-id < 0) || (tab-label.key == "chart" && !root.impress-sel-is-chart)));
+                            width: (root.impress-master-mode ? tab-label.key != "master" : (tab-label.key == "master" || (tab-label.key == "shape" && root.impress-sel-id < 0) || (tab-label.key == "chart" && !root.impress-sel-is-chart))) ? 0px : impress-tab-label.width + 16px;
                             height: root.tabbar-height();
                             clicked => { root.active-impress-tab = tab-label.key; }
 
@@ -2047,8 +2167,19 @@ export component AppWindow inherits Window {
                     if root.active-ribbon-tab == "layout": WriterRibbonLayout { width: parent.width; action(cmd) => { root.ribbon-action(cmd); } }
                     if root.active-ribbon-tab == "reference": WriterRibbonReference { width: parent.width; action(c) => { root.ribbon-action(c); } }
                     if root.active-ribbon-tab == "mail": WriterRibbonMail { width: parent.width; }
-                    if root.active-ribbon-tab == "review": WriterRibbonReview { width: parent.width; action(c) => { root.ribbon-action(c); } }
+                    if root.active-ribbon-tab == "review": WriterRibbonReview { width: parent.width; track-active: root.writer-track-changes; action(c) => { root.ribbon-action(c); } }
                     if root.active-ribbon-tab == "view": WriterRibbonView { width: parent.width; }
+                    if root.active-ribbon-tab == "chart": ChartDesignTab {
+                        width: parent.width;
+                        show-legend: root.chart-show-legend;
+                        show-grid: root.chart-show-grid;
+                        legend-pos: root.chart-legend-pos;
+                        is-stat: root.chart-is-stat;
+                        kind-name: root.chart-kind-name;
+                        grouping: root.chart-grouping;
+                        show-val: root.chart-show-val;
+                        patch(k, v) => { root.chart-patch(k, v); }
+                    }
                     if root.active-ribbon-tab == "shapefmt": WriterRibbonShapeFormat {
                         width: parent.width;
                         apply(s) => { root.writer-shape-style(s); }
@@ -2266,9 +2397,29 @@ export component AppWindow inherits Window {
                             root.stat-menu-y = y;
                         }
                     }
-                    if root.active-calc-tab == "view": CalcRibbonView { width: parent.width; }
-                    if root.active-calc-tab == "pivot": CalcRibbonPivotTable { width: parent.width; }
+                    if root.active-calc-tab == "view": CalcRibbonView { width: parent.width; gridlines-on <=> root.calc-gridlines-on; action(cmd) => { root.ribbon-action(cmd); } }
+                    if root.active-calc-tab == "pivot": CalcRibbonPivotTable {
+                        width: parent.width;
+                        subtotal-row-on: root.pivot-subtotal-row-on;
+                        subtotal-col-on: root.pivot-subtotal-col-on;
+                        grand-bottom-on: root.pivot-grand-bottom-on;
+                        layout-mode: root.pivot-layout-mode;
+                        subtotals-top: root.pivot-subtotals-top;
+                        grand-right-on: root.pivot-grand-right-on;
+                        action(cmd) => { root.ribbon-action(cmd); }
+                    }
                     if root.active-calc-tab == "shape": CalcRibbonShapeFormat { width: parent.width; apply(s) => { root.calc-shape-style(s); } }
+                    if root.active-calc-tab == "chart": ChartDesignTab {
+                        width: parent.width;
+                        show-legend: root.chart-show-legend;
+                        show-grid: root.chart-show-grid;
+                        legend-pos: root.chart-legend-pos;
+                        is-stat: root.chart-is-stat;
+                        kind-name: root.chart-kind-name;
+                        grouping: root.chart-grouping;
+                        show-val: root.chart-show-val;
+                        patch(k, v) => { root.chart-patch(k, v); }
+                    }
 
                     // 其余4个未实现的tab：绘图/页面布局/审阅/告诉我
                     if root.active-calc-tab != "home"
@@ -2277,7 +2428,8 @@ export component AppWindow inherits Window {
                         && root.active-calc-tab != "view"
                         && root.active-calc-tab != "data"
                         && root.active-calc-tab != "formula"
-                        && root.active-calc-tab != "shape" : Rectangle {
+                        && root.active-calc-tab != "shape"
+                        && root.active-calc-tab != "chart" : Rectangle {
                         width: parent.width;
                         height: parent.height;
                         Text {
@@ -2386,6 +2538,17 @@ export component AppWindow inherits Window {
                     if root.active-impress-tab == "slideshow": ImpressRibbonSlideShow { width: parent.width; }
                     if root.active-impress-tab == "design": ImpressRibbonDesign { width: parent.width; apply(s) => { root.impress-style(s); } pick-image() => { root.impress-bg-image(); } }
                     if root.active-impress-tab == "shape": ImpressRibbonShapeFormat { width: parent.width; apply(s) => { root.impress-style(s); } }
+                    if root.active-impress-tab == "chart": ChartDesignTab {
+                        width: parent.width;
+                        show-legend: root.chart-show-legend;
+                        show-grid: root.chart-show-grid;
+                        legend-pos: root.chart-legend-pos;
+                        is-stat: root.chart-is-stat;
+                        kind-name: root.chart-kind-name;
+                        grouping: root.chart-grouping;
+                        show-val: root.chart-show-val;
+                        patch(k, v) => { root.chart-patch(k, v); }
+                    }
                     if root.active-impress-tab == "review": ImpressRibbonReview { width: parent.width; }
                     if root.active-impress-tab == "view": ImpressRibbonView { width: parent.width; request-master() => { root.impress-master-mode = true; root.active-impress-tab = "master"; root.impress-master-enter(); } }
                     if root.active-impress-tab == "master": ImpressRibbonMaster { width: parent.width; can-delete: root.impress-master-can-delete; rename-layout => { root.impress-master-rename-open(); } insert-placeholder => { root.impress-master-ph-open(); } duplicate-layout() => { root.impress-master-duplicate-layout(); } delete-layout() => { root.impress-master-delete-layout(); } insert-image() => { root.impress-insert-image-clicked(); } bg-image() => { root.impress-bg-image(); } apply(s) => { root.impress-style(s); } close() => { root.impress-master-mode = false; root.active-impress-tab = "home"; root.impress-master-close(); } }
@@ -3041,14 +3204,14 @@ export component AppWindow inherits Window {
                     width: parent.width - 12px;
                     spacing: 4px;
                     Text { text: @tr("获取数据"); font-size: 11px; color: #666666; height: 16px; }
-                    for lbl[i] in [@tr("CSV 文件…"), @tr("Parquet / Hive 目录…"), @tr("Excel 文件…")] : Rectangle {
+                    for lbl[i] in [@tr("CSV 文件…"), @tr("Parquet 文件…"), @tr("Excel 文件…")] : Rectangle {
                         height: 24px;
                         background: dfItemTouch.has-hover ? #e8f0fc : transparent;
                         Text { text: lbl; font-size: 12px; color: #222222; x: 4px; y: (parent.height - self.height) / 2; }
                         dfItemTouch := TouchArea {
                             changed has-hover => { root.popup-hover-changed(self.has-hover); }
                             clicked => {
-                                root.ribbon-action(i == 0 ? "calc.df_open_csv" : (i == 1 ? "calc.df_open_parquet" : "calc.df_open_xlsx"));
+                                root.ribbon-action(i == 0 ? "calc.df_open_csv" : (i == 1 ? "calc.df_open_parquet_file" : "calc.df_open_xlsx"));
                                 root.df-menu-open = false;
                             }
                         }
@@ -3230,7 +3393,7 @@ export component AppWindow inherits Window {
                     Rectangle {
                         height: 24px;
                         background: cfClearSelTouch.has-hover ? #e8f0fc : transparent;
-                        Text { text: @tr("清除所选单元格的规则"); font-size: 12px; color: #222222; x: 4px; y: (parent.height - self.height) / 2; }
+                        Text { text: @tr("清除所选单元格的规则"); font-size: 12px; color: #222222; x: 4px; width: parent.width - 8px; overflow: elide; y: (parent.height - self.height) / 2; }
                         cfClearSelTouch := TouchArea {
                             changed has-hover => { root.popup-hover-changed(self.has-hover); }
                             clicked => { root.ribbon-action("calc.cf:clear:sel"); root.cf-menu-open = false; }
@@ -3239,7 +3402,7 @@ export component AppWindow inherits Window {
                     Rectangle {
                         height: 24px;
                         background: cfClearSheetTouch.has-hover ? #e8f0fc : transparent;
-                        Text { text: @tr("清除整个工作表的规则"); font-size: 12px; color: #222222; x: 4px; y: (parent.height - self.height) / 2; }
+                        Text { text: @tr("清除整个工作表的规则"); font-size: 12px; color: #222222; x: 4px; width: parent.width - 8px; overflow: elide; y: (parent.height - self.height) / 2; }
                         cfClearSheetTouch := TouchArea {
                             changed has-hover => { root.popup-hover-changed(self.has-hover); }
                             clicked => { root.ribbon-action("calc.cf:clear:sheet"); root.cf-menu-open = false; }
@@ -3404,6 +3567,9 @@ export component AppWindow inherits Window {
                     border-color: root.style-bds[i];
                     Text {
                         text: root.style-names[i];
+                        overflow: elide;
+                        width: parent.width - 4px;
+                        x: 2px;
                         color: root.style-fgs[i];
                         font-size: root.style-fsz[i];
                         font-weight: root.style-bolds[i] ? 700 : 400;
@@ -3486,7 +3652,7 @@ export component AppWindow inherits Window {
                 z: 150;
                 x: root.wstyle-menu-x - parent.absolute-position.x;
                 y: root.wstyle-menu-y - parent.absolute-position.y;
-                width: 308px;
+                width: 472px;
                 height: 138px;
                 wstyleBgTouch := TouchArea {
                     changed has-hover => { root.popup-hover-changed(self.has-hover); }
@@ -3499,9 +3665,9 @@ export component AppWindow inherits Window {
                 drop-shadow-color: #00000030;
 
                 for nm[idx] in root.wstyle-names: Rectangle {
-                    x: (Math.mod(idx, 4) * 74 + 4) * 1px;
+                    x: (Math.mod(idx, 4) * 116 + 4) * 1px;
                     y: (Math.floor(idx / 4) * 50 + 4) * 1px;
-                    width: 70px;
+                    width: 112px;
                     height: 46px;
                     border-radius: 3px;
                     background: wsItemTouch.has-hover ? #e8f0fc : #f7f7f7;
@@ -3512,7 +3678,10 @@ export component AppWindow inherits Window {
                         font-size: (idx == 0 ? 12 : idx == 1 ? 16 : idx == 2 ? 14 : idx == 3 ? 13 : idx == 4 ? 12 : idx == 5 ? 18 : 12) * 1px;
                         font-weight: (idx >= 1 && idx <= 5) ? 700 : 400;
                         color: idx == 6 ? #666666 : #222222;
-                        x: (parent.width - self.width) / 2;
+                        horizontal-alignment: center;
+                        overflow: elide;
+                        width: parent.width - 8px;
+                        x: 4px;
                         y: (parent.height - self.height) / 2;
                     }
                     wsItemTouch := TouchArea {
@@ -3554,8 +3723,8 @@ export component AppWindow inherits Window {
                 z: 150;
                 x: root.list-menu-x - parent.absolute-position.x;
                 y: root.list-menu-y - parent.absolute-position.y;
-                width: root.list-menu-kind == "case" ? 170px : 130px;
-                height: root.list-menu-items.length * 26px + 4px;
+                width: root.list-menu-kind == "case" ? 170px : root.list-menu-kind == "multi" ? 190px : 130px;
+                height: root.list-menu-kind == "multi" ? 26px + (root.list-menu-items.length - 1) * 62px + 4px : root.list-menu-items.length * 26px + 4px;
                 listMenuBgTouch := TouchArea {
                     changed has-hover => { root.popup-hover-changed(self.has-hover); }
                 }
@@ -3572,14 +3741,34 @@ export component AppWindow inherits Window {
                     width: parent.width - 4px;
                     spacing: 0px;
                     for lbl[idx] in root.list-menu-items: Rectangle {
-                        height: 26px;
+                        height: root.list-menu-kind == "multi" && idx > 0 ? 62px : 26px;
                         background: listItemTouch.has-hover ? #e8f0fc : transparent;
                         Text {
                             text: lbl;
+                            visible: root.list-menu-kind != "multi" || idx == 0;
+                            width: parent.width - 16px;
+                            overflow: elide;
                             font-size: 12px;
                             color: #222222;
                             x: 8px;
                             y: (parent.height - self.height) / 2;
+                        }
+                        if root.list-menu-kind == "multi" && idx > 0: Text {
+                            text: root.list-multi-l1[idx];
+                            font-size: 12px; color: #222222; x: 8px; y: 6px;
+                        }
+                        if root.list-menu-kind == "multi" && idx > 0: Text {
+                            text: root.list-multi-l2[idx];
+                            font-size: 12px; color: #222222; x: 20px; y: 24px;
+                        }
+                        if root.list-menu-kind == "multi" && idx > 0: Text {
+                            text: root.list-multi-l3[idx];
+                            font-size: 12px; color: #222222; x: 32px; y: 42px;
+                        }
+                        if root.list-menu-kind == "multi" && idx < root.list-menu-items.length - 1: Rectangle {
+                            x: 6px; y: parent.height - 1px;
+                            width: parent.width - 12px; height: 1px;
+                            background: #e4e4e4;
                         }
                         listItemTouch := TouchArea {
                             changed has-hover => { root.popup-hover-changed(self.has-hover); }
@@ -3587,6 +3776,7 @@ export component AppWindow inherits Window {
                                 if (root.list-menu-kind == "bullet") { if (root.doc-type == "impress") { root.impress-para-style("bulletstyle:" + idx); } else { root.ribbon-action("writer.list_bullet:" + idx); } }
                                 if (root.list-menu-kind == "number") { if (root.doc-type == "impress") { root.impress-para-style("numstyle:" + idx); } else { root.ribbon-action("writer.list_number:" + idx); } }
                                 if (root.list-menu-kind == "case") { root.ribbon-action("writer.change_case:" + idx); }
+                                if (root.list-menu-kind == "multi") { root.ribbon-action("writer.list_multi:" + idx); }
                                 if (root.list-menu-kind == "spacing") {
                                     if (idx == 0) { if (root.doc-type == "impress") { root.impress-para-style("spacing:1.0"); } else { root.ribbon-action("writer.line_spacing:1.0"); } }
                                     if (idx == 1) { if (root.doc-type == "impress") { root.impress-para-style("spacing:1.5"); } else { root.ribbon-action("writer.line_spacing:1.5"); } }
@@ -3680,12 +3870,11 @@ export component AppWindow inherits Window {
                 Rectangle {
                     visible: root.formula-box-visible && root.sidebar-kind == "formula";
                     x: (parent.width - 8px - root.writer-doc-width-pt * root.writer-scale * 1px) / 2 + root.formula-box-x * root.writer-scale * 1px;
-                    y: (root.formula-box-y + 24.0) * root.writer-scale * 1px - root.writer-scroll-y-pt * root.writer-scale * 1px;
+                    y: (root.formula-box-y + 24.0) * root.writer-scale * 1px - root.writer-scroll-y-pt * root.writer-scale * 1px - 2px;
                     width: root.formula-box-w * root.writer-scale * 1px;
-                    height: root.formula-box-h * root.writer-scale * 1px;
-                    background: transparent;
-                    border-width: 1px;
-                    border-color: #2f6fdd;
+                    height: root.formula-box-h * root.writer-scale * 1px + 4px;
+                    background: #2f6fdd22;
+                    border-radius: 2px;
                 }
                 // 选区高亮矩形（本次新增，画在光标下层，故放在光标Rectangle之前）
                 for rect in root.writer-selection-rects: Rectangle {
@@ -4020,10 +4209,10 @@ export component AppWindow inherits Window {
                     visible: root.sidebar-kind == "formula" && root.formula-para >= 0 && root.formula-run < 0;
                     x: (parent.width - 8px - root.writer-doc-width-pt * root.writer-scale * 1px) / 2 + root.writer-cursor-x * root.writer-scale * 1px;
                     y: root.writer-cursor-y * root.writer-scale * 1px - root.writer-scroll-y-pt * root.writer-scale * 1px;
-                    width: 20.0 * root.writer-scale * 1px;
+                    width: 3px;
                     height: root.writer-cursor-h * root.writer-scale * 1px;
-                    background: #d4d4d4b0;
-                    border-radius: 2px;
+                    background: #5b8fd6a0;
+                    border-radius: 1px;
                 }
                 Rectangle {
                     visible: root.writer-cursor-visible && root.cursor-blink-phase;
@@ -4044,7 +4233,9 @@ export component AppWindow inherits Window {
                 writer-ime-input := WriterImeInput {
                     visible: true;
                     x: (parent.width - 8px - root.writer-doc-width-pt * root.writer-scale * 1px) / 2 + root.writer-cursor-x * root.writer-scale * 1px;
-                    y: root.writer-cursor-y * root.writer-scale * 1px - root.writer-scroll-y-pt * root.writer-scale * 1px;
+                    // v304: 下移一行高，让输入法候选框出现在光标行下方而不是盖住它
+                    // v304: 限制在可视区内，光标在屏幕外时输入框也不能跑出去（否则收不到键盘事件）
+                    y: max(0px, min(parent.height - 20px, (root.writer-cursor-y + root.writer-cursor-h) * root.writer-scale * 1px - root.writer-scroll-y-pt * root.writer-scale * 1px));
                     width: 4px;
                     height: root.writer-cursor-h * root.writer-scale * 1px;
                     font-size: 1px;
@@ -4104,7 +4295,11 @@ export component AppWindow inherits Window {
                         y: 0px;
                         width: root.writer-doc-width-pt * root.writer-scale * 1px;
                         height: parent.height;
+                        changed has-hover => {
+                            if (!self.has-hover) { root.writer-rev-tip-visible = false; }
+                        }
                         clicked => {
+                            root.writer-rev-tip-visible = false;
                             // v117修复2：点击焦点目标改回 writer-ime-input（而不是
                             // writer-focus）。根因：writer-ime-input(TextInput)才是
                             // 真正处理IME组字/Ctrl+Z撤销/回车换行的组件（v101起新增，
@@ -4118,12 +4313,18 @@ export component AppWindow inherits Window {
                             // 的问题（Slint事件命中测试的z-order），跟"点击后键盘焦点该
                             // 给谁"是两件独立的事，可以同时成立不冲突。
                             writer-ime-input.focus();
-                            debug("[SLINT-CLICKED] mouse-x=", self.mouse-x / 1px, " mouse-y=", self.mouse-y / 1px);
+                            // debug("[SLINT-CLICKED] mouse-x=", self.mouse-x / 1px, " mouse-y=", self.mouse-y / 1px);
                             root.writer-click(self.mouse-x / 1px / root.writer-scale, self.mouse-y / 1px / root.writer-scale + root.writer-scroll-y-pt);
                         }
                         pointer-event(event) => {
+                            if (event.kind == PointerEventKind.move && !self.pressed) {
+                                root.writer-rev-tip-x = self.x + self.mouse-x + 14px;
+                                root.writer-rev-tip-y = self.y + self.mouse-y + 20px;
+                                root.writer-hover(self.mouse-x / 1px / root.writer-scale, self.mouse-y / 1px / root.writer-scale + root.writer-scroll-y-pt);
+                            }
                             if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
                                 debug("[SLINT-POINTEREVENT-DOWN] mouse-x=", self.mouse-x / 1px, " mouse-y=", self.mouse-y / 1px);
+                                root.writer-shift-down = event.modifiers.shift;
                                 root.writer-drag-start(self.mouse-x / 1px / root.writer-scale, self.mouse-y / 1px / root.writer-scale + root.writer-scroll-y-pt);
                             }
                             if (event.kind == PointerEventKind.up && event.button == PointerEventButton.left && root.writer-painter-active) {
@@ -4139,7 +4340,8 @@ export component AppWindow inherits Window {
                         }
                         moved => {
                             if (self.pressed) {
-                                debug("[SLINT-MOVED] mouse-x=", self.mouse-x / 1px, " mouse-y=", self.mouse-y / 1px);
+                                // debug("[SLINT-MOVED] mouse-x=", self.mouse-x / 1px, " mouse-y=", self.mouse-y / 1px);
+                                root.writer-rev-tip-visible = false;
                                 root.writer-drag-move(self.mouse-x / 1px / root.writer-scale, self.mouse-y / 1px / root.writer-scale + root.writer-scroll-y-pt);
                             }
                         }
@@ -4164,6 +4366,25 @@ export component AppWindow inherits Window {
                     cancelled => { root.writer-draw-kind = ""; writer-ime-input.focus(); }
                 }
 
+                // v309: 悬停修订气泡
+                if root.writer-rev-tip-visible : Rectangle {
+                    x: root.writer-rev-tip-x;
+                    y: root.writer-rev-tip-y;
+                    z: 45;
+                    width: rev-tip-label.preferred-width + 16px;
+                    height: rev-tip-label.preferred-height + 10px;
+                    background: #fffbe6;
+                    border-color: #c8b560;
+                    border-width: 1px;
+                    border-radius: 3px;
+                    rev-tip-label := Text {
+                        x: 8px;
+                        y: 5px;
+                        text: root.writer-rev-tip-text;
+                        font-size: 12px;
+                        color: #333333;
+                    }
+                }
                 // v318j: Writer 拖动缩放时的半透明原图替身（从视口图按像素比例裁出）
                 if root.writer-ghost-on && root.writer-obj-sel >= 0 : Image {
                     property <float> pxs: root.writer-scale * root.device-ppp; // 位图 px/pt = writer-scale * 写死的设备像素比 2(见 doc-core DEVICE_PPP)
@@ -4317,16 +4538,16 @@ export component AppWindow inherits Window {
                     y: 0px;
                     width: 8px;
                     height: parent.height;
-                    background: #d0d0d0;
+                    background: transparent;
                     Rectangle {
-                        width: 6px;
-                        x: 1px;
+                        width: 8px;
+                        x: 0px;
                         height: max(24px, parent.height * parent.height /
                             (root.writer-canvas-height-pt * root.writer-scale * 1px));
                         y: (parent.height - self.height) *
                             root.writer-scroll-y-pt / max(1.0, root.writer-canvas-height-pt - root.writer-view-height);
-                        background: #a0a0a0;
-                        border-radius: 3px;
+                        background: #c3c7cd;
+                        border-radius: 4px;
                     }
                 }
             }
@@ -4427,12 +4648,12 @@ export component AppWindow inherits Window {
                     property <float> sc: root.calc-scale;
                     changed sc => {
                         if root.calc-selected-col >= 0 {
-                            root.calc-highlight-x = root.calc-cell-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                            root.calc-highlight-y = root.calc-cell-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                            root.calc-highlight-x = root.d2v(root.calc-cell-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                            root.calc-highlight-y = root.d2v(root.calc-cell-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                             root.calc-highlight-w = root.calc-cell-w-pt * 1.3333333 + 2.0;
                             root.calc-highlight-h = root.calc-cell-h-pt * 1.3333333 + 2.0;
-                            root.calc-range-x = root.calc-sel-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                            root.calc-range-y = root.calc-sel-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                            root.calc-range-x = root.d2v(root.calc-sel-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                            root.calc-range-y = root.d2v(root.calc-sel-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                             root.calc-range-w = root.calc-sel-w-pt * 1.3333333 + 2.0;
                             root.calc-range-h = root.calc-sel-h-pt * 1.3333333 + 2.0;
                         }
@@ -4457,6 +4678,33 @@ export component AppWindow inherits Window {
                         viewport-image: root.calc-viewport-image;
                     }
 
+                    // 标题缩放参考线
+                    if root.calc-header-resizing : Rectangle {
+                        x: root.calc-header-guide-is-col ? root.calc-header-guide * 1px : 30px;
+                        y: root.calc-header-guide-is-col ? 18px : root.calc-header-guide * 1px;
+                        width: root.calc-header-guide-is-col ? 1px : parent.width - 30px;
+                        height: root.calc-header-guide-is-col ? parent.height - 18px : 1px;
+                        background: #217346;
+                        z: 50;
+                    }
+
+                    // 冻结窗格分割线(冻结为 0 时不显示):竖线在冻结列右缘,横线在冻结行下缘
+                    if root.calc-frozen-w > 0.0 : Rectangle {
+                        x: (30.0 + root.calc-frozen-w) * 1px - 1px;
+                        y: 18px;
+                        width: 1px;
+                        height: parent.height - 18px;
+                        background: #6b6b6b;
+                        z: 60;
+                    }
+                    if root.calc-frozen-h > 0.0 : Rectangle {
+                        x: 30px;
+                        y: (18.0 + root.calc-frozen-h) * 1px - 1px;
+                        width: parent.width - 30px;
+                        height: 1px;
+                        background: #6b6b6b;
+                        z: 60;
+                    }
                     // 单元格选中高亮（clip到数据区，不覆盖标题栏）
                     Rectangle {
                         x: 30px;   // header_col_w 逻辑px
@@ -4468,10 +4716,10 @@ export component AppWindow inherits Window {
 
 
                         if root.calc-selected-col >= 0 && root.calc-selected-row >= 0 : Rectangle {
-                            x: (root.calc-range-x - 30.0) * 1px;
-                            y: (root.calc-range-y - 18.0) * 1px;
-                            width: root.calc-range-w * 1px;
-                            height: root.calc-range-h * 1px;
+                            x: root.cl-start(root.calc-range-x - 30.0, root.calc-sel-x-pt * 1.3333333, root.calc-frozen-w) * 1px;
+                            y: root.cl-start(root.calc-range-y - 18.0, root.calc-sel-y-pt * 1.3333333, root.calc-frozen-h) * 1px;
+                            width: root.cl-size(root.calc-range-x - 30.0, root.calc-range-w, root.calc-sel-x-pt * 1.3333333, root.calc-frozen-w) * 1px;
+                            height: root.cl-size(root.calc-range-y - 18.0, root.calc-range-h, root.calc-sel-y-pt * 1.3333333, root.calc-frozen-h) * 1px;
                             // 单元格高亮压住图表bug修复（2026-07-09）：图表bitmap是ROE烘焙进
                             // CalcViewport整表渲染的，不是独立图层；此高亮容器声明在CalcViewport
                             // 之后，天然在图表bitmap上层。用纯前端AABB重叠判断规避：若当前选中
@@ -4485,7 +4733,9 @@ export component AppWindow inherits Window {
                             background: #21734615;
                         }
                         // 填充柄(选区右下角小方块)与填充预览框
-                        if root.calc-selected-col >= 0 && root.calc-selected-row >= 0 && !root.calc-editing : Rectangle {
+                        if root.calc-selected-col >= 0 && root.calc-selected-row >= 0 && !root.calc-editing
+                            && !(root.calc-frozen-w > 0.0 && root.calc-sel-x-pt * 1.3333333 >= root.calc-frozen-w && root.calc-range-x + root.calc-range-w - 30.0 < root.calc-frozen-w)
+                            && !(root.calc-frozen-h > 0.0 && root.calc-sel-y-pt * 1.3333333 >= root.calc-frozen-h && root.calc-range-y + root.calc-range-h - 18.0 < root.calc-frozen-h) : Rectangle {
                             x: (root.calc-range-x + root.calc-range-w - 30.0) * 1px - 3px;
                             y: (root.calc-range-y + root.calc-range-h - 18.0) * 1px - 3px;
                             width: 6px;
@@ -4518,8 +4768,8 @@ export component AppWindow inherits Window {
                             image-rendering: pixelated;
                         }
                         if root.calc-ghost-on && root.calc-obj-id >= 0 : Image {
-                            x: root.calc-obj-x-pt * 1.3333333px - root.calc-scroll-x * 1px;
-                            y: root.calc-obj-y-pt * 1.3333333px - root.calc-scroll-y * 1px;
+                            x: root.d2v(root.calc-obj-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) * 1px;
+                            y: root.d2v(root.calc-obj-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) * 1px;
                             width: root.calc-obj-w-pt * 1.3333333px;
                             height: root.calc-obj-h-pt * 1.3333333px;
                             source: root.calc-viewport-image;
@@ -4752,9 +5002,9 @@ export component AppWindow inherits Window {
                     }
                     // 列标题高亮（顶部header行，与选区列范围对齐）
                     if root.calc-selected-col >= 0 && root.calc-selected-row >= 0 : Rectangle {
-                        x: root.calc-range-x * 1px;
+                        x: (30.0 + root.cl-start(root.calc-range-x - 30.0, root.calc-sel-x-pt * 1.3333333, root.calc-frozen-w)) * 1px;
                         y: 0px;
-                        width: root.calc-range-w * 1px;
+                        width: root.cl-size(root.calc-range-x - 30.0, root.calc-range-w, root.calc-sel-x-pt * 1.3333333, root.calc-frozen-w) * 1px;
                         height: 18px;
                         background: #21734630;
                         border-color: transparent;
@@ -4762,9 +5012,9 @@ export component AppWindow inherits Window {
                     // 行标题高亮（左侧header列，与选区行范围对齐）
                     if root.calc-selected-col >= 0 && root.calc-selected-row >= 0 : Rectangle {
                         x: 0px;
-                        y: root.calc-range-y * 1px;
+                        y: (18.0 + root.cl-start(root.calc-range-y - 18.0, root.calc-sel-y-pt * 1.3333333, root.calc-frozen-h)) * 1px;
                         width: 30px;
-                        height: root.calc-range-h * 1px;
+                        height: root.cl-size(root.calc-range-y - 18.0, root.calc-range-h, root.calc-sel-y-pt * 1.3333333, root.calc-frozen-h) * 1px;
                         background: #21734630;
                         border-color: transparent;
                     }
@@ -4788,6 +5038,9 @@ export component AppWindow inherits Window {
                     TouchArea {
                         width: parent.width;
                         height: parent.height;
+                        mouse-cursor: root.calc-header-resizing
+                            ? (root.calc-header-guide-is-col ? MouseCursor.col-resize : MouseCursor.row-resize)
+                            : MouseCursor.default;
                         scroll-event(e) => {
                             if e.modifiers.control {
                                 if e.delta-y != 0 {
@@ -4821,12 +5074,12 @@ export component AppWindow inherits Window {
                             if e.delta-x < 0 && root.calc-scroll-x >= root.calc-sheet-total-width / 1px - root.calc-view-width - 300.0 { root.calc-extend-total(false); }
                             // 滚动时高亮框跟随（编辑框定位 + 选区框/行列标题高亮，二者需同步更新）
                             if root.calc-selected-col >= 0 {
-                                root.calc-highlight-x = root.calc-cell-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                                root.calc-highlight-y = root.calc-cell-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                                root.calc-highlight-x = root.d2v(root.calc-cell-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                                root.calc-highlight-y = root.d2v(root.calc-cell-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                                 root.calc-highlight-w = root.calc-cell-w-pt * 1.3333333 + 2.0;
                                 root.calc-highlight-h = root.calc-cell-h-pt * 1.3333333 + 2.0;
-                                root.calc-range-x = root.calc-sel-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                                root.calc-range-y = root.calc-sel-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                                root.calc-range-x = root.d2v(root.calc-sel-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                                root.calc-range-y = root.d2v(root.calc-sel-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                                 root.calc-range-w = root.calc-sel-w-pt * 1.3333333 + 2.0;
                                 root.calc-range-h = root.calc-sel-h-pt * 1.3333333 + 2.0;
                             }
@@ -4867,11 +5120,14 @@ export component AppWindow inherits Window {
                                 }
                                 if root.calc-selected-col >= 0 && root.calc-selected-row >= 0
                                     && abs(self.mouse-x - (root.calc-range-x + root.calc-range-w) * 1px) < 5px
-                                    && abs(self.mouse-y - (root.calc-range-y + root.calc-range-h) * 1px) < 5px {
+                                    && abs(self.mouse-y - (root.calc-range-y + root.calc-range-h) * 1px) < 5px
+                                    && !(root.calc-frozen-w > 0.0 && root.calc-sel-x-pt * 1.3333333 >= root.calc-frozen-w && root.calc-range-x + root.calc-range-w - 30.0 < root.calc-frozen-w)
+                                    && !(root.calc-frozen-h > 0.0 && root.calc-sel-y-pt * 1.3333333 >= root.calc-frozen-h && root.calc-range-y + root.calc-range-h - 18.0 < root.calc-frozen-h) {
                                     root.calc-fill-active = true;
                                     root.calc-fill-start();
                                     return;
                                 }
+                                if root.calc-header-resize-start(self.mouse-x / 1px, self.mouse-y / 1px) { return; }
                                 if root.calc-obj-try-select(self.mouse-x / 1px, self.mouse-y / 1px) { return; }
                                 cell-edit.focus();
                                 root.calc-dragging = true;
@@ -4880,13 +5136,19 @@ export component AppWindow inherits Window {
                                 root.calc-cell-click(self.mouse-x / 1px, self.mouse-y / 1px);
                             }
                             if e.kind == PointerEventKind.up {
+                                if root.calc-header-resizing {
+                                    root.calc-header-resize-end(self.mouse-x / 1px, self.mouse-y / 1px);
+                                    return;
+                                }
                                 root.calc-dragging = false;
                                 if root.calc-fill-active { root.calc-fill-active = false; root.calc-fill-end(); }
                                 root.calc-pointer-up();
                             }
                         }
                         moved => {
-                            if root.calc-fill-active && self.pressed {
+                            if root.calc-header-resizing && self.pressed {
+                                root.calc-header-resize-move(self.mouse-x / 1px, self.mouse-y / 1px);
+                            } else if root.calc-fill-active && self.pressed {
                                 root.calc-fill-move(self.mouse-x / 1px, self.mouse-y / 1px);
                             } else if root.calc-dragging && self.pressed {
                                 root.calc-range-drag(self.mouse-x / 1px, self.mouse-y / 1px);
@@ -5061,8 +5323,8 @@ export component AppWindow inherits Window {
                         height: parent.height;
                         active: true;
                         rotatable: root.calc-obj-rotatable;
-                        obj-x: root.calc-obj-x-pt * 1.3333333 - root.calc-scroll-x;
-                        obj-y: root.calc-obj-y-pt * 1.3333333 - root.calc-scroll-y;
+                        obj-x: root.d2v(root.calc-obj-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w);
+                        obj-y: root.d2v(root.calc-obj-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h);
                         obj-w: root.calc-obj-w-pt * 1.3333333;
                         obj-h: root.calc-obj-h-pt * 1.3333333;
                         obj-rot: 0.0;
@@ -5092,12 +5354,12 @@ export component AppWindow inherits Window {
                         if root.calc-scroll-y >= self.total - root.calc-view-height - 2.0 { root.calc-extend-total(true); }
                         calc-canvas.calc-scroll-render-pending = true;
             if root.calc-selected-col >= 0 {
-                root.calc-highlight-x = root.calc-cell-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                root.calc-highlight-y = root.calc-cell-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                root.calc-highlight-x = root.d2v(root.calc-cell-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                root.calc-highlight-y = root.d2v(root.calc-cell-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                 root.calc-highlight-w = root.calc-cell-w-pt * 1.3333333 + 2.0;
                 root.calc-highlight-h = root.calc-cell-h-pt * 1.3333333 + 2.0;
-                root.calc-range-x = root.calc-sel-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                root.calc-range-y = root.calc-sel-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                root.calc-range-x = root.d2v(root.calc-sel-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                root.calc-range-y = root.d2v(root.calc-sel-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                 root.calc-range-w = root.calc-sel-w-pt * 1.3333333 + 2.0;
                 root.calc-range-h = root.calc-sel-h-pt * 1.3333333 + 2.0;
             }
@@ -5132,12 +5394,12 @@ export component AppWindow inherits Window {
                         if root.calc-scroll-x >= self.total - root.calc-view-width - 2.0 { root.calc-extend-total(false); }
                         calc-canvas.calc-scroll-render-pending = true;
             if root.calc-selected-col >= 0 {
-                root.calc-highlight-x = root.calc-cell-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                root.calc-highlight-y = root.calc-cell-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                root.calc-highlight-x = root.d2v(root.calc-cell-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                root.calc-highlight-y = root.d2v(root.calc-cell-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                 root.calc-highlight-w = root.calc-cell-w-pt * 1.3333333 + 2.0;
                 root.calc-highlight-h = root.calc-cell-h-pt * 1.3333333 + 2.0;
-                root.calc-range-x = root.calc-sel-x-pt * 1.3333333 - root.calc-scroll-x + 30.0 - 1.0;
-                root.calc-range-y = root.calc-sel-y-pt * 1.3333333 - root.calc-scroll-y + 18.0 - 1.0;
+                root.calc-range-x = root.d2v(root.calc-sel-x-pt * 1.3333333, root.calc-scroll-x, root.calc-frozen-w) + 30.0 - 1.0;
+                root.calc-range-y = root.d2v(root.calc-sel-y-pt * 1.3333333, root.calc-scroll-y, root.calc-frozen-h) + 18.0 - 1.0;
                 root.calc-range-w = root.calc-sel-w-pt * 1.3333333 + 2.0;
                 root.calc-range-h = root.calc-sel-h-pt * 1.3333333 + 2.0;
             }
@@ -5165,12 +5427,12 @@ export component AppWindow inherits Window {
                     property <float> v-ratio: min(1.0, root.calc-view-height / (root.calc-sheet-total-height / 1px));
                     property <float> v-pos: root.calc-scroll-y / (root.calc-sheet-total-height / 1px);
                     Rectangle {
-                        x: 2px;
+                        x: 0px;
                         y: (parent.v-pos * (parent.height - 8px) / 1px) * 1px;
-                        width: 4px;
+                        width: 8px;
                         height: max(20px, (parent.v-ratio * (parent.height - 8px) / 1px) * 1px);
-                        background: #b0b0b080;
-                        border-radius: 2px;
+                        background: #c3c7cd;
+                        border-radius: 4px;
                     }
                 }
 
@@ -5185,11 +5447,11 @@ export component AppWindow inherits Window {
                     property <float> h-pos: root.calc-scroll-x / (root.calc-sheet-total-width / 1px);
                     Rectangle {
                         x: (parent.h-pos * (parent.width - 8px) / 1px) * 1px;
-                        y: 2px;
+                        y: 0px;
                         width: max(20px, (parent.h-ratio * (parent.width - 8px) / 1px) * 1px);
-                        height: 4px;
-                        background: #b0b0b080;
-                        border-radius: 2px;
+                        height: 8px;
+                        background: #c3c7cd;
+                        border-radius: 4px;
                     }
                 }
 
@@ -5242,6 +5504,11 @@ export component AppWindow inherits Window {
                     show-grid: root.chart-show-grid;
                     x-axis-label: root.chart-x-axis-label;
                     y-axis-label: root.chart-y-axis-label;
+                    kind-name: root.chart-kind-name;
+                    gap-width: root.chart-gap-width;
+                    overlap: root.chart-overlap;
+                    hole-size: root.chart-hole-size;
+                    patch(k, v) => { root.chart-patch(k, v); }
                     kind-changed(v) => { root.chart-kind-index = v; root.chart-style-kind-changed(v); }
                     title-edited(v) => { root.chart-title-text = v; root.chart-style-title-edited(v); }
                     legend-toggled(v) => { root.chart-show-legend = v; root.chart-style-legend-toggled(v); }
@@ -5983,6 +6250,8 @@ accept
             input-text <=> root.agent-input-text;
             autonomous-mode <=> root.agent-autonomous-mode;
             sending: root.agent-sending;
+            archived: root.agent-archived;
+            active-id: root.agent-active-id;
             configured: root.ai-configured;
             profile-names: root.ai-profile-names;
             active-profile: root.ai-active-profile;
@@ -5999,6 +6268,8 @@ accept
                 root.activity-active-item = "home";
             }
             conversation-selected(id) => { root.agent-conversation-selected(id); }
+            conversation-renamed(id, t) => { root.agent-conversation-renamed(id, t); }
+            conversation-deleted(id) => { root.agent-conversation-deleted(id); }
             project-selected(id) => { root.agent-project-selected(id); }
             mode-changed(m) => { root.agent-mode-changed(m); }
             send-message(msg) => { root.agent-send-message(msg); }
@@ -6006,8 +6277,35 @@ accept
             script-confirm(idx) => { root.agent-script-confirm(idx); }
             script-discard(idx) => { root.agent-script-discard(idx); }
             thinking-toggle(idx) => { root.agent-thinking-toggle(idx); }
+            file-preview(idx) => { root.agent-file-preview(idx); }
+            file-folder(idx) => { root.agent-file-folder(idx); }
             copy-message(idx) => { root.agent-copy-message(idx); }
             copy-all => { root.agent-copy-all(); }
+        }
+
+        if root.preview-visible : PreviewDialog {
+            x: 0px; y: 0px;
+            width: parent.width;
+            height: parent.height;
+            z: 80;
+            title: root.preview-title;
+            accent: root.preview-accent;
+            kind: root.preview-kind;
+            goto(n) => { root.preview-goto(n); }
+            sheets: root.preview-sheets;
+            sheet-current: root.preview-sheet-current;
+            calc-total-w: root.preview-calc-total-w;
+            calc-total-h: root.preview-calc-total-h;
+            calc-capped: root.preview-calc-capped;
+            render-calc(sx, sy, vw, vh) => { root.preview-render-calc(sx, sy, vw, vh); }
+            sheet-select(i) => { root.preview-sheet-select(i); }
+            viewport-image: root.preview-image;
+            doc-width-pt: root.preview-doc-width-pt;
+            canvas-height-pt: root.preview-canvas-height-pt;
+            page-current: root.preview-page-current;
+            page-total: root.preview-page-total;
+            render(sy, vw, vh) => { root.preview-render(sy, vw, vh); }
+            close => { root.preview-close(); }
         }
     }
 
@@ -6251,10 +6549,18 @@ accept
         height: parent.height;
         visible-dialog: root.dfo-visible;
         title: root.dfo-title;
-        info-text: root.dfo-info;
+        info-mode: root.dfo-info-mode;
+        info-rows: root.dfo-info-rows;
+        info-ncols: root.dfo-info-ncols;
+        info-xlsx: root.dfo-info-xlsx;
         col-info: root.dfo-col-info;
         head-cols: root.dfo-head-cols;
         head-rows: root.dfo-head-rows;
+        desc-cols: root.dfo-desc-cols;
+        desc-rows: root.dfo-desc-rows;
+        shape: root.dfo-shape;
+        loading: root.dfo-loading;
+        elapsed-secs: root.dfo-elapsed;
         confirmed => {
             root.dfo-visible = false;
             root.dfo-confirmed();
@@ -6309,6 +6615,7 @@ accept
         rows <=> root.chart-dlg-rows;
         cols <=> root.chart-dlg-cols;
         single <=> root.chart-dlg-single;
+        stat: root.chart-dlg-stat;
         generation <=> root.chart-dlg-gen;
         cells <=> root.chart-dlg-cells;
         confirmed => { root.chart-dlg-confirm(); }

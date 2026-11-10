@@ -11,7 +11,9 @@ fn preview_register_and_sheet_head_csv() {
 
     let pv = s.df_preview_file(&path, "csv", r#"{"head":2}"#).unwrap();
     println!("preview => {pv}");
-    assert_eq!(pv["rows"], 3);
+    assert!(pv.get("rows").is_none(), "csv 预览不应给总行数");
+    assert_eq!(pv["preview_only"], true);
+    assert_eq!(pv["cols"], 2);
     assert_eq!(pv["head"]["rows"].as_array().unwrap().len(), 2);
 
     let (name, rows, cols) = s.df_register_file(&path, "csv", "").unwrap();

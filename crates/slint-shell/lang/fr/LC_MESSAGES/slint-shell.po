@@ -2969,7 +2969,7 @@ msgstr "Configuration IA"
 msgid "界面语言"
 msgstr "Langue de l'interface"
 
-msgid "切换后立即生效；目前仅提供英文译文。"
+msgid "切换后立即生效。"
 msgstr "Prend effet immédiatement."
 
 msgid "主题色"
@@ -3134,3 +3134,72 @@ msgstr "Premier plan"
 msgid "置于底层"
 msgstr "Arrière-plan"
 
+msgid "Carlito (默认)"
+msgstr "Carlito (défaut)"
+
+msgid "等线 (中文正文)"
+msgstr "DengXian (chin.)"
+
+msgid "空值"
+msgstr "Nuls"
+
+msgid "中位数"
+msgstr "Médiane"
+
+msgid "统计量"
+msgstr "Statistique"
+
+msgid "前 5 行"
+msgstr "5 premières lignes"
+
+msgid "正在读取并分析… 已用 {} 秒"
+msgstr "Lecture et analyse… {} s"
+
+msgid "导入概览:{}"
+msgstr "Aperçu de l'import : {}"
+
+msgid "共 {} 行,{} 列"
+msgstr "{} lignes, {} colonnes"
+
+msgid "{} 列"
+msgstr "{} colonnes"
+
+msgid "仅预览前 5 行"
+msgstr "Aperçu : 5 lignes"
+
+msgid "仅第一个工作表"
+msgstr "Première feuille seule"
+
+msgid "小计与总计"
+msgstr "Sous-totaux et totaux généraux"
+
+msgid "行小计"
+msgstr "Sous-totaux des lignes"
+
+msgid "列小计"
+msgstr "Sous-totaux des colonnes"
+
+msgid "底部总计行"
+msgstr "Total général en bas"
+
+msgid "右侧总计列"
+msgstr "Total général à droite"
+
+
+msgid "紧凑形式"
+msgstr "Format compact"
+
+msgid "大纲形式"
+msgstr "Format plan"
+
+msgid "表格形式"
+msgstr "Format tabulaire"
+
+msgid "小计位置"
+msgstr "Position des sous-totaux"
+
+msgid "小计显示在组顶部"
+msgstr "Sous-totaux en haut du groupe"
+
+msgid "小计显示在组底部"
+msgstr "Sous-totaux en bas du groupe"

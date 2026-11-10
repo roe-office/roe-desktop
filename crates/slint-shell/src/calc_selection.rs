@@ -103,13 +103,11 @@ fn rect_pt(sess: &mut doc_core::TileCacheRust, sheet: u32, rect: Rect) -> (f32, 
 /// 由 pt 矩形与当前滚动,算出屏幕框 (x, y, w, h)(逻辑 px,含 +2 边框余量)。
 /// 与 slint 滚动重算公式保持一致。
 fn to_screen(app: &AppWindow, pt: (f32, f32, f32, f32)) -> (f32, f32, f32, f32) {
-    let sx = app.get_calc_scroll_x();
-    let sy = app.get_calc_scroll_y();
-    (
-        pt.0 * PT_TO_PX - sx + HEADER_COL_W - 1.0,
-        pt.1 * PT_TO_PX - sy + HEADER_ROW_H - 1.0,
-        pt.2 * PT_TO_PX + 2.0,
-        pt.3 * PT_TO_PX + 2.0,
+    crate::calc_frozen::rect_to_screen(
+        pt,
+        (app.get_calc_scroll_x(), app.get_calc_scroll_y()),
+        (app.get_calc_frozen_w(), app.get_calc_frozen_h()),
+        (HEADER_COL_W, HEADER_ROW_H),
     )
 }
 

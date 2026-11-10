@@ -11,140 +11,175 @@ import { RibbonBigButton } from "RibbonBigButton.slint";
 
 export component WriterRibbonReview inherits Rectangle {
     callback action(string);
+    in property <bool> track-active: false;
     height: 88px;
 
-    HorizontalLayout {
-        x: 4px;
-        spacing: 0px;
-        alignment: start;
+    Flickable {
+        width: root.width;
+        height: root.height;
+        viewport-width: max(root.width, row.preferred-width + 8px);
+        viewport-height: root.height;
+        row := HorizontalLayout {
+            width: max(root.width, self.preferred-width + 8px);
+            height: root.height;
+            x: 4px;
+            spacing: 0px;
+            alignment: start;
 
 
-        // ── 校对 ──────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("校对");
+            // ── 校对 ──────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("校对");
 
-            HorizontalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/spell_check.svg");
-                    label: @tr("拼写和语法");
-                    tooltip: @tr("拼写和语法检查 (F7)");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/word_count.svg");
-                    label: @tr("字数统计");
-                    tooltip: @tr("查看字数统计");
-                }
-            }
-        }
-
-
-        // ── 批注 ──────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("批注");
-
-            HorizontalLayout {
-                spacing: 1px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/new_comment.svg");
-                    label: @tr("新建批注");
-                    tooltip: @tr("插入批注 (Ctrl+Alt+C)");
-                    clicked => { root.action("writer.comment_dialog"); }
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/comment_dismiss.svg");
-                    label: @tr("删除");
-                    tooltip: @tr("删除当前批注");
-                    clicked => { root.action("writer.comment_delete_current"); }
-                }
-
-                VerticalLayout {
-                    spacing: 2px;
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        icon-source: @image-url("../icons/fluent/chevron_up.svg");
-                        label: @tr("上一条");
-                        tooltip: @tr("上一条批注");
-                        clicked => { root.action("writer.comment_prev"); }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/spell_check.svg");
+                        label: @tr("拼写和语法");
+                        tooltip: @tr("拼写和语法检查 (F7)");
                     }
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        icon-source: @image-url("../icons/fluent/chevron_down.svg");
-                        label: @tr("下一条");
-                        tooltip: @tr("下一条批注");
-                        clicked => { root.action("writer.comment_next"); }
-                    }
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        icon-source: @image-url("../icons/fluent/all_comments.svg");
-                        label: @tr("显示批注");
-                        tooltip: @tr("显示/隐藏批注");
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/word_count.svg");
+                        label: @tr("字数统计");
+                        tooltip: @tr("查看字数统计");
                     }
                 }
             }
-        }
 
 
-        // ── 修订 ──────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("修订");
+            // ── 批注 ──────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("批注");
 
-            HorizontalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/track_changes.svg");
-                    label: @tr("修订");
-                    tooltip: @tr("启用/禁用修订跟踪");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/accept_change.svg");
-                    label: @tr("接受");
-                    tooltip: @tr("接受所有修订");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/reject_change.svg");
-                    label: @tr("拒绝");
-                    tooltip: @tr("拒绝所有修订");
-                }
-
-                VerticalLayout {
-                    spacing: 2px;
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        icon-source: @image-url("../icons/fluent/chevron_up.svg");
-                        label: @tr("上一条");
-                        tooltip: @tr("上一条修订");
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/new_comment.svg");
+                        label: @tr("新建批注");
+                        tooltip: @tr("插入批注 (Ctrl+Alt+C)");
+                        clicked => { root.action("writer.comment_dialog"); }
                     }
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        icon-source: @image-url("../icons/fluent/chevron_down.svg");
-                        label: @tr("下一条");
-                        tooltip: @tr("下一条修订");
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/comment_dismiss.svg");
+                        label: @tr("删除");
+                        tooltip: @tr("删除当前批注");
+                        clicked => { root.action("writer.comment_delete_current"); }
+                    }
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/chevron_up.svg");
+                            label: @tr("上一条");
+                            tooltip: @tr("上一条批注");
+                            clicked => { root.action("writer.comment_prev"); }
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/chevron_down.svg");
+                            label: @tr("下一条");
+                            tooltip: @tr("下一条批注");
+                            clicked => { root.action("writer.comment_next"); }
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/all_comments.svg");
+                            label: @tr("显示批注");
+                            tooltip: @tr("显示/隐藏批注");
+                        }
                     }
                 }
             }
-        }
 
 
-        // ── 比较 ──────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("比较");
+            // ── 修订 ──────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("修订");
 
-            HorizontalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/window_multiple.svg");
-                    label: @tr("比较");
-                    tooltip: @tr("比较文档版本");
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/document_edit.svg");
+                        active: root.track-active;
+                        label: @tr("修订");
+                        tooltip: @tr("启用/禁用修订跟踪");
+                        clicked => { root.action("writer.revision_toggle"); }
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/accept_change.svg");
+                        label: @tr("接受");
+                        tooltip: @tr("接受所有修订");
+                        clicked => { root.action("writer.revision_accept_all"); }
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/reject_change.svg");
+                        label: @tr("拒绝");
+                        tooltip: @tr("拒绝所有修订");
+                        clicked => { root.action("writer.revision_reject_all"); }
+                    }
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/chevron_up.svg");
+                            label: @tr("上一条");
+                            tooltip: @tr("上一条修订");
+                            clicked => { root.action("writer.revision_prev"); }
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/chevron_down.svg");
+                            label: @tr("下一条");
+                            tooltip: @tr("下一条修订");
+                            clicked => { root.action("writer.revision_next"); }
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/accept_change.svg");
+                            label: @tr("接受此条");
+                            tooltip: @tr("接受当前这一条修订");
+                            clicked => { root.action("writer.revision_accept_one"); }
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            icon-source: @image-url("../icons/fluent/reject_change.svg");
+                            label: @tr("拒绝此条");
+                            tooltip: @tr("拒绝当前这一条修订");
+                            clicked => { root.action("writer.revision_reject_one"); }
+                        }
+                    }
+                }
+            }
+
+
+            // ── 比较 ──────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("比较");
+
+                HorizontalLayout {
+                    spacing: 1px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/window_multiple.svg");
+                        label: @tr("比较");
+                        tooltip: @tr("比较文档版本");
+                    }
                 }
             }
         }

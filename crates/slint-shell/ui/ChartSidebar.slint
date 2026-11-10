@@ -13,6 +13,13 @@ export component ChartSidebar inherits Rectangle {
     in property <bool> show-grid: true;
     in property <string> x-axis-label: "";
     in property <string> y-axis-label: "";
+    in property <string> kind-name: "";
+    in property <string> gap-width: "";
+    in property <string> overlap: "";
+    in property <string> hole-size: "";
+    property <bool> is-bar: !root.is-stat && (root.kind-name == "Bar" || root.kind-name == "HorizontalBar");
+    property <bool> is-donut: !root.is-stat && root.kind-name == "Doughnut";
+    property <bool> show-num: root.is-bar || root.is-donut;
 
     // 下标与 main.rs chart_kind_index_to_str 一致
     in property <[ChartKindOption]> kind-options: [
@@ -35,11 +42,15 @@ export component ChartSidebar inherits Rectangle {
     callback x-label-edited(string);
     callback y-label-edited(string);
     callback closed();
+    callback patch(string, string);
 
     // 外部值变化(切换选中图)时同步输入框;用户键入不会改动 root 属性
     changed title-text => { title-input.text = self.title-text; }
     changed x-axis-label => { x-input.text = self.x-axis-label; }
     changed y-axis-label => { y-input.text = self.y-axis-label; }
+    changed gap-width => { gap-input.text = self.gap-width; }
+    changed overlap => { ov-input.text = self.overlap; }
+    changed hole-size => { hole-input.text = self.hole-size; }
     changed is-stat => { self.kind-dropdown-open = false; }
 
     background: #fafafa;
@@ -162,6 +173,63 @@ export component ChartSidebar inherits Rectangle {
             }
 
             Rectangle { height: 1px; background: #e8e8e8; }
+
+            // 柱/条/圆环数值参数(留空=默认;统计图与不适用图型隐藏)
+            VerticalLayout {
+                spacing: 0px;
+                Rectangle {
+                    height: root.is-bar ? 30px : 0px; visible: root.is-bar;
+                    HorizontalLayout {
+                        spacing: 6px; padding-bottom: 6px;
+                        Text { text: @tr("间距 %"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
+                        Rectangle {
+                            border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                            gap-input := TextInput {
+                                x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
+                                font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
+                                text: root.gap-width;
+                                accepted => { if self.text != root.gap-width { root.patch("gap_width_pct", self.text == "" ? "null" : self.text); } }
+                                changed has-focus => { if !self.has-focus && self.text != root.gap-width { root.patch("gap_width_pct", self.text == "" ? "null" : self.text); } }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    height: root.is-bar ? 30px : 0px; visible: root.is-bar;
+                    HorizontalLayout {
+                        spacing: 6px; padding-bottom: 6px;
+                        Text { text: @tr("重叠 %"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
+                        Rectangle {
+                            border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                            ov-input := TextInput {
+                                x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
+                                font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
+                                text: root.overlap;
+                                accepted => { if self.text != root.overlap { root.patch("overlap_pct", self.text == "" ? "null" : self.text); } }
+                                changed has-focus => { if !self.has-focus && self.text != root.overlap { root.patch("overlap_pct", self.text == "" ? "null" : self.text); } }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    height: root.is-donut ? 30px : 0px; visible: root.is-donut;
+                    HorizontalLayout {
+                        spacing: 6px; padding-bottom: 6px;
+                        Text { text: @tr("孔径 %"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
+                        Rectangle {
+                            border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                            hole-input := TextInput {
+                                x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
+                                font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
+                                text: root.hole-size;
+                                accepted => { if self.text != root.hole-size { root.patch("hole_size_pct", self.text == "" ? "null" : self.text); } }
+                                changed has-focus => { if !self.has-focus && self.text != root.hole-size { root.patch("hole_size_pct", self.text == "" ? "null" : self.text); } }
+                            }
+                        }
+                    }
+                }
+                Rectangle { height: root.show-num ? 1px : 0px; background: #e8e8e8; }
+            }
 
             // 坐标轴标题(统计图置灰)
             VerticalLayout {

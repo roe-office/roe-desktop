@@ -34,6 +34,18 @@ unsafe fn take_roe_string(ptr: *mut c_char) -> Option<String> {
     Some(s)
 }
 
+/// v301: 一条合并后的修订（来自 roe_list_revisions）
+#[derive(Debug, Clone)]
+pub struct RevisionItem {
+    pub para: u32,
+    pub start: u32,
+    pub end: u32,
+    pub kind: String,
+    pub author: String,
+    pub date: String,
+    pub text: String,
+}
+
 /// roe_save_document_to_bytes 的回调：把数据追加到 userdata 指向的 Vec<u8>。
 extern "C" fn collect_bytes_callback(data: *const u8, len: usize, userdata: *mut c_void) {
     if data.is_null() || userdata.is_null() {
@@ -771,11 +783,44 @@ impl TileCacheRust {
         unsafe { take_roe_string(roe_api::roe_impress_get_chart_json(self.handle, slide_idx, shape_id)) }
     }
 
+    /// Impress：读取统计图形状的完整 StatChartModel JSON。非统计图返回 None。
+    pub fn impress_get_stat_chart_json(&mut self, slide_idx: u32, shape_id: u32) -> Option<String> {
+        if self.handle == 0 { return None; }
+        unsafe { take_roe_string(roe_api::roe_impress_get_stat_chart_json(self.handle, slide_idx, shape_id)) }
+    }
+
+    /// Impress：统计图「编辑数据」回写。edit_json={"categories":[[..]],"values":[..]}。
+    /// 返回 -1 失败;>=0 成功,数值为被丢弃的越界 subtotals 个数。
+    pub fn impress_set_stat_chart_data(&mut self, slide_idx: u32, shape_id: u32, edit_json: &str) -> i32 {
+        if self.handle == 0 { return -1; }
+        let c = match std::ffi::CString::new(edit_json) { Ok(c) => c, Err(_) => return -1 };
+        roe_api::roe_impress_set_stat_chart_data(self.handle, slide_idx, shape_id, c.as_ptr())
+    }
+
+    /// Impress：形状是普通图表或统计图(决定「编辑数据」按钮是否出现)。
+    pub fn impress_is_chart_like(&mut self, slide_idx: u32, shape_id: u32) -> bool {
+        self.impress_get_chart_json(slide_idx, shape_id).is_some()
+            || self.impress_get_stat_chart_json(slide_idx, shape_id).is_some()
+    }
+
     /// Impress（v221）：用新的 ChartModel JSON 整体替换图表内容（保留 id 与位置尺寸）。
     pub fn impress_set_chart_json(&mut self, slide_idx: u32, shape_id: u32, chart_json: &str) -> bool {
         if self.handle == 0 { return false; }
         let c = match std::ffi::CString::new(chart_json) { Ok(c) => c, Err(_) => return false };
         roe_api::roe_impress_set_chart_json(self.handle, slide_idx, shape_id, c.as_ptr())
+    }
+
+    /// Impress:图表/统计图配置 JSON(同 get_chart_config 字段)。
+    pub fn impress_get_chart_config(&mut self, slide_idx: u32, shape_id: u32) -> Option<String> {
+        if self.handle == 0 { return None; }
+        unsafe { take_roe_string(roe_api::roe_impress_get_chart_config(self.handle, slide_idx, shape_id)) }
+    }
+
+    /// Impress:局部修改图表样式(同 set_chart_style 的键)。
+    pub fn impress_set_chart_style(&mut self, slide_idx: u32, shape_id: u32, style_json: &str) -> bool {
+        if self.handle == 0 { return false; }
+        let c = match std::ffi::CString::new(style_json) { Ok(c) => c, Err(_) => return false };
+        roe_api::roe_impress_set_chart_style(self.handle, slide_idx, shape_id, c.as_ptr())
     }
 
     /// Impress（v318o）：改形状样式。fill/stroke: ""不改 "none"清除 "#rrggbb"；width<0 不改。
@@ -1185,6 +1230,30 @@ impl TileCacheRust {
 
     // ================= 前台数据集:通用文件导入(csv/parquet/xlsx) =================
 
+    /// 同 df_preview_file,但不依赖文档句柄,可在后台线程调用(roe_df_preview_file 本身不需要 handle)。
+    pub fn df_preview_file_detached(path: &str, kind: &str, opts_json: &str) -> Result<serde_json::Value, String> {
+        let c_path = std::ffi::CString::new(path).map_err(|_| "路径含 NUL 字符".to_string())?;
+        let c_kind = std::ffi::CString::new(kind).map_err(|_| "类型含 NUL 字符".to_string())?;
+        let c_opts = std::ffi::CString::new(opts_json).map_err(|_| "选项含 NUL 字符".to_string())?;
+        let raw = unsafe {
+            take_roe_string(roe_api::script::roe_df_preview_file(c_path.as_ptr(), c_kind.as_ptr(), c_opts.as_ptr()))
+        }
+        .ok_or_else(|| "roe_df_preview_file returned null".to_string())?;
+        df_unwrap(&raw)
+    }
+
+    /// 预热外部文件(xlsx 落 IPC 缓存),不依赖文档句柄,可在后台线程调用。
+    pub fn df_prepare_file_detached(path: &str, kind: &str, opts_json: &str) -> Result<(), String> {
+        let c_path = std::ffi::CString::new(path).map_err(|_| "路径含 NUL 字符".to_string())?;
+        let c_kind = std::ffi::CString::new(kind).map_err(|_| "类型含 NUL 字符".to_string())?;
+        let c_opts = std::ffi::CString::new(opts_json).map_err(|_| "选项含 NUL 字符".to_string())?;
+        let raw = unsafe {
+            take_roe_string(roe_api::script::roe_df_prepare_file(c_path.as_ptr(), c_kind.as_ptr(), c_opts.as_ptr()))
+        }
+        .ok_or_else(|| "roe_df_prepare_file returned null".to_string())?;
+        df_unwrap(&raw).map(|_| ())
+    }
+
     /// 预览外部文件(概览 JSON:rows/cols/columns/head),不注册、不碰文档。
     /// kind: "csv" | "parquet" | "xlsx";opts_json 如 {"delimiter":",","has_header":true,"head":10}。
     pub fn df_preview_file(&self, path: &str, kind: &str, opts_json: &str) -> Result<serde_json::Value, String> {
@@ -1271,8 +1340,20 @@ impl TileCacheRust {
         if sql.trim().is_empty() {
             return Err("SQL 不能为空".to_string());
         }
-        let raw = self.query_script(&format!("df_sql_ds({})", rhai_str(sql)));
+        let q = rhai_str(sql);
+        let raw = self.query_script(&format!("df_register_sheets({q}); df_sql_ds({q})"));
         df_unwrap(&raw)
+    }
+
+    /// 各 sheet 对应的 SQL 表名(只读,不转换数据)。
+    pub fn df_sheet_tables(&self) -> Result<Vec<String>, String> {
+        if self.handle == 0 {
+            return Err("no document open".to_string());
+        }
+        let raw = self.query_script("df_sheet_tables()");
+        let v = df_unwrap(&raw)?;
+        let arr = v.as_array().ok_or_else(|| format!("意外的返回值: {v}"))?;
+        Ok(arr.iter().filter_map(|x| x.get("table")?.as_str().map(String::from)).collect())
     }
 
     /// 多数据集 SQL 结果存为新数据集 df_N,返回 (数据集名, 行数, 列名)。
@@ -1283,7 +1364,8 @@ impl TileCacheRust {
         if sql.trim().is_empty() {
             return Err("SQL 不能为空".to_string());
         }
-        let raw = self.execute_script(&format!("df_sql_save({})", rhai_str(sql)));
+        let q = rhai_str(sql);
+        let raw = self.execute_script(&format!("df_register_sheets({q}); df_sql_save({q})"));
         let v = df_unwrap(&raw)?;
         let name = v.get("name").and_then(|x| x.as_str()).unwrap_or("").to_string();
         let rows = v.get("rows").and_then(|x| x.as_u64()).unwrap_or(0);
@@ -1391,6 +1473,18 @@ impl TileCacheRust {
         if v <= 0.0 { 18.0 } else { v }
     }
 
+    /// 设置第 col 列的列宽(pt)。成功返回 true;无文档或内核拒绝返回 false。
+    pub fn set_column_width_pt(&mut self, sheet_idx: u32, col: u32, width_pt: f32) -> bool {
+        if self.handle == 0 { return false; }
+        roe_api::roe_set_column_width(self.handle, sheet_idx, col, width_pt)
+    }
+
+    /// 设置第 row 行的行高(pt)。成功返回 true;无文档或内核拒绝返回 false。
+    pub fn set_row_height_pt(&mut self, sheet_idx: u32, row: u32, height_pt: f32) -> bool {
+        if self.handle == 0 { return false; }
+        roe_api::roe_set_row_height(self.handle, sheet_idx, row, height_pt)
+    }
+
     /// 返回第 row 行的起始 y 坐标（pt）。失败返回 -1.0。
     pub fn get_row_offset_pt(&self, sheet_idx: u32, row: u32) -> f32 {
         if self.handle == 0 { return -1.0; }
@@ -1413,6 +1507,48 @@ impl TileCacheRust {
     pub fn get_col_at_offset(&self, sheet_idx: u32, x_pt: f32) -> i32 {
         if self.handle == 0 { return -1; }
         roe_api::roe_get_col_at_offset(self.handle, sheet_idx, x_pt)
+    }
+
+    /// 读取冻结行列数 (rows, cols)。失败返回 (0, 0)。
+    pub fn get_frozen_panes(&self, sheet_idx: u32) -> (u32, u32) {
+        if self.handle == 0 { return (0, 0); }
+        let raw = match unsafe { take_roe_string(roe_api::roe_get_frozen_panes(self.handle, sheet_idx)) } {
+            Some(r) => r,
+            None => return (0, 0),
+        };
+        match serde_json::from_str::<serde_json::Value>(&raw) {
+            Ok(v) => (
+                v.get("frozen_rows").and_then(|x| x.as_u64()).unwrap_or(0) as u32,
+                v.get("frozen_cols").and_then(|x| x.as_u64()).unwrap_or(0) as u32,
+            ),
+            Err(_) => (0, 0),
+        }
+    }
+
+    /// 设置冻结行列数。成功返回 true(设置后读回比对)。
+    pub fn set_frozen_panes(&mut self, sheet_idx: u32, rows: u32, cols: u32) -> bool {
+        if self.handle == 0 { return false; }
+        // Rhai 层的 err: 不一定体现在外层 ok 字段，所以设置后读回比对。
+        let _ = self.execute_script(&format!("set_frozen_panes({}, {}, {})", sheet_idx, rows, cols));
+        self.get_frozen_panes(sheet_idx) == (rows, cols)
+    }
+
+    /// 读取工作表网格线开关(内部用):解析失败返回 None。
+    fn query_gridlines(&self, sheet_idx: u32) -> Option<bool> {
+        parse_bool_value(&self.query_script(&format!("get_gridlines({})", sheet_idx)))
+    }
+
+    /// 读取网格线是否显示。读取失败按默认值 true(显示)。
+    pub fn get_gridlines(&self, sheet_idx: u32) -> bool {
+        if self.handle == 0 { return true; }
+        self.query_gridlines(sheet_idx).unwrap_or(true)
+    }
+
+    /// 设置网格线显示开关。成功返回 true(设置后读回比对)。
+    pub fn set_gridlines(&mut self, sheet_idx: u32, on: bool) -> bool {
+        if self.handle == 0 { return false; }
+        let _ = self.execute_script(&format!("set_gridlines({}, {})", sheet_idx, on));
+        self.query_gridlines(sheet_idx) == Some(on)
     }
 
     /// 返回 sheet 实际使用的行列数。失败返回 (0, 0)。
@@ -1579,6 +1715,26 @@ impl TileCacheRust {
         let json = unsafe { take_roe_string(roe_api::roe_cell_replace_range(self.handle, cid, para, start, end, b.as_ptr(), b.len() as u32)) }?;
         let v: serde_json::Value = serde_json::from_str(&json).ok()?;
         v.get("off").and_then(|x| x.as_i64())
+    }
+
+    /// 单元格内 (sp,so)-(ep,eo) 的文本，段落间 \n 连接。
+    pub fn cell_get_text(&self, cid: u32, sp: u32, so: u32, ep: u32, eo: u32) -> Option<String> {
+        if self.handle == 0 { return None; }
+        unsafe { take_roe_string(roe_api::roe_cell_get_text(self.handle, cid, sp, so, ep, eo)) }
+    }
+
+    /// v309：清空两格围成的矩形内所有单元格，一次撤销。返回清空的格数。
+    pub fn cell_clear_range(&mut self, cid_a: u32, cid_b: u32) -> Option<usize> {
+        if self.handle == 0 { return None; }
+        let json = unsafe { take_roe_string(roe_api::roe_cell_clear_range(self.handle, cid_a, cid_b)) }?;
+        let v: serde_json::Value = serde_json::from_str(&json).ok()?;
+        v.get("cells").and_then(|x| x.as_u64()).map(|n| n as usize)
+    }
+
+    /// v309：两格围成的矩形内文字（TSV）。
+    pub fn cell_range_tsv(&self, cid_a: u32, cid_b: u32) -> Option<String> {
+        if self.handle == 0 { return None; }
+        unsafe { take_roe_string(roe_api::roe_cell_range_tsv(self.handle, cid_a, cid_b)) }
     }
 
     /// v315：单元格内退格(0)/Delete(1)。返回新 off。
@@ -2418,6 +2574,34 @@ impl TileCacheRust {
         roe_api::roe_pivot_set_sort(self.handle, sheet_idx, c_field.as_ptr(), if asc { 1 } else { 0 }) == 0
     }
 
+    /// 开关透视表的行/列分类小计并就地刷新(true=显示)。
+    /// 不包撤销事务,调用方自行 begin_edit/commit_edit。失败返回 false。
+    pub fn pivot_set_subtotals(&mut self, sheet_idx: u32, row_on: bool, col_on: bool) -> bool {
+        if self.handle == 0 { return false; }
+        roe_api::roe_pivot_set_subtotals(self.handle, sheet_idx, row_on as i32, col_on as i32) == 0
+    }
+
+    /// 切换透视表布局形态并就地刷新。mode: 0=大纲 1=紧凑 2=表格。
+    /// 不包撤销事务,调用方自行 begin_edit/commit_edit。失败返回 false。
+    pub fn pivot_set_layout(&mut self, sheet_idx: u32, mode: i32) -> bool {
+        if self.handle == 0 { return false; }
+        roe_api::roe_pivot_set_layout(self.handle, sheet_idx, mode) == 0
+    }
+
+    /// 设置大纲/紧凑形式下小计位置并就地刷新(true=组顶,false=组底;表格形式恒在组末)。
+    /// 不包撤销事务,调用方自行 begin_edit/commit_edit。失败返回 false。
+    pub fn pivot_set_subtotals_top(&mut self, sheet_idx: u32, top: bool) -> bool {
+        if self.handle == 0 { return false; }
+        roe_api::roe_pivot_set_subtotals_top(self.handle, sheet_idx, top as i32) == 0
+    }
+
+    /// 开关透视表总计并就地刷新(true=显示)。bottom_row=最下面一行,right_col=最右边一列。
+    /// 不包撤销事务,调用方自行 begin_edit/commit_edit。失败返回 false。
+    pub fn pivot_set_grand_totals(&mut self, sheet_idx: u32, bottom_row: bool, right_col: bool) -> bool {
+        if self.handle == 0 { return false; }
+        roe_api::roe_pivot_set_grand_totals(self.handle, sheet_idx, bottom_row as i32, right_col as i32) == 0
+    }
+
     /// 取透视表当前配置 JSON:
     /// {"rows":[..],"cols":[..],"values":[..],"filters":[..],"source_idx":N,"fields":[数据源列名]}
     /// 非透视 sheet/无效句柄返回 None。
@@ -2657,6 +2841,57 @@ impl TileCacheRust {
         if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
     }
 
+    /// v301: 列出全部修订（合并后的整条），按段落、起点升序
+    pub fn writer_list_revisions(&self) -> Vec<RevisionItem> {
+        if self.handle == 0 { return Vec::new(); }
+        let Some(s) = (unsafe { take_roe_string(roe_api::roe_list_revisions(self.handle)) }) else { return Vec::new() };
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) else { return Vec::new() };
+        let mut out = Vec::new();
+        if let Some(arr) = v.get("revisions").and_then(|x| x.as_array()) {
+            for it in arr {
+                out.push(RevisionItem {
+                    para: it.get("para").and_then(|x| x.as_u64()).unwrap_or(0) as u32,
+                    start: it.get("start").and_then(|x| x.as_u64()).unwrap_or(0) as u32,
+                    end: it.get("end").and_then(|x| x.as_u64()).unwrap_or(0) as u32,
+                    kind: it.get("kind").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+                    author: it.get("author").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+                    date: it.get("date").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+                    text: it.get("text").and_then(|x| x.as_str()).unwrap_or("").to_string(),
+                });
+            }
+        }
+        out
+    }
+
+    /// v301: 接受/拒绝段落内一个区间的修订。accept 1=接受 0=拒绝
+    pub fn writer_resolve_revision_range(&self, para: u32, start: u32, end: u32, accept: u32) -> Result<(), String> {
+        if self.handle == 0 { return Err("没有打开的文档".to_string()); }
+        let code = roe_api::roe_resolve_revision_range(self.handle, para, start, end, accept);
+        if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
+    }
+
+    /// v300: 接受/拒绝光标处的一条修订。accept 1=接受 0=拒绝
+    pub fn writer_resolve_revision(&self, para: u32, offset: u32, accept: u32) -> Result<(), String> {
+        if self.handle == 0 { return Err("没有打开的文档".to_string()); }
+        let code = roe_api::roe_resolve_revision(self.handle, para, offset, accept);
+        if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
+    }
+
+    /// v300: 接受/拒绝全部修订。accept 1=接受 0=拒绝
+    pub fn writer_resolve_all_revisions(&self, accept: u32) -> Result<(), String> {
+        if self.handle == 0 { return Err("没有打开的文档".to_string()); }
+        let code = roe_api::roe_resolve_all_revisions(self.handle, accept);
+        if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
+    }
+
+    /// v308: 设置修订模式。on true=开；author 为作者名。
+    pub fn writer_set_track_changes(&self, on: bool, author: &str) -> Result<(), String> {
+        if self.handle == 0 { return Err("没有打开的文档".to_string()); }
+        let c = std::ffi::CString::new(author).map_err(|_| "作者名含非法字符".to_string())?;
+        let code = roe_api::roe_set_track_changes(self.handle, if on { 1 } else { 0 }, c.as_ptr());
+        if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
+    }
+
     /// v298: 删除光标处脚注/尾注。kind 0=脚注 1=尾注
     pub fn writer_delete_note(&self, para: u32, offset: u32, kind: u32) -> Result<(), String> {
         if self.handle == 0 { return Err("没有打开的文档".to_string()); }
@@ -2695,6 +2930,29 @@ impl TileCacheRust {
     pub fn writer_get_chart_json(&self, body_index: u32) -> Option<String> {
         if self.handle == 0 { return None; }
         unsafe { take_roe_string(roe_api::roe_writer_get_chart_json(self.handle, body_index)) }
+    }
+    /// Writer：读取内联统计图的完整 StatChartModel JSON。
+    pub fn writer_get_stat_chart_json(&self, body_index: u32) -> Option<String> {
+        if self.handle == 0 { return None; }
+        unsafe { take_roe_string(roe_api::roe_writer_get_stat_chart_json(self.handle, body_index)) }
+    }
+    /// Writer：统计图「编辑数据」回写(入撤销栈)。返回 -1 失败;>=0 为丢弃的越界 subtotals 个数。
+    pub fn writer_set_stat_chart_data(&self, body_index: u32, edit_json: &str) -> i32 {
+        if self.handle == 0 { return -1; }
+        let c = match std::ffi::CString::new(edit_json) { Ok(c) => c, Err(_) => return -1 };
+        roe_api::roe_writer_set_stat_chart_data(self.handle, body_index, c.as_ptr())
+    }
+    /// Writer:内联图表/统计图配置 JSON(同 get_chart_config 字段)。
+    pub fn writer_get_chart_config(&self, body_index: u32) -> Option<String> {
+        if self.handle == 0 { return None; }
+        unsafe { take_roe_string(roe_api::roe_writer_get_chart_config(self.handle, body_index)) }
+    }
+    /// Writer:局部修改内联图表样式(入撤销栈)。
+    pub fn writer_set_chart_style(&self, body_index: u32, style_json: &str) -> Result<(), String> {
+        if self.handle == 0 { return Err("没有打开的文档".to_string()); }
+        let c = std::ffi::CString::new(style_json).map_err(|_| "样式 JSON 含非法字符".to_string())?;
+        let code = roe_api::roe_writer_set_chart_style(self.handle, body_index, c.as_ptr());
+        if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
     }
     /// v318m: 替换内联图表内容（保留尺寸，入撤销栈）
     pub fn writer_set_chart_json(&self, body_index: u32, chart_json: &str) -> Result<(), String> {
@@ -2871,6 +3129,18 @@ impl TileCacheRust {
         let p = v.get("local_para_index").and_then(|x| x.as_u64()).ok_or("缺 local_para_index")? as u32;
         let o = v.get("char_offset").and_then(|x| x.as_u64()).ok_or("缺 char_offset")? as u32;
         Ok((p, o))
+    }
+    /// 内部剪贴板缓冲的纯文本（无缓冲返回 None）。
+    pub fn writer_clip_text(&self) -> Option<String> {
+        let ptr = roe_api::roe_writer_clip_text();
+        if ptr.is_null() { return None; }
+        unsafe { take_roe_string(ptr) }
+    }
+    /// 把外部纯文本放进内部缓冲，之后可直接 writer_clip_paste。
+    pub fn writer_set_clip_text(&self, text: &str) -> Result<(), String> {
+        let cs = std::ffi::CString::new(text.replace('\0', "")).map_err(|e| e.to_string())?;
+        let code = roe_api::roe_writer_set_clip_text(cs.as_ptr());
+        if code == 0 { Ok(()) } else { Err(Self::formula_last_err()) }
     }
     pub fn writer_clip_has(&self) -> bool {
         roe_api::roe_writer_clip_has() != 0
@@ -3368,4 +3638,47 @@ fn calc_extra_add(handle: u64, sheet: u32, is_height: bool) {
         let e = m.entry((handle, sheet)).or_insert((0.0, 0.0));
         if is_height { e.0 = (e.0 + 700.0).min(15_000_000.0); } else { e.1 = (e.1 + 480.0).min(786_432.0); }
     });
+}
+
+/// 解析 query_script 返回的 {"ok":true,"value":...}。
+/// value 兼容原生 bool 与字符串 "true"/"false";其余情况返回 None。
+pub(crate) fn parse_bool_value(raw: &str) -> Option<bool> {
+    let v: serde_json::Value = serde_json::from_str(raw).ok()?;
+    if v.get("ok").and_then(|x| x.as_bool()) != Some(true) {
+        return None;
+    }
+    match v.get("value")? {
+        serde_json::Value::Bool(b) => Some(*b),
+        serde_json::Value::String(t) => match t.trim().to_ascii_lowercase().as_str() {
+            "true" => Some(true),
+            "false" => Some(false),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod gridlines_tests {
+    use super::parse_bool_value;
+
+    #[test]
+    fn native_bool() {
+        assert_eq!(parse_bool_value(r#"{"ok":true,"value":true}"#), Some(true));
+    }
+
+    #[test]
+    fn string_bool() {
+        assert_eq!(parse_bool_value(r#"{"ok":true,"value":"false"}"#), Some(false));
+    }
+
+    #[test]
+    fn not_ok_is_none() {
+        assert_eq!(parse_bool_value(r#"{"ok":false,"error":"x"}"#), None);
+    }
+
+    #[test]
+    fn bad_json_is_none() {
+        assert_eq!(parse_bool_value("not json"), None);
+    }
 }

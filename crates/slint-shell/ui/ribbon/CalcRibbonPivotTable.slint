@@ -12,163 +12,279 @@ import { RibbonGroup } from "RibbonGroup.slint";
 import { RibbonButton } from "RibbonButton.slint";
 import { RibbonBigButton } from "RibbonBigButton.slint";
 import { RibbonCheckBox } from "RibbonCheckBox.slint";
+import { CheckBox16 } from "../CheckBox16.slint";
+
+// 只显示状态的开关:状态由 app 属性持有,点击只发命令,等后端回灌(不在本地改写)
+component PivotSwitch inherits Rectangle {
+    in property <bool> on: false;
+    in property <string> text: "";
+    callback toggled();
+    width: 96px;
+    height: 20px;
+    HorizontalLayout {
+        spacing: 5px;
+        alignment: start;
+        CheckBox16 { on: root.on; }
+        Text { text: root.text; font-size: 11px; color: #333333; vertical-alignment: center; }
+    }
+    TouchArea { clicked => { root.toggled(); } }
+}
 
 export component CalcRibbonPivotTable inherits Rectangle {
     height: 88px;
 
     callback insert-slicer-requested();
+    callback action(string);
+    in property <bool> subtotal-row-on: false;
+    in property <bool> subtotal-col-on: false;
+    in property <bool> grand-bottom-on: true;
+    in property <bool> grand-right-on: true;
+    in property <int> layout-mode: 0;
+    in property <bool> subtotals-top: true;
 
-    HorizontalLayout {
-        x: 4px;
-        spacing: 0px;
-        alignment: start;
+    Flickable {
+        width: root.width;
+        height: root.height;
+        viewport-width: max(root.width, row.preferred-width + 8px);
+        viewport-height: root.height;
+        row := HorizontalLayout {
+            width: max(root.width, self.preferred-width + 8px);
+            height: root.height;
+            x: 4px;
+            spacing: 0px;
+            alignment: start;
 
 
-        // ── 数据透视表名称 ────────────────────────────────────
-        RibbonGroup {
-            label: @tr("数据透视表");
-
-            Rectangle {
-                width: 120px;
-                height: 22px;
-                border-radius: 3px;
-                border-width: 1px;
-                border-color: #c0c0c0;
-                background: #ffffff;
-
-                Text {
-                    text: @tr("数据透视表1");
-                    font-size: 11px;
-                    color: #333333;
-                    x: 6px;
-                    y: (parent.height - self.height) / 2;
-                }
-            }
-        }
-
-        // ── 数据组 ───────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("数据");
-
-            HorizontalLayout {
-                spacing: 2px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
-                    label: @tr("全部刷新");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
-                    label: @tr("更改数据源");
-                }
-            }
-        }
-
-        // ── 操作组 ───────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("操作");
-
-            HorizontalLayout {
-                spacing: 2px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/document.svg");
-                    label: @tr("移动透视表");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/document_search.svg");
-                    label: @tr("显示详情");
-                }
-            }
-        }
-
-        // ── 筛选器组 ─────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("筛选器");
-
-            HorizontalLayout {
-                spacing: 2px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/filter.svg");
-                    label: @tr("插入切片器");
-                    clicked => { root.insert-slicer-requested(); }
-                }
-            }
-        }
-
-        // ── 数据透视表样式选项 ────────────────────────────────
-        RibbonGroup {
-            label: @tr("样式选项");
-
-            HorizontalLayout {
-                spacing: 8px;
-
-                VerticalLayout {
-                    spacing: 3px;
-                    RibbonCheckBox {
-                        text: @tr("行标题");
-                        checked: true;
-                    }
-                    RibbonCheckBox {
-                        text: @tr("镶边行");
-                        checked: false;
-                    }
-                }
-                VerticalLayout {
-                    spacing: 3px;
-                    RibbonCheckBox {
-                        text: @tr("列标题");
-                        checked: true;
-                    }
-                    RibbonCheckBox {
-                        text: @tr("镶边列");
-                        checked: false;
-                    }
-                }
-            }
-        }
-
-        // ── 数据透视表样式主题 ────────────────────────────────
-        RibbonGroup {
-            label: @tr("数据透视表样式");
-
-            HorizontalLayout {
-                spacing: 4px;
+            /* 暂时停用:名称框/数据/操作/筛选器(空壳,保留备用)
+            // ── 数据透视表名称 ────────────────────────────────────
+            RibbonGroup {
+                label: @tr("数据透视表");
 
                 Rectangle {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 2px;
+                    width: 120px;
+                    height: 22px;
+                    border-radius: 3px;
                     border-width: 1px;
-                    border-color: #d0d0d0;
+                    border-color: #c0c0c0;
                     background: #ffffff;
-                }
-                Rectangle {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 2px;
-                    border-width: 1px;
-                    border-color: #d0d0d0;
-                    background: #dae3f3;
-                }
-                Rectangle {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 2px;
-                    border-width: 1px;
-                    border-color: #d0d0d0;
-                    background: #bdd7ee;
-                }
-                Rectangle {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 2px;
-                    border-width: 1px;
-                    border-color: #d0d0d0;
-                    background: #1f3864;
+
+                    Text {
+                        text: @tr("数据透视表1");
+                        font-size: 11px;
+                        color: #333333;
+                        x: 6px;
+                        y: (parent.height - self.height) / 2;
+                    }
                 }
             }
+
+            // ── 数据组 ───────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("数据");
+
+                HorizontalLayout {
+                    spacing: 2px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/arrow_rotate_clockwise.svg");
+                        label: @tr("全部刷新");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                        label: @tr("更改数据源");
+                    }
+                }
+            }
+
+            // ── 操作组 ───────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("操作");
+
+                HorizontalLayout {
+                    spacing: 2px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/document.svg");
+                        label: @tr("移动透视表");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/document_search.svg");
+                        label: @tr("显示详情");
+                    }
+                }
+            }
+
+            // ── 筛选器组 ─────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("筛选器");
+
+                HorizontalLayout {
+                    spacing: 2px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/filter.svg");
+                        label: @tr("插入切片器");
+                        clicked => { root.insert-slicer-requested(); }
+                    }
+                }
+            }
+
+            */
+
+            // ── 小计 / 总计 ──────────────────────────────────────
+            RibbonGroup {
+                label: @tr("小计与总计");
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    VerticalLayout {
+                        spacing: 3px;
+                        PivotSwitch {
+                            text: @tr("行小计");
+                            on: root.subtotal-row-on;
+                            toggled => { root.action("calc.pivot_switch:subtotal_row:" + (root.subtotal-row-on ? "0" : "1")); }
+                        }
+                        PivotSwitch {
+                            text: @tr("列小计");
+                            on: root.subtotal-col-on;
+                            toggled => { root.action("calc.pivot_switch:subtotal_col:" + (root.subtotal-col-on ? "0" : "1")); }
+                        }
+                    }
+                    VerticalLayout {
+                        spacing: 3px;
+                        PivotSwitch {
+                            text: @tr("底部总计行");
+                            on: root.grand-bottom-on;
+                            toggled => { root.action("calc.pivot_switch:grand_bottom:" + (root.grand-bottom-on ? "0" : "1")); }
+                        }
+                        PivotSwitch {
+                            text: @tr("右侧总计列");
+                            on: root.grand-right-on;
+                            toggled => { root.action("calc.pivot_switch:grand_right:" + (root.grand-right-on ? "0" : "1")); }
+                        }
+                    }
+                }
+            }
+
+            // ── 布局 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("布局");
+
+                VerticalLayout {
+                    spacing: 3px;
+                    PivotSwitch {
+                        text: @tr("紧凑形式");
+                        on: root.layout-mode == 1;
+                        toggled => { root.action("calc.pivot_layout:1"); }
+                    }
+                    PivotSwitch {
+                        text: @tr("大纲形式");
+                        on: root.layout-mode == 0;
+                        toggled => { root.action("calc.pivot_layout:0"); }
+                    }
+                    PivotSwitch {
+                        text: @tr("表格形式");
+                        on: root.layout-mode == 2;
+                        toggled => { root.action("calc.pivot_layout:2"); }
+                    }
+                }
+            }
+
+            // ── 小计位置(大纲/紧凑有效,表格形式恒在组末) ─────────
+            RibbonGroup {
+                label: @tr("小计位置");
+
+                VerticalLayout {
+                    spacing: 3px;
+                    PivotSwitch {
+                        text: @tr("小计显示在组顶部");
+                        on: root.subtotals-top;
+                        toggled => { root.action("calc.pivot_subtotals_top:1"); }
+                    }
+                    PivotSwitch {
+                        text: @tr("小计显示在组底部");
+                        on: !root.subtotals-top;
+                        toggled => { root.action("calc.pivot_subtotals_top:0"); }
+                    }
+                }
+            }
+
+            /* 暂时停用:样式选项与样式主题(空壳,保留备用)
+            // ── 数据透视表样式选项 ────────────────────────────────
+            RibbonGroup {
+                label: @tr("样式选项");
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    VerticalLayout {
+                        spacing: 3px;
+                        RibbonCheckBox {
+                            text: @tr("行标题");
+                            checked: true;
+                        }
+                        RibbonCheckBox {
+                            text: @tr("镶边行");
+                            checked: false;
+                        }
+                    }
+                    VerticalLayout {
+                        spacing: 3px;
+                        RibbonCheckBox {
+                            text: @tr("列标题");
+                            checked: true;
+                        }
+                        RibbonCheckBox {
+                            text: @tr("镶边列");
+                            checked: false;
+                        }
+                    }
+                }
+            }
+
+            // ── 数据透视表样式主题 ────────────────────────────────
+            RibbonGroup {
+                label: @tr("数据透视表样式");
+
+                HorizontalLayout {
+                    spacing: 4px;
+
+                    Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 2px;
+                        border-width: 1px;
+                        border-color: #d0d0d0;
+                        background: #ffffff;
+                    }
+                    Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 2px;
+                        border-width: 1px;
+                        border-color: #d0d0d0;
+                        background: #dae3f3;
+                    }
+                    Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 2px;
+                        border-width: 1px;
+                        border-color: #d0d0d0;
+                        background: #bdd7ee;
+                    }
+                    Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 2px;
+                        border-width: 1px;
+                        border-color: #d0d0d0;
+                        background: #1f3864;
+                    }
+                }
+            }
+*/
         }
     }
 }

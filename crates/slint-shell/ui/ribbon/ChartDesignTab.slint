@@ -1,0 +1,96 @@
+// 「图表设计」功能区(选中图表时出现),Calc/Impress/Writer 通用。
+// 所有参数经 patch(key, value) 传出:value 先按 JSON 解析,失败当字符串;清除用 "null"。
+import { RibbonGroup } from "RibbonGroup.slint";
+import { FmtBtn } from "WriterRibbonShapeFormat.slint";
+import { RibbonCheckBox } from "RibbonCheckBox.slint";
+
+export component ChartDesignTab inherits Rectangle {
+    in property <bool> show-legend: true;
+    in property <bool> show-grid: true;
+    in property <string> legend-pos: "";
+    in property <bool> is-stat: false;
+    in property <string> kind-name: "";
+    in property <string> grouping: "Standard";
+    in property <bool> show-val: false;
+    callback patch(string, string);
+    height: 88px;
+
+    // 适用范围:图例位置对统计图仅瀑布生效;堆积仅柱/条/折线/面积
+    property <bool> legend-pos-ok: !root.is-stat || root.kind-name == "Waterfall";
+    property <bool> grouping-ok: !root.is-stat && (root.kind-name == "Bar" || root.kind-name == "HorizontalBar" || root.kind-name == "Line" || root.kind-name == "Area");
+    property <bool> val-ok: !root.is-stat;
+
+    changed show-legend => { legend-cb.checked = root.show-legend; }
+    changed show-grid => { grid-cb.checked = root.show-grid; }
+
+    HorizontalLayout {
+        x: 4px; spacing: 0px; alignment: start;
+        RibbonGroup {
+            label: @tr("图例");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                legend-cb := RibbonCheckBox {
+                    text: @tr("显示图例");
+                    checked: root.show-legend;
+                    toggled(v) => { root.patch("show_legend", v ? "true" : "false"); }
+                }
+                if root.legend-pos-ok : HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: @tr("上"); clicked => { root.patch("legend_pos", "Top"); } }
+                    FmtBtn { label: @tr("下"); clicked => { root.patch("legend_pos", "Bottom"); } }
+                    FmtBtn { label: @tr("左"); clicked => { root.patch("legend_pos", "Left"); } }
+                    FmtBtn { label: @tr("右"); clicked => { root.patch("legend_pos", "Right"); } }
+                    FmtBtn { label: @tr("默认"); clicked => { root.patch("legend_pos", "null"); } }
+                }
+                if root.legend-pos-ok : Text {
+                    font-size: 11px;
+                    color: #666666;
+                    text: root.legend-pos == "Top" ? "当前:上"
+                        : root.legend-pos == "Bottom" ? "当前:下"
+                        : root.legend-pos == "Left" ? "当前:左"
+                        : root.legend-pos == "Right" ? "当前:右" : "当前:默认";
+                }
+            }
+        }
+        RibbonGroup {
+            label: @tr("网格线");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                grid-cb := RibbonCheckBox {
+                    text: @tr("显示网格线");
+                    checked: root.show-grid;
+                    toggled(v) => { root.patch("show_grid", v ? "true" : "false"); }
+                }
+            }
+        }
+        if root.val-ok : RibbonGroup {
+            label: @tr("数据标签");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                val-cb := RibbonCheckBox {
+                    text: @tr("显示数值");
+                    checked: root.show-val;
+                    toggled(v) => { root.patch("show_val", v ? "true" : "false"); }
+                }
+            }
+        }
+        if root.grouping-ok : RibbonGroup {
+            label: @tr("堆积方式");
+            VerticalLayout {
+                spacing: 4px; alignment: center;
+                HorizontalLayout {
+                    spacing: 4px; alignment: start;
+                    FmtBtn { label: @tr("标准"); clicked => { root.patch("grouping", "Standard"); } }
+                    FmtBtn { label: @tr("堆积"); clicked => { root.patch("grouping", "Stacked"); } }
+                    FmtBtn { label: @tr("百分比"); clicked => { root.patch("grouping", "PercentStacked"); } }
+                }
+                Text {
+                    font-size: 11px;
+                    color: #666666;
+                    text: root.grouping == "Stacked" ? "当前:堆积"
+                        : root.grouping == "PercentStacked" ? "当前:百分比" : "当前:标准";
+                }
+            }
+        }
+    }
+}

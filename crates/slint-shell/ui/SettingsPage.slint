@@ -55,8 +55,9 @@ component SChip inherits Rectangle {
 component SBtn inherits Rectangle {
     in property <string> label;
     in property <color> tone: #6d28d9;
+    in property <bool> fit: false;
     callback clicked();
-    min-width: 80px;
+    min-width: root.fit ? max(80px, measure.preferred-width + 28px) : 80px;
     height: 30px;
     background: ta.has-hover ? root.tone.with-alpha(0.12) : #ffffff;
     border-color: root.tone;
@@ -69,6 +70,7 @@ component SBtn inherits Rectangle {
         font-size: 12px;
         color: root.tone;
     }
+    measure := Text { visible: false; text: root.label; font-size: 12px; }
     ta := TouchArea { clicked => { root.clicked(); } }
 }
 
@@ -191,7 +193,7 @@ export component SettingsPage inherits Rectangle {
                     }
                     TouchArea { clicked => { root.lang-open = !root.lang-open; } }
                 }
-                Text { x: 32px; y: 138px; text: @tr("切换后立即生效；目前仅提供英文译文。"); font-size: 11px; color: #9ca3af; }
+                Text { x: 32px; y: 138px; text: @tr("切换后立即生效。"); font-size: 11px; color: #9ca3af; }
 
                 Text { x: 32px; y: 180px; text: @tr("主题色"); font-size: 12px; color: #6b7280; }
                 for c[i] in root.theme-colors : Rectangle {
@@ -331,7 +333,7 @@ export component SettingsPage inherits Rectangle {
                             spacing: 8px;
                             alignment: start;
                             SBtn {
-                                label: @tr("保存并使用"); tone: #6d28d9;
+                                label: @tr("保存并使用"); tone: #6d28d9; fit: true;
                                 clicked => {
                                     if (root.edit-name != "") {
                                         root.save-profile(root.sel, root.edit-name, root.edit-endpoint, root.edit-key, root.edit-model, root.edit-provider);

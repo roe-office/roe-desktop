@@ -19,242 +19,249 @@ export component WriterRibbonInsert inherits Rectangle {
     callback request-table-menu(length, length);
     callback request-insert-chart();
 
-    HorizontalLayout {
-        x: 4px;
-        spacing: 0px;
-        alignment: start;
+    Flickable {
+        width: root.width;
+        height: root.height;
+        viewport-width: max(root.width, row.preferred-width + 8px);
+        viewport-height: root.height;
+        row := HorizontalLayout {
+            width: max(root.width, self.preferred-width + 8px);
+            height: root.height;
+            x: 4px;
+            spacing: 0px;
+            alignment: start;
 
 
-        // ── 页面 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("页面");
+            // ── 页面 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("页面");
 
-            HorizontalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/document_add.svg");
-                    label: @tr("封面");
-                    tooltip: @tr("插入封面页");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/document.svg");
-                    label: @tr("空白页");
-                    tooltip: @tr("插入空白页");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/page_break.svg");
-                    label: @tr("分页符");
-                    tooltip: @tr("插入分页符 (Ctrl+Enter)");
-                    clicked => { root.action("writer.page_break"); }
-                }
-            }
-        }
-
-
-        // ── 表格 ────────────────────────────────────────────
-        // 表格网格选择器（10x8悬停高亮）本轮不做，按钮占位
-        RibbonGroup {
-            label: @tr("表格");
-
-            HorizontalLayout {
-                spacing: 1px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/insert_table.svg");
-                    label: @tr("表格");
-                    tooltip: @tr("插入表格");
-                    clicked => { root.request-table-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/document_add.svg");
+                        label: @tr("封面");
+                        tooltip: @tr("插入封面页");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/document.svg");
+                        label: @tr("空白页");
+                        tooltip: @tr("插入空白页");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/page_break.svg");
+                        label: @tr("分页符");
+                        tooltip: @tr("插入分页符 (Ctrl+Enter)");
+                        clicked => { root.action("writer.page_break"); }
+                    }
                 }
             }
-        }
 
 
-        // ── 插图 ────────────────────────────────────────────
-        // 图片：FileDialog占位；形状：ShapePickerPopup占位
-        RibbonGroup {
-            label: @tr("插图");
+            // ── 表格 ────────────────────────────────────────────
+            // 表格网格选择器（10x8悬停高亮）本轮不做，按钮占位
+            RibbonGroup {
+                label: @tr("表格");
 
-            HorizontalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/insert_image.svg");
-                    label: @tr("图片");
-                    tooltip: @tr("插入图片");
-                    clicked => { root.action("writer.insert_image"); }
-                }
-                shape-btn := RibbonBigButton {
-                    width: 56px;
-                    icon-source: @image-url("../icons/fluent/shapes.svg");
-                    label: @tr("形状");
-                    tooltip: @tr("插入形状");
-                    clicked => { root.request-shape-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/grid_dots.svg");
-                    label: @tr("图标");
-                    tooltip: @tr("插入图标");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
-                    label: @tr("图表");
-                    tooltip: @tr("插入图表");
-                    clicked => { root.request-insert-chart(); }
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/screenshot.svg");
-                    label: @tr("截图");
-                    tooltip: @tr("插入截图");
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/insert_table.svg");
+                        label: @tr("表格");
+                        tooltip: @tr("插入表格");
+                        clicked => { root.request-table-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
+                    }
                 }
             }
-        }
 
 
-        // ── 链接 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("链接");
+            // ── 插图 ────────────────────────────────────────────
+            // 图片：FileDialog占位；形状：ShapePickerPopup占位
+            RibbonGroup {
+                label: @tr("插图");
 
-            VerticalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonButton {
-                    show-label: true;
-                    width: 88px;
-                    height: 20px;
-                    has-icon: true;
-                    icon-source: @image-url("../icons/fluent/insert_link.svg");
-                    label: @tr("超链接");
-                    tooltip: @tr("插入超链接 (Ctrl+K)");
-                }
-                RibbonButton {
-                    show-label: true;
-                    width: 88px;
-                    height: 20px;
-                    has-icon: true;
-                    icon-source: @image-url("../icons/fluent/bookmark.svg");
-                    label: @tr("书签");
-                    tooltip: @tr("插入书签");
-                }
-                RibbonButton {
-                    show-label: true;
-                    width: 88px;
-                    height: 20px;
-                    has-icon: true;
-                    icon-source: @image-url("../icons/fluent/heading2.svg");
-                    label: @tr("交叉引用");
-                    tooltip: @tr("插入交叉引用");
-                }
-            }
-        }
-
-
-        // ── 批注 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("批注");
-
-            HorizontalLayout {
-                spacing: 1px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/new_comment.svg");
-                    label: @tr("批注");
-                    tooltip: @tr("插入批注 (Ctrl+Alt+C)");
-                    clicked => { root.action("writer.comment_dialog"); }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/insert_image.svg");
+                        label: @tr("图片");
+                        tooltip: @tr("插入图片");
+                        clicked => { root.action("writer.insert_image"); }
+                    }
+                    shape-btn := RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/shapes.svg");
+                        label: @tr("形状");
+                        tooltip: @tr("插入形状");
+                        clicked => { root.request-shape-menu(self.absolute-position.x, self.absolute-position.y + self.height); }
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/grid_dots.svg");
+                        label: @tr("图标");
+                        tooltip: @tr("插入图标");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/data_bar_vertical.svg");
+                        label: @tr("图表");
+                        tooltip: @tr("插入图表");
+                        clicked => { root.request-insert-chart(); }
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/screenshot.svg");
+                        label: @tr("截图");
+                        tooltip: @tr("插入截图");
+                    }
                 }
             }
-        }
 
 
-        // ── 页眉和页脚 ──────────────────────────────────────
-        RibbonGroup {
-            label: @tr("页眉和页脚");
+            // ── 链接 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("链接");
 
-            HorizontalLayout {
-                spacing: 1px;
+                VerticalLayout {
+                    spacing: 1px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/insert_header.svg");
-                    label: @tr("页眉");
-                    tooltip: @tr("插入页眉");
-                    clicked => { root.action("writer.header_footer_dialog"); }
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/insert_footer.svg");
-                    label: @tr("页脚");
-                    tooltip: @tr("插入页脚");
-                    clicked => { root.action("writer.header_footer_dialog"); }
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/page_number.svg");
-                    label: @tr("页码");
-                    tooltip: @tr("插入页码");
-                    clicked => { root.action("writer.header_footer_dialog"); }
-                }
-            }
-        }
-
-
-        // ── 文本 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("文本");
-
-            HorizontalLayout {
-                spacing: 1px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/textbox.svg");
-                    label: @tr("文本框");
-                    tooltip: @tr("插入文本框");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/text_effects.svg");
-                    label: @tr("艺术字");
-                    tooltip: @tr("插入艺术字");
-                }
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/calendar.svg");
-                    label: @tr("日期时间");
-                    tooltip: @tr("插入日期和时间");
+                    RibbonButton {
+                        show-label: true;
+                        min-w: 88px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/insert_link.svg");
+                        label: @tr("超链接");
+                        tooltip: @tr("插入超链接 (Ctrl+K)");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        min-w: 88px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/bookmark.svg");
+                        label: @tr("书签");
+                        tooltip: @tr("插入书签");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        min-w: 88px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/heading2.svg");
+                        label: @tr("交叉引用");
+                        tooltip: @tr("插入交叉引用");
+                    }
                 }
             }
-        }
 
 
-        // ── 符号 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("符号");
+            // ── 批注 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("批注");
 
-            VerticalLayout {
-                spacing: 1px;
+                HorizontalLayout {
+                    spacing: 1px;
 
-                RibbonButton {
-                    show-label: true;
-                    width: 80px;
-                    height: 20px;
-                    has-icon: true;
-                    icon-source: @image-url("../icons/fluent/equation.svg");
-                    label: @tr("公式");
-                    tooltip: @tr("插入公式");
-                    clicked => { root.insert-formula(); }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/new_comment.svg");
+                        label: @tr("批注");
+                        tooltip: @tr("插入批注 (Ctrl+Alt+C)");
+                        clicked => { root.action("writer.comment_dialog"); }
+                    }
                 }
-                RibbonButton {
-                    show-label: true;
-                    width: 80px;
-                    height: 20px;
-                    has-icon: true;
-                    icon-source: @image-url("../icons/fluent/symbol.svg");
-                    label: @tr("符号");
-                    tooltip: @tr("插入特殊符号");
+            }
+
+
+            // ── 页眉和页脚 ──────────────────────────────────────
+            RibbonGroup {
+                label: @tr("页眉和页脚");
+
+                HorizontalLayout {
+                    spacing: 1px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/insert_header.svg");
+                        label: @tr("页眉");
+                        tooltip: @tr("插入页眉");
+                        clicked => { root.action("writer.header_footer_dialog"); }
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/insert_footer.svg");
+                        label: @tr("页脚");
+                        tooltip: @tr("插入页脚");
+                        clicked => { root.action("writer.header_footer_dialog"); }
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/page_number.svg");
+                        label: @tr("页码");
+                        tooltip: @tr("插入页码");
+                        clicked => { root.action("writer.header_footer_dialog"); }
+                    }
                 }
-                RibbonButton {
-                    show-label: true;
-                    width: 80px;
-                    height: 20px;
-                    has-icon: true;
-                    icon-source: @image-url("../icons/fluent/document.svg");
-                    label: @tr("编号");
-                    tooltip: @tr("插入域编号");
+            }
+
+
+            // ── 文本 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("文本");
+
+                HorizontalLayout {
+                    spacing: 1px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/textbox.svg");
+                        label: @tr("文本框");
+                        tooltip: @tr("插入文本框");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/text_effects.svg");
+                        label: @tr("艺术字");
+                        tooltip: @tr("插入艺术字");
+                    }
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/calendar.svg");
+                        label: @tr("日期时间");
+                        tooltip: @tr("插入日期和时间");
+                    }
+                }
+            }
+
+
+            // ── 符号 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("符号");
+
+                VerticalLayout {
+                    spacing: 1px;
+
+                    RibbonButton {
+                        show-label: true;
+                        min-w: 80px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/equation.svg");
+                        label: @tr("公式");
+                        tooltip: @tr("插入公式");
+                        clicked => { root.insert-formula(); }
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        min-w: 80px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/symbol.svg");
+                        label: @tr("符号");
+                        tooltip: @tr("插入特殊符号");
+                    }
+                    RibbonButton {
+                        show-label: true;
+                        min-w: 80px;
+                        height: 20px;
+                        has-icon: true;
+                        icon-source: @image-url("../icons/fluent/document.svg");
+                        label: @tr("编号");
+                        tooltip: @tr("插入域编号");
+                    }
                 }
             }
         }

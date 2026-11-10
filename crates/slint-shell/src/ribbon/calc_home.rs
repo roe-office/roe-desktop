@@ -850,8 +850,28 @@ pub fn sync_state_at(app: &super::AppWindow, sess: &mut doc_core::TileCacheRust,
 }
 
 /// 已持有 session 可变借用时使用(避免 RefCell 重复借用)。
+/// 透视上下文 Tab 的可见性与四个小计/总计勾选态(读回后端配置)。
+pub fn sync_pivot_state(app: &super::AppWindow, sess: &doc_core::TileCacheRust, sheet: u32) {
+    let is_pivot = sess.is_pivot_sheet(sheet);
+    app.set_pivot_table_active(is_pivot);
+    if !is_pivot { return; }
+    let Some(v) = sess.pivot_config_json(sheet).and_then(|j| serde_json::from_str::<serde_json::Value>(&j).ok()) else { return };
+    let b = |k: &str, cur: bool| v.get(k).and_then(|x| x.as_bool()).unwrap_or(cur);
+    app.set_pivot_subtotal_row_on(b("subtotals_row", app.get_pivot_subtotal_row_on()));
+    app.set_pivot_subtotal_col_on(b("subtotals_col", app.get_pivot_subtotal_col_on()));
+    app.set_pivot_grand_bottom_on(b("grand_bottom", app.get_pivot_grand_bottom_on()));
+    app.set_pivot_grand_right_on(b("grand_right", app.get_pivot_grand_right_on()));
+    if let Some(m) = v.get("layout").and_then(|x| x.as_str()) {
+        app.set_pivot_layout_mode(match m { "compact" => 1, "tabular" => 2, _ => 0 });
+    }
+    app.set_pivot_subtotals_top(b("subtotals_top", true));
+}
+
 pub fn sync_state_inner(app: &super::AppWindow, sess: &mut doc_core::TileCacheRust, sheet: u32) {
+    // 透视 Tab 可见性:必须在"无选区则 return"之前设置
+    sync_pivot_state(app, sess, sheet);
     load_font_list(app, sess);
+    app.set_calc_gridlines_on(sess.get_gridlines(sheet)); // 工作表级属性,与选区无关
     let Some((r1, c1, _, _)) = read_selection(app) else {
         app.set_calc_bold_active(false);
         app.set_calc_italic_active(false);

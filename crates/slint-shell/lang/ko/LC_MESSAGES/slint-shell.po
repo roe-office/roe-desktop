@@ -2972,7 +2972,7 @@ msgstr "AI 구성"
 msgid "界面语言"
 msgstr "인터페이스 언어"
 
-msgid "切换后立即生效；目前仅提供英文译文。"
+msgid "切换后立即生效。"
 msgstr "즉시 적용됩니다."
 
 msgid "主题色"
@@ -3137,3 +3137,72 @@ msgstr "맨 앞으로 가져오기"
 msgid "置于底层"
 msgstr "맨 뒤로 보내기"
 
+msgid "Carlito (默认)"
+msgstr "Carlito (기본)"
+
+msgid "等线 (中文正文)"
+msgstr "등선 (중국어 본문)"
+
+msgid "空值"
+msgstr "결측"
+
+msgid "中位数"
+msgstr "중앙값"
+
+msgid "统计量"
+msgstr "통계량"
+
+msgid "前 5 行"
+msgstr "처음 5행"
+
+msgid "正在读取并分析… 已用 {} 秒"
+msgstr "읽고 분석하는 중… {}초 경과"
+
+msgid "导入概览:{}"
+msgstr "가져오기 개요: {}"
+
+msgid "共 {} 行,{} 列"
+msgstr "{}행, {}열"
+
+msgid "{} 列"
+msgstr "{}열"
+
+msgid "仅预览前 5 行"
+msgstr "미리보기는 처음 5행만"
+
+msgid "仅第一个工作表"
+msgstr "첫 번째 시트만"
+
+msgid "小计与总计"
+msgstr "부분합 및 총합계"
+
+msgid "行小计"
+msgstr "행 부분합"
+
+msgid "列小计"
+msgstr "열 부분합"
+
+msgid "底部总计行"
+msgstr "하단 총합계 행"
+
+msgid "右侧总计列"
+msgstr "오른쪽 총합계 열"
+
+
+msgid "紧凑形式"
+msgstr "압축 형식"
+
+msgid "大纲形式"
+msgstr "개요 형식"
+
+msgid "表格形式"
+msgstr "테이블 형식"
+
+msgid "小计位置"
+msgstr "소계 위치"
+
+msgid "小计显示在组顶部"
+msgstr "그룹 위쪽에 소계 표시"
+
+msgid "小计显示在组底部"
+msgstr "그룹 아래쪽에 소계 표시"

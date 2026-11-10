@@ -9,10 +9,17 @@ export component RibbonButton inherits Rectangle {
     in property <string> tooltip: "";
     in property <bool> active: false;
     in property <bool> show-label: false;
+    // 带文字模式的最小宽度；文字更长时按钮自动变宽
+    in property <length> min-w: 80px;
 
     callback clicked();
 
-    width: root.show-label ? 80px : 28px;
+    width: root.show-label ? max(root.min-w, measure.preferred-width + 31px) : 28px;
+    measure := Text {
+        visible: false;
+        text: root.label;
+        font-size: 11px;
+    }
     height: root.show-label ? 22px : 28px;
     border-radius: 3px;
 

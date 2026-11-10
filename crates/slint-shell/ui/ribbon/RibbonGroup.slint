@@ -28,7 +28,8 @@ export component RibbonGroup inherits Rectangle {
 
         Rectangle {
             height: 16px;
-            Text {
+            min-width: glabel.preferred-width + 8px;
+            glabel := Text {
                 text: root.label;
                 font-size: 11px;
                 color: #666666;

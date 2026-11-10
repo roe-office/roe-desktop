@@ -51,8 +51,8 @@ export component ImpressRibbonView inherits Rectangle {
                 RibbonBigButton { label: @tr("幻灯片母版"); icon-source: @image-url("../icons/fluent/style_guide.svg"); clicked => { root.request-master(); } }
                 VerticalLayout {
                     spacing: 2px; alignment: center;
-                    RibbonButton { label: @tr("讲义母版"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document.svg"); }
-                    RibbonButton { label: @tr("备注母版"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document.svg"); }
+                    RibbonButton { label: @tr("讲义母版"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document.svg"); }
+                    RibbonButton { label: @tr("备注母版"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/document.svg"); }
                 }
             }
         }
@@ -63,9 +63,9 @@ export component ImpressRibbonView inherits Rectangle {
             label: @tr("显示");
             VerticalLayout {
                 y: 8px; spacing: 4px;
-                RibbonButton { label: @tr("标尺");  show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/ruler.svg"); }
-                RibbonButton { label: @tr("网格线"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/grid_dots.svg"); }
-                RibbonButton { label: @tr("参考线"); show-label: true; width: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/style_guide.svg"); }
+                RibbonButton { label: @tr("标尺");  show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/ruler.svg"); }
+                RibbonButton { label: @tr("网格线"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/grid_dots.svg"); }
+                RibbonButton { label: @tr("参考线"); show-label: true; min-w: 80px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/style_guide.svg"); }
             }
         }
 
@@ -81,9 +81,9 @@ export component ImpressRibbonView inherits Rectangle {
                 }
                 VerticalLayout {
                     spacing: 2px; alignment: center;
-                    RibbonButton { label: @tr("放大"); show-label: true; width: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_in.svg"); }
-                    RibbonButton { label: @tr("缩小"); show-label: true; width: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_out.svg"); }
-                    RibbonButton { label: "100%"; show-label: true; width: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_fit.svg"); }
+                    RibbonButton { label: @tr("放大"); show-label: true; min-w: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_in.svg"); }
+                    RibbonButton { label: @tr("缩小"); show-label: true; min-w: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_out.svg"); }
+                    RibbonButton { label: "100%"; show-label: true; min-w: 60px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/zoom_fit.svg"); }
                 }
             }
         }

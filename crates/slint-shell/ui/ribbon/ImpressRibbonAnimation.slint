@@ -54,9 +54,9 @@ export component ImpressRibbonAnimation inherits Rectangle {
             label: @tr("效果");
             VerticalLayout {
                 spacing: 1px; alignment: center;
-                RibbonButton { label: @tr("效果选项"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/flash.svg"); }
-                RibbonButton { label: @tr("动画窗格"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/panel_left.svg"); }
-                RibbonButton { label: @tr("动画刷");   show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/format_painter.svg"); }
+                RibbonButton { label: @tr("效果选项"); show-label: true; min-w: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/flash.svg"); }
+                RibbonButton { label: @tr("动画窗格"); show-label: true; min-w: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/panel_left.svg"); }
+                RibbonButton { label: @tr("动画刷");   show-label: true; min-w: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/format_painter.svg"); }
             }
         }
 
@@ -66,8 +66,8 @@ export component ImpressRibbonAnimation inherits Rectangle {
             label: @tr("自动播放");
             VerticalLayout {
                 spacing: 1px; alignment: center;
-                RibbonButton { label: @tr("开始时机"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/cursor_click.svg"); }
-                RibbonButton { label: @tr("持续时间"); show-label: true; width: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/timer.svg"); }
+                RibbonButton { label: @tr("开始时机"); show-label: true; min-w: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/cursor_click.svg"); }
+                RibbonButton { label: @tr("持续时间"); show-label: true; min-w: 88px; height: 20px; has-icon: true; icon-source: @image-url("../icons/fluent/timer.svg"); }
             }
         }
     }

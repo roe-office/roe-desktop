@@ -15,113 +15,130 @@ import { RibbonCheckBox } from "RibbonCheckBox.slint";
 
 export component CalcRibbonView inherits Rectangle {
     height: 88px;
+    callback action(string);
+    in-out property <bool> gridlines-on: true;
 
-    HorizontalLayout {
-        x: 4px;
-        spacing: 0px;
-        alignment: start;
+    Flickable {
+        width: root.width;
+        height: root.height;
+        viewport-width: max(root.width, row.preferred-width + 8px);
+        viewport-height: root.height;
+        row := HorizontalLayout {
+            width: max(root.width, self.preferred-width + 8px);
+            height: root.height;
+            x: 4px;
+            spacing: 0px;
+            alignment: start;
 
 
-        // ── 冻结窗格 ─────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("冻结窗格");
+            // ── 冻结窗格 ─────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("冻结窗格");
 
-            HorizontalLayout {
-                spacing: 4px;
+                HorizontalLayout {
+                    spacing: 4px;
 
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/table_calculator.svg");
-                    label: @tr("冻结窗格");
-                    tooltip: @tr("冻结当前单元格上方和左侧的行列（图标占位）");
-                }
-
-                VerticalLayout {
-                    spacing: 2px;
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        width: 80px;
-                        height: 20px;
+                    RibbonBigButton {
                         icon-source: @image-url("../icons/fluent/table_calculator.svg");
-                        label: @tr("冻结首行");
-                        tooltip: @tr("始终显示第一行（图标占位）");
+                        label: @tr("冻结窗格");
+                        tooltip: @tr("冻结当前单元格上方和左侧的行列（图标占位）");
+                        clicked => { root.action("calc.freeze_panes"); }
                     }
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        width: 80px;
-                        height: 20px;
-                        icon-source: @image-url("../icons/fluent/table_calculator.svg");
-                        label: @tr("冻结首列");
-                        tooltip: @tr("始终显示第一列（图标占位）");
-                    }
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        width: 80px;
-                        height: 20px;
-                        icon-source: @image-url("../icons/fluent/table_calculator.svg");
-                        label: @tr("取消冻结");
-                        tooltip: @tr("取消所有冻结（图标占位）");
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            min-w: 80px;
+                            height: 20px;
+                            icon-source: @image-url("../icons/fluent/table_calculator.svg");
+                            label: @tr("冻结首行");
+                            tooltip: @tr("始终显示第一行（图标占位）");
+                            clicked => { root.action("calc.freeze_top_row"); }
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            min-w: 80px;
+                            height: 20px;
+                            icon-source: @image-url("../icons/fluent/table_calculator.svg");
+                            label: @tr("冻结首列");
+                            tooltip: @tr("始终显示第一列（图标占位）");
+                            clicked => { root.action("calc.freeze_first_col"); }
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            min-w: 80px;
+                            height: 20px;
+                            icon-source: @image-url("../icons/fluent/table_calculator.svg");
+                            label: @tr("取消冻结");
+                            tooltip: @tr("取消所有冻结（图标占位）");
+                            clicked => { root.action("calc.unfreeze"); }
+                        }
                     }
                 }
             }
-        }
 
-        // ── 显示 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("显示");
-
-            VerticalLayout {
-                spacing: 4px;
-
-                RibbonCheckBox {
-                    text: @tr("编辑栏");
-                    checked: true;
-                }
-                RibbonCheckBox {
-                    text: @tr("网格线");
-                    checked: true;
-                }
-                RibbonCheckBox {
-                    text: @tr("行列标题");
-                    checked: true;
-                }
-            }
-        }
-
-        // ── 缩放 ────────────────────────────────────────────
-        RibbonGroup {
-            label: @tr("缩放");
-
-            HorizontalLayout {
-                spacing: 4px;
-
-                RibbonBigButton {
-                    icon-source: @image-url("../icons/fluent/zoom_fit.svg");
-                    label: "100%";
-                    tooltip: @tr("恢复100%大小");
-                }
+            // ── 显示 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("显示");
 
                 VerticalLayout {
-                    spacing: 2px;
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        width: 68px;
-                        height: 20px;
-                        icon-source: @image-url("../icons/fluent/zoom_in.svg");
-                        label: @tr("放大");
-                        tooltip: @tr("放大视图");
+                    spacing: 4px;
+
+                    RibbonCheckBox {
+                        text: @tr("编辑栏");
+                        checked: true;
+                        enabled: false;
                     }
-                    RibbonButton {
-                        show-label: true;
-                        has-icon: true;
-                        width: 68px;
-                        height: 20px;
-                        icon-source: @image-url("../icons/fluent/zoom_out.svg");
-                        label: @tr("缩小");
-                        tooltip: @tr("缩小视图");
+                    RibbonCheckBox {
+                        text: @tr("网格线");
+                        checked <=> root.gridlines-on;
+                        toggled(v) => { root.action(v ? "calc.gridlines_on" : "calc.gridlines_off"); }
+                    }
+                    RibbonCheckBox {
+                        text: @tr("行列标题");
+                        checked: true;
+                        enabled: false;
+                    }
+                }
+            }
+
+            // ── 缩放 ────────────────────────────────────────────
+            RibbonGroup {
+                label: @tr("缩放");
+
+                HorizontalLayout {
+                    spacing: 4px;
+
+                    RibbonBigButton {
+                        icon-source: @image-url("../icons/fluent/zoom_fit.svg");
+                        label: "100%";
+                        tooltip: @tr("恢复100%大小");
+                    }
+
+                    VerticalLayout {
+                        spacing: 2px;
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            min-w: 68px;
+                            height: 20px;
+                            icon-source: @image-url("../icons/fluent/zoom_in.svg");
+                            label: @tr("放大");
+                            tooltip: @tr("放大视图");
+                        }
+                        RibbonButton {
+                            show-label: true;
+                            has-icon: true;
+                            min-w: 68px;
+                            height: 20px;
+                            icon-source: @image-url("../icons/fluent/zoom_out.svg");
+                            label: @tr("缩小");
+                            tooltip: @tr("缩小视图");
+                        }
                     }
                 }
             }

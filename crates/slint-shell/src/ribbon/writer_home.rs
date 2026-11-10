@@ -18,7 +18,7 @@ fn cell_fmt_supported(sub: &str) -> bool {
 fn cell_unsupported(sub: &str) -> bool {
     const EXACT: &[&str] = &[
         "indent_inc", "indent_dec",
-        "copy", "cut", "paste", "format_painter", "painter_apply",
+        "copy", "cut", "paste", "format_painter", "painter_apply", "select_all",
         "page_break", "soft_break", "column_break", "insert_image",
         "comment_dialog", "comment_apply", "footnote_dialog", "endnote_dialog",
         "sort_dialog",
@@ -49,6 +49,10 @@ pub fn handle(sub: &str, ctx: &RibbonCtx) {
         Some((cid, cp, _)) if cp >= 0 && cell_fmt_supported(sub) => Some((cid, cp as u32)),
         _ => None,
     };
+    if let (Some(_), true) = (cell, matches!(sub, "copy" | "cut" | "paste")) {
+        cell_clip(sub, ctx);
+        return;
+    }
     if cell.is_some() && cell_unsupported(sub) {
         say(ctx, "单元格内暂不支持该操作");
         return;
@@ -79,6 +83,7 @@ fn handle_inner(sub: &str, ctx: &RibbonCtx) {
     if let Some(v) = sub.strip_prefix("page_setup:") { return set_page_setup(v, ctx); }
     if let Some(v) = sub.strip_prefix("list_bullet:") { return set_list(1, v, ctx); }
     if let Some(v) = sub.strip_prefix("list_number:") { return set_list(2, v, ctx); }
+    if let Some(v) = sub.strip_prefix("list_multi:") { return set_list(3, v, ctx); }
     if let Some(v) = sub.strip_prefix("para_style:") { return set_style(v, ctx); }
     if let Some(v) = sub.strip_prefix("change_case:") { return change_case(v.parse().unwrap_or(0), ctx); }
     if let Some(v) = sub.strip_prefix("columns:") { return set_columns(v.parse().unwrap_or(1), ctx); }
@@ -107,6 +112,13 @@ fn handle_inner(sub: &str, ctx: &RibbonCtx) {
         "comment_delete_current" => return delete_current_comment(ctx),
         "comment_prev" => return step_comment(ctx, -1),
         "comment_next" => return step_comment(ctx, 1),
+        "revision_toggle" => return toggle_track_changes(ctx),
+        "revision_accept_all" => return resolve_all_revisions(ctx, 1),
+        "revision_reject_all" => return resolve_all_revisions(ctx, 0),
+        "revision_prev" => return step_revision(ctx, -1),
+        "revision_next" => return step_revision(ctx, 1),
+        "revision_accept_one" => return resolve_current_revision(ctx, 1),
+        "revision_reject_one" => return resolve_current_revision(ctx, 0),
         "sort_dialog" => return open_sort_dialog(ctx),
         "delete_footnote" => return delete_note(ctx, 0),
         "delete_endnote" => return delete_note(ctx, 1),
@@ -130,6 +142,7 @@ fn handle_inner(sub: &str, ctx: &RibbonCtx) {
         "copy" => clip_copy(false, ctx),
         "cut" => clip_copy(true, ctx),
         "paste" => clip_paste(ctx),
+        "select_all" => select_all(ctx),
         "format_painter" => painter_toggle(ctx),
         "painter_apply" => painter_apply(ctx),
         _ => eprintln!("[ribbon] writer 未接线的命令: {}", sub),
@@ -702,6 +715,130 @@ fn delete_current_comment(ctx: &RibbonCtx) {
     }
 }
 
+/// v301: 光标定位到修订起点，必要时滚动到可见
+fn goto_revision(ctx: &RibbonCtx, para: u32, start: u32) {
+    place_cursor(ctx, para as i64, start as i64);
+    let Some(app) = ctx.app_weak.upgrade() else { return };
+    let cy = app.get_writer_cursor_y() as f32;
+    let scroll = app.get_writer_scroll_y_pt() as f32;
+    let vh = app.get_writer_view_height() as f32;
+    if vh > 0.0 && (cy < scroll || cy > scroll + vh * 0.9) {
+        let target = (cy - vh * 0.3).max(0.0);
+        app.set_writer_scroll_y_pt(target);
+        app.invoke_scroll_writer_to(target);
+        app.invoke_writer_render_viewport(target);
+    }
+}
+
+fn revision_kind_cn(k: &str) -> &'static str {
+    if k == "insert" { "插入" } else { "删除" }
+}
+
+/// v301: 上一条/下一条修订。dir=1 下一条，dir=-1 上一条，首尾循环
+fn step_revision(ctx: &RibbonCtx, dir: i32) {
+    let (cp, co) = {
+        let s = ctx.state.borrow();
+        (s.writer_cursor_para.max(0) as u32, s.writer_cursor_offset.max(0) as u32)
+    };
+    let list = {
+        let s = ctx.state.borrow();
+        match s.session.as_ref() {
+            Some(sess) => sess.writer_list_revisions(),
+            None => return,
+        }
+    };
+    if list.is_empty() { say(ctx, "文档中没有修订"); return; }
+    let n = list.len();
+    let idx = if dir > 0 {
+        list.iter().position(|r| (r.para, r.start) > (cp, co)).unwrap_or(0)
+    } else {
+        list.iter().rposition(|r| (r.para, r.start) < (cp, co)).unwrap_or(n - 1)
+    };
+    let r = list[idx].clone();
+    goto_revision(ctx, r.para, r.start);
+    say(ctx, &format!("第 {}/{} 条：{} {}", idx + 1, n, r.author, revision_kind_cn(&r.kind)));
+}
+
+/// v301: 接受/拒绝光标所在的那一条修订。accept 1=接受 0=拒绝
+fn resolve_current_revision(ctx: &RibbonCtx, accept: u32) {
+    let Some(app) = ctx.app_weak.upgrade() else { return };
+    let (cp, co) = {
+        let s = ctx.state.borrow();
+        (s.writer_cursor_para.max(0) as u32, s.writer_cursor_offset.max(0) as u32)
+    };
+    let found = {
+        let s = ctx.state.borrow();
+        match s.session.as_ref() {
+            Some(sess) => sess.writer_list_revisions().into_iter().find(|r| r.para == cp && r.start <= co && co <= r.end),
+            None => return,
+        }
+    };
+    let Some(r) = found else {
+        say(ctx, "光标不在修订上，请先点击修订文字，或用上一条/下一条定位");
+        return;
+    };
+    let res = {
+        let s = ctx.state.borrow();
+        match s.session.as_ref() {
+            Some(sess) => sess.writer_resolve_revision_range(r.para, r.start, r.end, accept),
+            None => return,
+        }
+    };
+    match res {
+        Err(e) => say(ctx, &format!("处理修订失败: {}", e)),
+        Ok(()) => {
+            say(ctx, if accept == 1 { "已接受此条修订" } else { "已拒绝此条修订" });
+            place_cursor(ctx, r.para as i64, r.start as i64);
+            app.set_writer_needs_render(true);
+            refresh_canvas(ctx);
+            refresh_selection(ctx);
+        }
+    }
+}
+
+/// v300: 接受/拒绝全部修订。accept 1=接受 0=拒绝
+/// v308: 切换修订模式（翻转前台开关并同步到当前文档）
+fn toggle_track_changes(ctx: &RibbonCtx) {
+    let author = "用户".to_string();
+    let res = {
+        let mut s = ctx.state.borrow_mut();
+        let on = !s.writer_track_changes;
+        let r = match s.session.as_ref() {
+            Some(sess) => sess.writer_set_track_changes(on, &author),
+            None => return,
+        };
+        if r.is_ok() { s.writer_track_changes = on; }
+        r.map(|_| on)
+    };
+    match res {
+        Err(e) => say(ctx, &format!("切换修订失败: {}", e)),
+        Ok(on) => {
+            if let Some(app) = ctx.app_weak.upgrade() { app.set_writer_track_changes(on); }
+            say(ctx, &format!("修订：{}（作者：{}）", if on { "开" } else { "关" }, author))
+        }
+    }
+}
+
+fn resolve_all_revisions(ctx: &RibbonCtx, accept: u32) {
+    let Some(app) = ctx.app_weak.upgrade() else { return };
+    let res = {
+        let s = ctx.state.borrow();
+        match s.session.as_ref() {
+            Some(sess) => sess.writer_resolve_all_revisions(accept),
+            None => return,
+        }
+    };
+    match res {
+        Err(e) => say(ctx, &format!("处理修订失败: {}", e)),
+        Ok(()) => {
+            say(ctx, if accept == 1 { "已接受所有修订" } else { "已拒绝所有修订" });
+            app.set_writer_needs_render(true);
+            refresh_canvas(ctx);
+            refresh_selection(ctx);
+        }
+    }
+}
+
 /// v290: 在当前可见气泡之间切换选中。dir=1 下一条，dir=-1 上一条
 fn step_comment(ctx: &RibbonCtx, dir: i32) {
     use slint::Model;
@@ -742,7 +879,7 @@ fn open_note_dialog(ctx: &RibbonCtx, kind: i32) {
 
 fn say(ctx: &RibbonCtx, msg: &str) {
     if let Some(app) = ctx.app_weak.upgrade() {
-        app.set_status_message(msg.into());
+        crate::ui_lang::StatusExt::set_status_msg(&app, msg.into());
     }
 }
 
@@ -1110,6 +1247,56 @@ fn refresh_selection(ctx: &RibbonCtx) {
     }
 }
 
+/// v304: Ctrl+A 全选。锚点=第一个普通段落开头，光标=最后一个普通段落末尾。
+fn select_all(ctx: &RibbonCtx) {
+    let picked: Option<(i64, i64, i64)> = {
+        let s = ctx.state.borrow();
+        let Some(sess) = s.session.as_ref() else { return };
+        let info = |i: i64| -> Option<serde_json::Value> {
+            sess.get_paragraph_info(i as u32).and_then(|j| serde_json::from_str(&j).ok())
+        };
+        let total = info(0).and_then(|v| v.get("total_para_count").and_then(|x| x.as_i64())).filter(|t| *t > 0);
+        match total {
+            None => None,
+            Some(total) => {
+                let mut first: Option<i64> = None;
+                let mut i = 0;
+                while i < total {
+                    if sess.writer_object_kind(i as u32) == 0 && info(i).and_then(|v| v.get("para_len").and_then(|x| x.as_i64())).is_some() { first = Some(i); break; }
+                    i += 1;
+                }
+                let mut last: Option<(i64, i64)> = None;
+                let mut i = total - 1;
+                while i >= 0 {
+                    if sess.writer_object_kind(i as u32) == 0 {
+                        if let Some(len) = info(i).and_then(|v| v.get("para_len").and_then(|x| x.as_i64())) { last = Some((i, len)); break; }
+                    }
+                    i -= 1;
+                }
+                match (first, last) {
+                    (Some(f), Some((l, len))) => Some((f, l, len)),
+                    _ => None,
+                }
+            }
+        }
+    };
+    let Some((first, last, last_len)) = picked else {
+        say(ctx, "全选失败：找不到可选的段落");
+        return;
+    };
+    {
+        let mut s = ctx.state.borrow_mut();
+        s.writer_sel_anchor_para = first;
+        s.writer_sel_anchor_offset = 0;
+        s.writer_cursor_para = last;
+        s.writer_cursor_offset = last_len;
+        s.writer_cursor_ideal_x = None;
+        s.writer_ime_session_start = None;
+        s.writer_ime_session_prev_len = 0;
+    }
+    refresh_selection(ctx);
+}
+
 /// v237：清除格式——把选区内的字符内联覆盖全部清掉
 fn clear_format(ctx: &RibbonCtx) {
     for_selection(ctx, |sess, p, so, eo| sess.writer_clear_char_format(p, so, eo));
@@ -1232,8 +1419,197 @@ fn place_cursor(ctx: &RibbonCtx, p: i64, o: i64) {
             app.set_writer_cursor_visible(true);
         }
         app.set_writer_needs_render(true);
+        {
+            let mut s2 = ctx.state.borrow_mut();
+            crate::writer_refresh_canvas(&app, &mut s2);
+        }
     }
     refresh_selection(ctx);
+}
+
+/// 系统剪贴板：Clipboard 对象必须常驻，否则 Linux 上内容会随对象销毁而丢失。
+fn sys_clip_set(text: &str) {
+    thread_local! {
+        static SYS_CLIP: std::cell::RefCell<Option<arboard::Clipboard>> = std::cell::RefCell::new(None);
+    }
+    SYS_CLIP.with(|c| {
+        let mut c = c.borrow_mut();
+        if c.is_none() {
+            match arboard::Clipboard::new() {
+                Ok(cb) => *c = Some(cb),
+                Err(e) => { eprintln!("[writer] 系统剪贴板初始化失败: {e}"); return; }
+            }
+        }
+        if let Err(e) = c.as_mut().unwrap().set_text(text.to_string()) {
+            eprintln!("[writer] 写系统剪贴板失败: {e}");
+        }
+    });
+}
+
+fn sys_clip_get() -> Option<String> {
+    thread_local! {
+        static SYS_CLIP_R: std::cell::RefCell<Option<arboard::Clipboard>> = std::cell::RefCell::new(None);
+    }
+    SYS_CLIP_R.with(|c| {
+        let mut c = c.borrow_mut();
+        if c.is_none() {
+            match arboard::Clipboard::new() {
+                Ok(cb) => *c = Some(cb),
+                Err(e) => { eprintln!("[writer] 系统剪贴板初始化失败: {e}"); return None; }
+            }
+        }
+        c.as_mut().unwrap().get_text().ok()
+    })
+}
+
+/// 单元格内的复制、剪切、粘贴（第一版：单个单元格内，纯文本）。
+fn cell_clip(op: &str, ctx: &RibbonCtx) {
+    let mut msg = String::new();
+    {
+        let mut s = ctx.state.borrow_mut();
+        let Some((cid, cp, coff)) = s.writer_cell_cursor else { return };
+        let sel = match (s.writer_cell_sel_anchor, s.writer_cell_sel_focus) {
+            (Some(a), Some(f)) if a != f => Some((a, f)),
+            _ => None,
+        };
+        if let Some((a, f)) = sel {
+            if a.0 != f.0 {
+                // v309: 多单元格矩形：复制成 TSV，剪切再清空；粘贴暂不支持
+                if op != "copy" && op != "cut" {
+                    drop(s);
+                    say(ctx, "暂不支持替换多单元格选区");
+                    return;
+                }
+                let (ca, cb) = (a.0, f.0);
+                let Some(sess) = s.session.as_mut() else { return };
+                let mut m = "复制失败".to_string();
+                let mut cleared = false;
+                if let Some(t) = sess.cell_range_tsv(ca, cb) {
+                    let _ = sess.writer_set_clip_text(&t);
+                    sys_clip_set(&t);
+                    m = "已复制".to_string();
+                    if op == "cut" {
+                        if sess.cell_clear_range(ca, cb).is_some() {
+                            m = "已剪切".to_string();
+                            cleared = true;
+                        } else {
+                            m = "已复制（清空失败）".to_string();
+                        }
+                    }
+                }
+                if cleared {
+                    // 光标回到矩形左上角格，选区折叠
+                    let tl = (ca & 0xFFFF0000) | ((((ca & 0xFFFF) / 64).min((cb & 0xFFFF) / 64)) * 64 + ((ca & 0xFFFF) % 64).min((cb & 0xFFFF) % 64));
+                    s.writer_cell_cursor = Some((tl, 0, 0));
+                    s.writer_cell_sel_anchor = None;
+                    s.writer_cell_sel_focus = None;
+                }
+                drop(s);
+                if let Some(app) = ctx.app_weak.upgrade() {
+                    app.set_writer_needs_render(true);
+                }
+                refresh_selection(ctx);
+                say(ctx, &m);
+                return;
+            }
+        }
+        // 选区起止（按 段落、偏移 排序）
+        let range = sel.map(|(a, f)| {
+            let (lo, hi) = if (a.1, a.2) <= (f.1, f.2) { ((a.1, a.2), (f.1, f.2)) } else { ((f.1, f.2), (a.1, a.2)) };
+            (lo, hi)
+        });
+        let Some(sess) = s.session.as_mut() else { return };
+        let mut new_cursor: Option<(u32, i64, i64)> = None;
+        match op {
+            "copy" | "cut" => {
+                let Some(((sp, so), (ep, eo))) = range else {
+                    drop(s);
+                    say(ctx, "请先选中文字");
+                    return;
+                };
+                match sess.cell_get_text(cid, sp as u32, so as u32, ep as u32, eo as u32) {
+                    Some(t) => {
+                        let _ = sess.writer_set_clip_text(&t);
+                        sys_clip_set(&t);
+                        msg = "已复制".to_string();
+                        if op == "cut" {
+                            sess.writer_undo_group(true);
+                            let mut ok = true;
+                            if ep > sp {
+                                // TODO(v302): 单元格内跨段剪切未实现。
+                                // 原因：内核没有单元格跨段删除接口。
+                                // 待内核补上后，在此删除 (sp,so)-(ep,eo) 并把光标置于 (sp,so)。
+                                // 同时放开粘贴时"替换跨段选区"的限制（见下方粘贴分支）。
+                                ok = false;
+                            } else {
+                                ok = sess.cell_replace_range(cid, sp as u32, so as u32, eo as u32, "").is_some();
+                            }
+                            sess.writer_undo_group(false);
+                            if ok {
+                                new_cursor = Some((cid, sp, so));
+                                msg = "已剪切".to_string();
+                            } else {
+                                msg = "已复制（跨段剪切暂不支持）".to_string();
+                            }
+                        }
+                    }
+                    None => msg = "复制失败".to_string(),
+                }
+            }
+            _ => {
+                let text = sys_clip_get()
+                    .filter(|t| !t.is_empty())
+                    .or_else(|| sess.writer_clip_text())
+                    .unwrap_or_default();
+                if text.is_empty() {
+                    drop(s);
+                    say(ctx, "剪贴板为空");
+                    return;
+                }
+                let text = text.replace("\r\n", "\n").replace('\r', "\n");
+                if matches!(range, Some(((sp, _), (ep, _))) if sp != ep) {
+                    drop(s);
+                    say(ctx, "暂不支持替换跨段选区");
+                    return;
+                }
+                sess.writer_undo_group(true);
+                let (mut p, mut o) = (cp, coff);
+                if let Some(((sp, so), (_ep, eo))) = range {
+                    if sess.cell_replace_range(cid, sp as u32, so as u32, eo as u32, "").is_some() {
+                        p = sp; o = so;
+                    }
+                }
+                let mut ok = true;
+                for (i, line) in text.split('\n').enumerate() {
+                    if i > 0 {
+                        match sess.cell_split(cid, p as u32, o as u32) {
+                            Some((np, no)) => { p = np; o = no; }
+                            None => { ok = false; break; }
+                        }
+                    }
+                    if !line.is_empty() {
+                        match sess.cell_replace_range(cid, p as u32, o as u32, o as u32, line) {
+                            Some(no) => o = no,
+                            None => { ok = false; break; }
+                        }
+                    }
+                }
+                sess.writer_undo_group(false);
+                msg = if ok { "已粘贴".to_string() } else { "粘贴失败".to_string() };
+                new_cursor = Some((cid, p, o));
+            }
+        }
+        if let Some(c) = new_cursor {
+            s.writer_cell_cursor = Some(c);
+            s.writer_cell_sel_anchor = None;
+            s.writer_cell_sel_focus = None;
+        }
+    }
+    if let Some(app) = ctx.app_weak.upgrade() {
+        app.set_writer_needs_render(true);
+    }
+    refresh_selection(ctx);
+    say(ctx, &msg);
 }
 
 fn clip_copy(cut: bool, ctx: &RibbonCtx) {
@@ -1251,6 +1627,9 @@ fn clip_copy(cut: bool, ctx: &RibbonCtx) {
         let Some(sess) = s.session.as_mut() else { return };
         if sess.get_doc_type() != "writer" { return; }
         let mut r = sess.writer_clip_copy(x.0 as u32, x.1 as u32, y.0 as u32, y.1 as u32);
+        if r.is_ok() {
+            if let Some(t) = sess.writer_clip_text() { sys_clip_set(&t); }
+        }
         if cut && r.is_ok() {
             r = sess.writer_clip_delete(x.0 as u32, x.1 as u32, y.0 as u32, y.1 as u32);
         }
@@ -1278,6 +1657,14 @@ fn clip_paste(ctx: &RibbonCtx) {
         let (x, y) = if a <= c { (a, c) } else { (c, a) };
         let Some(sess) = s.session.as_mut() else { return };
         if sess.get_doc_type() != "writer" { return; }
+        // 系统剪贴板与内部缓冲文本不一致 => 来自外部程序，按纯文本放进缓冲
+        if let Some(sys) = sys_clip_get() {
+            let norm = |t: &str| t.replace("\r\n", "\n").replace('\r', "\n");
+            let internal = sess.writer_clip_text().unwrap_or_default();
+            if !sys.is_empty() && norm(&sys) != norm(&internal) {
+                let _ = sess.writer_set_clip_text(&sys);
+            }
+        }
         if !sess.writer_clip_has() {
             drop(s);
             say(ctx, "剪贴板为空");
@@ -1480,7 +1867,7 @@ fn insert_image(ctx: &RibbonCtx) {
         (s.writer_cursor_para, s.writer_cursor_offset)
     };
     if p < 0 || o < 0 { say(ctx, "请先在正文中点击要插入图片的位置"); return; }
-    let file = rfd::FileDialog::new().add_filter("图片", &["png", "jpg", "jpeg"]).pick_file();
+    let file = rfd::FileDialog::new().add_filter(crate::ui_lang::t("图片", "Images"), &["png", "jpg", "jpeg"]).pick_file();
     let Some(path) = file else { return; };
     let bytes = match std::fs::read(&path) {
         Ok(b) => b,

@@ -25,6 +25,8 @@ pub enum AgentAction {
     Reconfigure(AgentConfig),
     /// 清空对话历史(换文档时由面板发送)。
     ResetHistory,
+    /// 预览失败等 UI 侧事件：只暂存，下一次 UserQuery 时拼在用户问题前，不触发模型调用。
+    PreviewFailed(String),
 }
 
 /// Agent -> UI：后台通过 slint::invoke_from_event_loop 送回 UI

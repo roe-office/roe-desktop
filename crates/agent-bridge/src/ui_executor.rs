@@ -76,7 +76,7 @@ fn parse_execute(raw: &str) -> ExecuteOutcome {
         .map(|a| a.iter().filter_map(|x| x.as_u64().map(|n| n as usize)).collect())
         .unwrap_or_default();
     let script_result = v.get("return_value").cloned().unwrap_or(Value::Null);
-    ExecuteOutcome { dirty_pages, dirty_regions: Vec::new(), script_result }
+    ExecuteOutcome { dirty_pages, dirty_regions: Vec::new(), script_result, exports: Vec::new(), export_errors: Vec::new() }
 }
 
 fn parse_query(raw: &str) -> Result<Value, ScriptExecError> {
