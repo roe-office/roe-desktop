@@ -1,6 +1,6 @@
 [package]
 name = "agent-bridge"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
@@ -15,6 +15,7 @@ slint = { version = "1.16.1", default-features = false, features = [
 ] }
 doc-core = { path = "../doc-core" }
 tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros"] }
+# 编译依赖与本目录同级的 roe 仓库(GitHub 上的仓库名是 roe-core,克隆后本地目录必须命名为 roe)
 roe-agent = { path = "../../../roe/roe-agent" }
 roe-api = { path = "../../../roe/roe-api" }
 dotenvy = "0.15"

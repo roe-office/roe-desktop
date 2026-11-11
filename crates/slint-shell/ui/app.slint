@@ -1447,6 +1447,9 @@ export component AppWindow inherits Window {
     in-out property <string> chart-gap-width: "";
     in-out property <string> chart-overlap: "";
     in-out property <string> chart-hole-size: "";
+    in-out property <string> chart-gap-default: "";
+    in-out property <string> chart-overlap-default: "";
+    in-out property <string> chart-hole-default: "";
     callback chart-patch(string, string);
     callback chart-panel-delete-clicked();
     callback calc-obj-delete-clicked();
@@ -5508,6 +5511,9 @@ export component AppWindow inherits Window {
                     gap-width: root.chart-gap-width;
                     overlap: root.chart-overlap;
                     hole-size: root.chart-hole-size;
+                    gap-default: root.chart-gap-default;
+                    overlap-default: root.chart-overlap-default;
+                    hole-default: root.chart-hole-default;
                     patch(k, v) => { root.chart-patch(k, v); }
                     kind-changed(v) => { root.chart-kind-index = v; root.chart-style-kind-changed(v); }
                     title-edited(v) => { root.chart-title-text = v; root.chart-style-title-edited(v); }

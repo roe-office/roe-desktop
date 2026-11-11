@@ -1,9 +1,10 @@
 [package]
 name = "doc-core"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
+# 编译依赖与本目录同级的 roe 仓库(GitHub 上的仓库名是 roe-core,克隆后本地目录必须命名为 roe)
 roe-api = { path = "../../../roe/roe-api" }
 roe-model = { path = "../../../roe/roe-model" }
 serde_json = "1"

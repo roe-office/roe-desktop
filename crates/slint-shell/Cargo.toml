@@ -1,6 +1,6 @@
 [package]
 name = "slint-shell"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
@@ -21,6 +21,7 @@ agent-bridge = { path = "../agent-bridge" }
 
 # Agent 接线最小验证（v1接线第一步）：先只验证依赖能否引入、编译能否通过，
 # 不代表最终的异步桥接实现已经开始。
+# 编译依赖与本目录同级的 roe 仓库(GitHub 上的仓库名是 roe-core,克隆后本地目录必须命名为 roe)
 roe-agent = { path = "../../../roe/roe-agent" }
 tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros"] }
 arboard = { version = "3", features = ["wayland-data-control"] }

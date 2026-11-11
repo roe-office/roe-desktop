@@ -538,6 +538,9 @@ fn fill_chart_design_props(app: &AppWindow, json: &str) {
     app.set_chart_gap_width(num("gap_width_pct").into());
     app.set_chart_overlap(num("overlap_pct").into());
     app.set_chart_hole_size(num("hole_size_pct").into());
+    app.set_chart_gap_default(num("default_gap_width_pct").into());
+    app.set_chart_overlap_default(num("default_overlap_pct").into());
+    app.set_chart_hole_default(num("default_hole_size_pct").into());
 }
 
 fn sync_chart_sidebar(app: &AppWindow, s: &mut AppState, sheet: u32) {
@@ -9021,9 +9024,13 @@ let done = match range {
         let app = match app_weak_chart_patch.upgrade() { Some(a) => a, None => return };
         let val: serde_json::Value = serde_json::from_str(value.as_str())
             .unwrap_or_else(|_| serde_json::Value::String(value.to_string()));
-        let mut obj = serde_json::Map::new();
-        obj.insert(key.to_string(), val);
-        let json = serde_json::Value::Object(obj).to_string();
+        let json = if key.as_str() == "__multi__" && val.is_object() {
+            val.to_string()
+        } else {
+            let mut obj = serde_json::Map::new();
+            obj.insert(key.to_string(), val);
+            serde_json::Value::Object(obj).to_string()
+        };
         // Impress:改样式 -> commit_edit -> 回读 -> 重绘
         if app.get_impress_sel_is_chart() && app.get_impress_sel_id() >= 0 {
             let sl = (app.get_impress_current_slide() - 1).max(0) as u32;

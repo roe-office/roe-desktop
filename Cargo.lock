@@ -115,7 +115,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "agent-bridge"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "doc-core",
  "dotenvy",
@@ -1951,7 +1951,7 @@ dependencies = [
 
 [[package]]
 name = "doc-core"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "roe-api",
@@ -2421,6 +2421,7 @@ dependencies = [
 [[package]]
 name = "fontique"
 version = "0.11.0"
+source = "git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf#78de830e4ef1ab6d3558f92d815ca40f2ab98eaf"
 dependencies = [
  "hashbrown 0.17.1",
  "linebender_resource_handle",
@@ -2429,13 +2430,13 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-core-text",
  "objc2-foundation 0.3.2",
- "parlance 0.1.0",
+ "parlance 0.1.0 (git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf)",
  "read-fonts 0.41.0",
- "roe-fontconfig-sys",
  "roxmltree 0.21.1",
  "smallvec",
  "windows 0.62.2",
  "windows-core 0.62.2",
+ "yeslogic-fontconfig-sys",
 ]
 
 [[package]]
@@ -5031,12 +5032,13 @@ dependencies = [
 [[package]]
 name = "parlance"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b6937eda350acc1a5d05872c3cbf99fe78619c269096e2be3d4a350058639d5"
 
 [[package]]
 name = "parlance"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b6937eda350acc1a5d05872c3cbf99fe78619c269096e2be3d4a350058639d5"
+source = "git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf#78de830e4ef1ab6d3558f92d815ca40f2ab98eaf"
 
 [[package]]
 name = "parley"
@@ -5059,11 +5061,12 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.11.0"
+source = "git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf#78de830e4ef1ab6d3558f92d815ca40f2ab98eaf"
 dependencies = [
  "fontique 0.11.0",
  "hashbrown 0.17.1",
  "linebender_resource_handle",
- "parlance 0.1.0",
+ "parlance 0.1.0 (git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf)",
  "parley_engine",
  "skrifa 0.44.0",
 ]
@@ -5080,6 +5083,7 @@ dependencies = [
 [[package]]
 name = "parley_data"
 version = "0.11.0"
+source = "git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf#78de830e4ef1ab6d3558f92d815ca40f2ab98eaf"
 dependencies = [
  "icu_properties",
 ]
@@ -5087,6 +5091,7 @@ dependencies = [
 [[package]]
 name = "parley_engine"
 version = "0.11.0"
+source = "git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf#78de830e4ef1ab6d3558f92d815ca40f2ab98eaf"
 dependencies = [
  "fontique 0.11.0",
  "harfrust 0.12.0",
@@ -5095,7 +5100,7 @@ dependencies = [
  "icu_properties",
  "icu_segmenter",
  "linebender_resource_handle",
- "parlance 0.1.0",
+ "parlance 0.1.0 (git+https://github.com/linebender/parley.git?rev=78de830e4ef1ab6d3558f92d815ca40f2ab98eaf)",
  "parley_data 0.11.0",
  "skrifa 0.44.0",
 ]
@@ -6286,7 +6291,8 @@ checksum = "973443cf09a9c8656b574a866ab68dfa19f0867d0340648c7d2f6a71b8a8ea68"
 
 [[package]]
 name = "ratex-font"
-version = "0.1.0"
+version = "0.1.13"
+source = "git+https://github.com/erweixin/RaTeX.git?rev=ac9be232eee08f062eecbb656cee95fb94bed1d4#ac9be232eee08f062eecbb656cee95fb94bed1d4"
 dependencies = [
  "phf 0.11.3",
  "ratex-types",
@@ -6294,7 +6300,8 @@ dependencies = [
 
 [[package]]
 name = "ratex-layout"
-version = "0.1.0"
+version = "0.1.13"
+source = "git+https://github.com/erweixin/RaTeX.git?rev=ac9be232eee08f062eecbb656cee95fb94bed1d4#ac9be232eee08f062eecbb656cee95fb94bed1d4"
 dependencies = [
  "ratex-font",
  "ratex-parser",
@@ -6304,7 +6311,8 @@ dependencies = [
 
 [[package]]
 name = "ratex-lexer"
-version = "0.1.0"
+version = "0.1.13"
+source = "git+https://github.com/erweixin/RaTeX.git?rev=ac9be232eee08f062eecbb656cee95fb94bed1d4#ac9be232eee08f062eecbb656cee95fb94bed1d4"
 dependencies = [
  "ratex-types",
  "serde",
@@ -6313,7 +6321,8 @@ dependencies = [
 
 [[package]]
 name = "ratex-parser"
-version = "0.1.0"
+version = "0.1.13"
+source = "git+https://github.com/erweixin/RaTeX.git?rev=ac9be232eee08f062eecbb656cee95fb94bed1d4#ac9be232eee08f062eecbb656cee95fb94bed1d4"
 dependencies = [
  "fancy-regex",
  "ratex-font",
@@ -6329,7 +6338,8 @@ dependencies = [
 
 [[package]]
 name = "ratex-types"
-version = "0.1.0"
+version = "0.1.13"
+source = "git+https://github.com/erweixin/RaTeX.git?rev=ac9be232eee08f062eecbb656cee95fb94bed1d4#ac9be232eee08f062eecbb656cee95fb94bed1d4"
 dependencies = [
  "serde",
 ]
@@ -6897,15 +6907,6 @@ dependencies = [
  "thiserror 1.0.69",
  "tiny-skia 0.12.0",
  "tracing",
-]
-
-[[package]]
-name = "roe-fontconfig-sys"
-version = "6.0.1"
-dependencies = [
- "dlib",
- "once_cell",
- "pkg-config",
 ]
 
 [[package]]
@@ -7708,7 +7709,7 @@ dependencies = [
 
 [[package]]
 name = "slint-shell"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "agent-bridge",
  "arboard",
@@ -8234,7 +8235,7 @@ dependencies = [
 
 [[package]]
 name = "tile-cache"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "lru",
 ]

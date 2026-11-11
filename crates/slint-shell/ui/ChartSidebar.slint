@@ -17,7 +17,11 @@ export component ChartSidebar inherits Rectangle {
     in property <string> gap-width: "";
     in property <string> overlap: "";
     in property <string> hole-size: "";
+    in property <string> gap-default: "";
+    in property <string> overlap-default: "";
+    in property <string> hole-default: "";
     property <bool> is-bar: !root.is-stat && (root.kind-name == "Bar" || root.kind-name == "HorizontalBar");
+    property <bool> is-col: !root.is-stat && root.kind-name == "Bar";
     property <bool> is-donut: !root.is-stat && root.kind-name == "Doughnut";
     property <bool> show-num: root.is-bar || root.is-donut;
 
@@ -184,6 +188,7 @@ export component ChartSidebar inherits Rectangle {
                         Text { text: @tr("间距 %"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
                         Rectangle {
                             border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                            Text { x: 6px; y: 0px; width: parent.width - 12px; height: parent.height; font-size: 11px; vertical-alignment: center; color: #aaaaaa; text: root.gap-default; visible: gap-input.text == ""; }
                             gap-input := TextInput {
                                 x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
                                 font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
@@ -195,12 +200,13 @@ export component ChartSidebar inherits Rectangle {
                     }
                 }
                 Rectangle {
-                    height: root.is-bar ? 30px : 0px; visible: root.is-bar;
+                    height: root.is-col ? 30px : 0px; visible: root.is-col;
                     HorizontalLayout {
                         spacing: 6px; padding-bottom: 6px;
                         Text { text: @tr("重叠 %"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
                         Rectangle {
                             border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                            Text { x: 6px; y: 0px; width: parent.width - 12px; height: parent.height; font-size: 11px; vertical-alignment: center; color: #aaaaaa; text: root.overlap-default; visible: ov-input.text == ""; }
                             ov-input := TextInput {
                                 x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
                                 font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
@@ -218,6 +224,7 @@ export component ChartSidebar inherits Rectangle {
                         Text { text: @tr("孔径 %"); font-size: 10px; color: #666666; width: 52px; vertical-alignment: center; }
                         Rectangle {
                             border-radius: 3px; border-width: 1px; border-color: #d0d0d0; background: #ffffff;
+                            Text { x: 6px; y: 0px; width: parent.width - 12px; height: parent.height; font-size: 11px; vertical-alignment: center; color: #aaaaaa; text: root.hole-default; visible: hole-input.text == ""; }
                             hole-input := TextInput {
                                 x: 6px; y: 0px; width: parent.width - 12px; height: parent.height;
                                 font-size: 11px; vertical-alignment: center; color: #222222; selection-background-color: #bcd7f7; selection-foreground-color: #000000;
@@ -229,6 +236,21 @@ export component ChartSidebar inherits Rectangle {
                     }
                 }
                 Rectangle { height: root.show-num ? 1px : 0px; background: #e8e8e8; }
+            }
+
+            // 恢复默认样式:不重置标题/轴标题/边框;统计图只重置图例与网格线
+            Rectangle {
+                height: 28px;
+                border-radius: 3px; border-width: 1px; border-color: #d0d0d0;
+                background: reset-ta.has-hover ? #eef3f8 : #ffffff;
+                reset-ta := TouchArea {
+                    clicked => {
+                        root.patch("__multi__", root.is-stat
+                            ? "{\"show_legend\":true,\"show_grid\":true}"
+                            : "{\"legend_pos\":null,\"gap_width_pct\":null,\"overlap_pct\":null,\"hole_size_pct\":null,\"grouping\":\"Standard\",\"show_val\":false,\"show_legend\":true,\"show_grid\":true}");
+                    }
+                }
+                Text { text: @tr("恢复默认样式"); font-size: 11px; color: #222222; horizontal-alignment: center; vertical-alignment: center; }
             }
 
             // 坐标轴标题(统计图置灰)
